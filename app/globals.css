@@ -16,6 +16,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 * {
@@ -24,6 +25,7 @@ body {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 a {
@@ -92,7 +94,7 @@ select {
 
 .category-marquee-track {
   animation: category-slide 36s linear infinite;
-  transform: translateX(100vw);
+  transform: translateX(0);
 }
 
 .category-marquee:hover .category-marquee-track,
@@ -102,11 +104,11 @@ select {
 
 @keyframes category-slide {
   from {
-    transform: translateX(100vw);
+    transform: translateX(0);
   }
 
   to {
-    transform: translateX(-50%);
+    transform: translateX(-25%);
   }
 }
 
@@ -146,6 +148,12 @@ select {
   animation: brand-slide 24s linear infinite;
 }
 
+.eid-deal-flash {
+  animation: eid-flash-blink 1s ease-in-out infinite;
+  fill: currentColor;
+  stroke-width: 0;
+}
+
 .brand-marquee:hover .brand-marquee-track,
 .brand-marquee:focus-within .brand-marquee-track {
   animation-play-state: paused;
@@ -158,6 +166,19 @@ select {
 
   to {
     transform: translateX(calc(-50% - 16px));
+  }
+}
+
+@keyframes eid-flash-blink {
+  0%,
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+
+  50% {
+    opacity: 0.38;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.75));
   }
 }
 

@@ -13,7 +13,7 @@ const productImages = {
   battery: "bg-[-1318px_-506px]",
 };
 
-const tabData = {
+export const tabData = {
   "CAR ACCESSORIES": [
     { category: "CAR CARE DETAILING", name: "Flamingo AC Pro Air Conditioner Cleaner", price: "Tk 650.00", reviews: 4, image: "/accessory-ac-pro.jpeg" },
     { category: "CAR CARE DETAILING", name: "Flamingo Windshield Washer Fluid", price: "Tk 480.00", reviews: 6, image: "/accessory-windshield-washer.jpeg" },
@@ -79,6 +79,29 @@ const quoteLabels = {
   TYRES: "TYRE",
   LUBRICANT: "LUBRICANT",
 };
+
+const viewAllLinks = {
+  "CAR ACCESSORIES": "/accessories",
+  "CAR PARTS": "/car-parts",
+  TYRES: "/tyres",
+  LUBRICANT: "/lubricant",
+};
+
+function expandProducts(products, total = 18) {
+  return Array.from({ length: total }, (_, index) => {
+    const product = products[index % products.length];
+    const round = Math.floor(index / products.length);
+
+    if (round === 0) {
+      return product;
+    }
+
+    return {
+      ...product,
+      name: `${product.name} ${round + 1}`,
+    };
+  });
+}
 
 const bestSellingProducts = [
   tabData["CAR PARTS"][0],
@@ -181,6 +204,7 @@ function CtaIcon({ name }) {
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState("CAR ACCESSORIES");
   const [addedItems, setAddedItems] = useState([]);
+  const visibleProducts = expandProducts(tabData[activeTab], 18);
 
   function handleAddToCart(productName) {
     setAddedItems((items) => (items.includes(productName) ? items : [...items, productName]));
@@ -219,14 +243,14 @@ export default function ProductTabs() {
           ))}
         </div>
 
-        <div className="mt-12 grid grid-cols-5 gap-x-[20px] gap-y-[44px] max-xl:grid-cols-4 max-lg:grid-cols-2 max-sm:mt-7 max-sm:grid-cols-1 max-sm:gap-y-6">
-          {tabData[activeTab].map((product) => (
+        <div className="mt-12 grid grid-cols-6 gap-x-[20px] gap-y-[44px] max-2xl:grid-cols-5 max-xl:grid-cols-4 max-lg:grid-cols-2 max-sm:mt-7 max-sm:grid-cols-1 max-sm:gap-y-6">
+          {visibleProducts.map((product) => (
             <article key={product.name} className="group/product rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]">
               <div className="block">
                 <div className="relative overflow-hidden rounded-[6px]">
                   <a
                     href={`/products/${slugify(product.name)}`}
-                    className={`block h-[280px] rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] max-xl:h-[300px] max-sm:h-[260px] ${
+                    className={`block aspect-square rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] ${
                       product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                     }`}
                     style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
@@ -244,7 +268,7 @@ export default function ProductTabs() {
                 <div className="pt-[18px]">
                   <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{product.category}</p>
                   <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                    <a href={`/products/${slugify(product.name)}`}>{product.name}</a>
+                    <a href={`/products/${slugify(product.name)}`}>{product.name.replace(/ (2|3)$/u, "")}</a>
                   </h3>
                   <Stars count={product.reviews} />
                   <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{product.price}</p>
@@ -256,7 +280,7 @@ export default function ProductTabs() {
 
         <div className="mt-14 flex flex-wrap items-center justify-center gap-4">
           <a
-            href="#featured-products"
+            href={viewAllLinks[activeTab]}
             className="inline-flex h-[70px] min-w-[324px] items-center justify-center gap-4 rounded-[14px] border border-transparent bg-[#ef3338] px-10 text-[22px] font-black !text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)] transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#d3191d] hover:shadow-[0_16px_34px_rgba(220,38,38,0.18)] max-sm:h-[58px] max-sm:min-w-full max-sm:text-[17px]"
           >
             <CtaIcon name="box" />

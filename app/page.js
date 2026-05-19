@@ -4,15 +4,29 @@ import ProductTabs, { BestSellingAutoParts, LatestJapaneseAutoParts } from "./Pr
 import VideoGallery from "./VideoGallery";
 import CustomerReviews from "./CustomerReviews";
 import PartsInquirySection from "./PartsInquirySection";
+import HeaderSearch from "./HeaderSearch";
 
 const navItems = [
   { label: "HOME", href: "/" },
-  { label: "CAR ACCESSORIES", href: "/#featured-products" },
-  { label: "CAR PARTS", href: "/#parts", hasMenu: true },
-  { label: "TYRES", href: "/#tyres", hasMenu: true },
-  { label: "LUBRICANT", href: "/#lubricant", hasMenu: true },
-  { label: "SALE OFFER", href: "/#sale" },
-  { label: "CONTACT", href: "/#contact" },
+  { label: "CAR ACCESSORIES", href: "/car-accessories", hasMenu: true },
+  { label: "CAR PARTS", href: "/car-parts", hasMenu: true },
+  { label: "TYRES", href: "/tyres", hasMenu: true },
+  { label: "LUBRICANT", href: "/lubricant", hasMenu: true },
+  { label: "SALE OFFER", href: "/sale-offer" },
+  { label: "BRANDS", href: "/brands" },
+  { label: "MODIFICATION", href: "/modification" },
+  { label: "COMBO PACKAGE", href: "/combo-package" },
+];
+
+const carAccessorySubcategories = [
+  { title: "Interior", icon: "car", tone: "red", links: ["Air Freshener", "Seat Covers", "Floor Mats"] },
+  { title: "Exterior", icon: "body", tone: "blue", links: ["Car Cover", "Mud Guard", "Chrome Trim"] },
+  { title: "Electronics", icon: "bolt", tone: "indigo", links: ["Phone Holder", "Dash Camera", "Chargers"] },
+  { title: "Car Care", icon: "drop", tone: "teal", links: ["Wax", "Shampoo", "Washer Fluid"] },
+  { title: "Utility", icon: "package", tone: "amber", links: ["Organizer", "Tool Kit", "Storage"] },
+  { title: "Safety", icon: "check", tone: "green", links: ["Emergency Kit", "Reflector", "First Aid"] },
+  { title: "Performance", icon: "trend", tone: "orange", links: ["Cleaner", "Additive", "Filter Care"] },
+  { title: "Lifestyle", icon: "star", tone: "purple", links: ["Perfume", "Decor", "Travel"] },
 ];
 
 const vehicleBrands = ["Toyota", "Honda", "Nissan", "Mitsubishi", "Suzuki"];
@@ -271,6 +285,15 @@ function Icon({ name, className = "size-5" }) {
         <path d="M12 14v7" />
       </>
     ),
+    gift: (
+      <>
+        <path d="M20 12v9H4v-9" />
+        <path d="M2 7h20v5H2z" />
+        <path d="M12 7v14" />
+        <path d="M12 7H8.5a2.5 2.5 0 1 1 2.5-2.5V7Z" />
+        <path d="M12 7h3.5A2.5 2.5 0 1 0 13 4.5V7Z" />
+      </>
+    ),
     calendar: (
       <>
         <path d="M8 2v4M16 2v4" />
@@ -297,6 +320,12 @@ function Icon({ name, className = "size-5" }) {
         <path d="M17 14h3v5h-3z" />
       </>
     ),
+    smartphone: (
+      <>
+        <rect x="7" y="2" width="10" height="20" rx="2" />
+        <path d="M11 18h2" />
+      </>
+    ),
     disc: (
       <>
         <circle cx="12" cy="12" r="8" />
@@ -311,6 +340,7 @@ function Icon({ name, className = "size-5" }) {
       </>
     ),
     bolt: <path d="m13 2-9 12h7l-1 8 10-13h-7l0-7Z" />,
+    flashSolid: <path d="M13 2H6l3 8H5l7 12v-9h5L13 2Z" />,
     filter: <path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z" />,
     drop: <path d="M12 3s6 6.2 6 10a6 6 0 0 1-12 0c0-3.8 6-10 6-10Z" />,
     wave: <path d="M3 12h4l2-6 4 12 2-6h6" />,
@@ -336,11 +366,28 @@ function Icon({ name, className = "size-5" }) {
         <path d="m16 8 2-2" />
       </>
     ),
+    body: (
+      <>
+        <path d="M4 14h16" />
+        <path d="M6 14l1.6-4.7A2 2 0 0 1 9.5 8h5a2 2 0 0 1 1.9 1.3L18 14" />
+        <path d="M6 14v3h2" />
+        <path d="M18 14v3h-2" />
+        <path d="M8 11h8" />
+      </>
+    ),
   };
 
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {paths[name]}
+    </svg>
+  );
+}
+
+function ChevronDown({ className = "size-3" }) {
+  return (
+    <svg className={className} viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m1 1.5 5 5 5-5" />
     </svg>
   );
 }
@@ -489,7 +536,7 @@ function PromoRail({ product, offer }) {
 
 function CarPartsMegaMenu() {
   return (
-    <div className="mega-menu invisible absolute left-1/2 top-full z-50 min-h-[569px] w-[1152px] -translate-x-1/2 rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
+    <div className="mega-menu invisible absolute left-[calc(50%-696px)] top-full z-50 min-h-[569px] w-[1272px] rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:left-6 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-8 place-items-center rounded-[7px] bg-[#ff474b] text-[#111827]">
           <Icon name="package" className="size-4" />
@@ -500,20 +547,21 @@ function CarPartsMegaMenu() {
         </div>
       </div>
       <div className="grid grid-cols-[1fr_203px] gap-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           {carPartCategories.map((category) => (
             <CategoryCard key={category.title} category={category} />
           ))}
         </div>
         <PromoRail product="Parts" offer="15% Off Car Parts" />
       </div>
+      <MegaMenuCta href="/car-parts" eyebrow="Genuine Auto Parts" text="Browse brakes, filters, electrical, suspension and engine parts." buttonText="View All Car Parts" />
     </div>
   );
 }
 
 function TyresMegaMenu() {
   return (
-    <div className="mega-menu invisible absolute left-1/2 top-full z-50 min-h-[569px] w-[1152px] -translate-x-1/2 rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
+    <div className="mega-menu invisible absolute left-[calc(50%-696px)] top-full z-50 min-h-[569px] w-[1272px] rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:left-6 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-8 place-items-center rounded-[7px] bg-[#ff474b] text-[#111827]">
           <Icon name="package" className="size-4" />
@@ -575,13 +623,14 @@ function TyresMegaMenu() {
         </div>
         <PromoRail product="Premium Tyres" offer="15% Off Tyres" />
       </div>
+      <MegaMenuCta href="/tyres" eyebrow="Premium Tyres" text="Browse tyres by brand, rim size, tyre care and accessories." buttonText="View All Tyres" />
     </div>
   );
 }
 
 function LubricantMegaMenu() {
   return (
-    <div className="mega-menu invisible absolute left-1/2 top-full z-50 min-h-[569px] w-[1152px] -translate-x-1/2 rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
+    <div className="mega-menu invisible absolute left-[calc(50%-696px)] top-full z-50 min-h-[569px] w-[1272px] rounded-b-[10px] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-150 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-xl:left-6 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-8 place-items-center rounded-[7px] bg-[#ff474b] text-[#111827]">
           <Icon name="package" className="size-4" />
@@ -611,93 +660,162 @@ function LubricantMegaMenu() {
         </div>
         <PromoRail product="Pro Grade Lubricants" offer="15% Off Lubricant" />
       </div>
+      <MegaMenuCta href="/lubricant" eyebrow="Quality Lubricants" text="Browse engine oil, transmission fluid, coolant and brand collections." buttonText="View All Lubricants" />
+    </div>
+  );
+}
+
+function MegaMenuCta({ href, eyebrow, text, buttonText }) {
+  return (
+    <div className="mt-5 flex items-center justify-between rounded-[10px] border border-[#ffd9d9] bg-[#fff5f5] p-4">
+      <div>
+        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#ef3338]">{eyebrow}</p>
+        <p className="mt-1 text-[15px] font-bold text-[#111827]">{text}</p>
+      </div>
+      <a href={href} className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d3191d]">
+        {buttonText}
+        <Icon name="arrow" className="size-4" />
+      </a>
+    </div>
+  );
+}
+
+function CarAccessoriesMegaMenu() {
+  return (
+    <div className="invisible absolute left-[calc(50%-696px)] top-full z-[120] min-h-[569px] w-[1272px] translate-y-0 rounded-b-[10px] bg-white px-6 py-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 max-xl:left-6 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
+      <div className="flex items-center gap-3">
+        <span className="grid size-8 place-items-center rounded-[8px] bg-[#ffefef] text-[#ef3338]">
+          <Icon name="car" className="size-4" />
+        </span>
+        <div>
+          <h3 className="text-[18px] font-black leading-none">Car Accessories</h3>
+          <span className="mt-3 block h-0.5 w-12 bg-[#ef3338]" />
+        </div>
+      </div>
+      <div className="mt-5 grid grid-cols-4 gap-4">
+        {carAccessorySubcategories.map((category) => (
+          <CategoryCard key={category.title} category={category} />
+        ))}
+      </div>
+      <div className="mt-5 flex items-center justify-between rounded-[10px] border border-[#ffd9d9] bg-[#fff5f5] p-4">
+        <div>
+          <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#ef3338]">Accessories Collection</p>
+          <p className="mt-1 text-[15px] font-bold text-[#111827]">Browse interior, exterior, electronics, care and lifestyle items.</p>
+        </div>
+        <a href="/car-accessories" className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d3191d]">
+          View All Accessories
+          <Icon name="arrow" className="size-4" />
+        </a>
+      </div>
     </div>
   );
 }
 
 function LogoMark() {
   return (
-    <Link href="/" className="relative block h-[58px] w-[190px] shrink-0 overflow-hidden" aria-label="JPSPARE home">
-      <span className="absolute inset-0 bg-[url('/jpspare-logo-wide.png')] bg-contain bg-left bg-no-repeat" />
+    <Link href="/" className="relative block h-[64px] w-[260px] shrink-0 overflow-hidden max-sm:h-[52px] max-sm:w-[210px]" aria-label="JPSPARE home">
+      <span className="absolute inset-0 bg-[url('/jpspare-logo-wide-clean.png')] bg-contain bg-left bg-no-repeat" />
       <span className="sr-only">JPSPARE</span>
     </Link>
   );
 }
 
 function TopSearch() {
-  return (
-    <form action="#parts" className="order-3 flex h-12 min-w-0 basis-full overflow-hidden rounded-[16px] border border-white/70 bg-white text-[#4b5563] shadow-[0_12px_24px_rgba(0,0,0,0.2)] lg:order-none lg:max-w-[760px] lg:flex-1 max-sm:h-11 max-sm:rounded-[12px]">
-      <label className="flex min-w-0 flex-1 items-center gap-4 border-r border-[#edf0f5] px-4 max-sm:gap-2 max-sm:px-3">
-        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#ff5458] text-white">
-          <Icon name="search" className="size-3.5" />
-        </span>
-        <input
-          name="q"
-          type="search"
-          className="min-w-0 flex-1 bg-transparent text-[16px] tracking-[0.01em] outline-none placeholder:text-[#9ca3af] max-sm:text-[14px]"
-          placeholder="Search Japanese car p"
-        />
-      </label>
-      <label className="flex w-[206px] shrink-0 items-center gap-2 bg-[#fafbfc] px-4 text-sm font-semibold text-[#4b5563] max-sm:w-[148px] max-sm:px-3 max-sm:text-[12px]">
-        <span className="grid size-6 place-items-center rounded-full border border-[#e5e7eb] text-[#111827]">
-          <Icon name="car" className="size-3.5" />
-        </span>
-        <select name="vehicle" className="min-w-0 flex-1 appearance-none bg-transparent outline-none">
-          <option>Search By Vehicle</option>
-          {vehicleBrands.map((brand) => (
-            <option key={brand}>{brand}</option>
-          ))}
-        </select>
-        <span className="text-[#a3a7ae]">⌄</span>
-      </label>
-    </form>
-  );
+  return <HeaderSearch vehicleBrands={vehicleBrands} />;
 }
 
 export function MainNavBar({ showTrackOrder = true }) {
   return (
-    <div className="relative z-30 bg-[#111827] text-white">
-      <div className="mx-auto flex h-[66px] w-full max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:py-3">
-        <nav className="flex items-center gap-[32px] overflow-visible text-[15px] font-bold leading-none max-lg:w-full max-lg:gap-4 max-lg:overflow-x-auto max-lg:pb-2 max-sm:text-[13px]">
+    <div className="relative z-[90] border-t border-[#111827]/40 bg-[#d3191d] text-white">
+      <div className="mx-auto flex h-[48px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:py-2">
+        <nav className="flex min-w-0 flex-1 items-center gap-[18px] overflow-visible text-[14px] font-bold leading-none max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:flex-none max-lg:gap-4 max-lg:overflow-x-auto max-lg:pb-2 max-sm:text-[13px]">
           {navItems.map((item) => (
-            item.label === "CAR PARTS" ? (
-              <div key={item.label} className="group/nav flex h-[66px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="flex h-[38px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  {item.label}
-                  <span className="text-lg leading-none transition group-hover/nav:rotate-180">⌄</span>
+            item.label === "CAR ACCESSORIES" ? (
+              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
+                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span className="leading-none">{item.label}</span>
+                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
+                </a>
+                <CarAccessoriesMegaMenu />
+              </div>
+            ) : item.label === "CAR PARTS" ? (
+              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
+                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span className="leading-none">{item.label}</span>
+                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
                 <CarPartsMegaMenu />
               </div>
             ) : item.label === "TYRES" ? (
-              <div key={item.label} className="group/nav flex h-[66px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="flex h-[38px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  {item.label}
-                  <span className="text-lg leading-none transition group-hover/nav:rotate-180">⌄</span>
+              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
+                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span className="leading-none">{item.label}</span>
+                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
                 <TyresMegaMenu />
               </div>
             ) : item.label === "LUBRICANT" ? (
-              <div key={item.label} className="group/nav flex h-[66px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="flex h-[38px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  {item.label}
-                  <span className="text-lg leading-none group-hover/nav:rotate-180">⌄</span>
+              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
+                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span className="leading-none">{item.label}</span>
+                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
                 <LubricantMegaMenu />
               </div>
             ) : (
-              <a key={item.label} href={item.href} className="flex h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 no-underline transition hover:bg-[#dd3b3f] hover:!text-[#f7d95f]">
-                {item.label}
-                {item.hasMenu && <span className="text-lg leading-none">⌄</span>}
+              <a key={item.label} href={item.href} className="inline-flex h-[32px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition hover:bg-[#dd3b3f] hover:!text-[#f7d95f]">
+                <span className="leading-none">{item.label}</span>
+                {item.hasMenu && <ChevronDown className="size-[11px] translate-y-px" />}
               </a>
             )
           ))}
         </nav>
-        {showTrackOrder && (
-          <a href="#track-order" className="flex h-[38px] shrink-0 items-center gap-2 rounded-[11px] bg-white px-[25px] text-[14px] font-black text-[#d3191d] transition hover:bg-[#fff2f2] max-lg:ml-auto max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
-            <Icon name="package" className="size-4" />
-            Track Order
+        <div className="ml-auto flex shrink-0 items-center gap-4 text-[14px] font-bold text-white max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:justify-end max-lg:gap-5 max-sm:text-[13px]">
+          <a href="#help-center" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition hover:bg-[#dd3b3f] hover:text-[#f7d95f]">
+            <Icon name="headphones" className="size-5" />
+            <span className="leading-none">HELP</span>
           </a>
-        )}
+          <div className="group/app relative flex h-[48px] items-center max-lg:h-auto">
+            <button type="button" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition group-hover/app:bg-[#dd3b3f] group-hover/app:text-[#f7d95f]">
+              <span className="leading-none">DOWNLOAD APP</span>
+              <ChevronDown className="size-[11px] translate-y-px transition group-hover/app:rotate-180" />
+            </button>
+            <div className="invisible absolute right-0 top-full z-50 w-[455px] translate-y-2 rounded-[10px] border border-[#e5e7eb] bg-white p-6 text-[#111827] opacity-0 shadow-[0_18px_36px_rgba(15,23,42,0.18)] transition duration-200 before:absolute before:-top-3 before:right-[116px] before:size-6 before:rotate-45 before:bg-white before:shadow-[-1px_-1px_0_0_#e5e7eb] group-hover/app:visible group-hover/app:translate-y-0 group-hover/app:opacity-100 max-sm:right-auto max-sm:left-0 max-sm:w-[calc(100vw-32px)] max-sm:p-4">
+              <div className="relative z-10 flex items-center gap-6 max-sm:gap-4">
+                <div className="grid size-[138px] shrink-0 grid-cols-7 grid-rows-7 gap-1 bg-white p-2 shadow-[inset_0_0_0_1px_#111827] max-sm:size-[116px]">
+                  {Array.from({ length: 49 }).map((_, index) => (
+                    <span
+                      key={index}
+                      className={`${[0, 1, 2, 4, 6, 7, 9, 10, 12, 13, 14, 16, 18, 21, 22, 23, 25, 27, 28, 30, 32, 34, 35, 36, 38, 40, 42, 43, 45, 46, 48].includes(index) ? "bg-[#111827]" : "bg-white"}`}
+                    />
+                  ))}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-[18px] font-black leading-tight text-[#111827] max-sm:text-[16px]">Download The JPSPARE App</h4>
+                  <p className="mt-3 text-[13px] font-medium leading-6 text-[#4b5563] max-sm:text-[12px] max-sm:leading-5">
+                    Scan the QR code with your phone camera or any QR code scanner
+                  </p>
+                  <div className="mt-4 flex gap-2 max-sm:flex-col">
+                    <a href="#download-ios" className="flex h-10 items-center justify-center gap-2 rounded-[5px] bg-black px-3 text-[11px] font-bold leading-none text-white transition hover:bg-[#1f2937]">
+                      <span className="text-[18px]">●</span>
+                      <span><span className="block text-[8px] font-medium">Download on the</span>App Store</span>
+                    </a>
+                    <a href="#download-android" className="flex h-10 items-center justify-center gap-2 rounded-[5px] bg-black px-3 text-[11px] font-bold leading-none text-white transition hover:bg-[#1f2937]">
+                      <span className="text-[18px] text-[#37d160]">▶</span>
+                      <span><span className="block text-[8px] font-medium">GET IT ON</span>Google Play</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {showTrackOrder && (
+            <a href="#track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] transition hover:bg-[#fff2f2] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
+              <Icon name="package" className="size-4 !text-[#111827]" />
+              <span className="leading-none !text-[#111827]">Track Order</span>
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -705,41 +823,57 @@ export function MainNavBar({ showTrackOrder = true }) {
 
 export function Header() {
   return (
-    <header className="relative z-20">
-      <div className="bg-[#d3191d] text-white">
-        <div className="mx-auto flex h-[103px] w-full max-w-[1600px] items-center gap-8 px-4 sm:px-6 lg:px-8 xl:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:gap-4 max-lg:py-4">
-          <LogoMark />
-          <TopSearch />
-          <a href="tel:01718914582" className="ml-auto hidden min-w-[188px] text-left lg:block">
-            <span className="block text-[14px] leading-4 text-white/80">© Call Us (10.00am-8.00pm)</span>
-            <span className="mt-1 flex items-center gap-2 text-[21px] font-black leading-6">
-              <Icon name="phone" className="size-4 text-white" />
-              01718914582
-            </span>
-          </a>
-          <div className="hidden items-center gap-6 text-white lg:flex">
-            <a href="#signin" aria-label="Sign in" className="transition hover:text-[#f7d95f]">
-              <Icon name="userMinimal" className="size-7" />
-            </a>
-            <a href="#wishlist" aria-label="Wishlist" className="relative transition hover:text-[#f7d95f]">
-              <Icon name="heart" className="size-7" />
-              <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
-            </a>
-            <a href="#compare" aria-label="Compare" className="transition hover:text-[#f7d95f]">
-              <Icon name="trend" className="size-7" />
-            </a>
-            <a href="#cart" aria-label="Cart" className="relative transition hover:text-[#f7d95f]">
-              <Icon name="cart" className="size-7" />
-              <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
-            </a>
-          </div>
-          <button className="ml-auto hidden text-white max-lg:block" aria-label="Open menu">
-            <Icon name="menu" className="size-7" />
-          </button>
-        </div>
+    <>
+      <div className="sticky top-0 z-[100] bg-[#111827] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]">
+        <SearchHeaderBar />
       </div>
       <MainNavBar />
-    </header>
+    </>
+  );
+}
+
+function SearchHeaderBar() {
+  return (
+    <div className="mx-auto flex h-[82px] w-full max-w-[1600px] items-center gap-8 px-4 sm:px-6 lg:px-8 xl:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:gap-4 max-lg:py-3">
+      <LogoMark />
+      <TopSearch />
+      <div className="hidden shrink-0 items-center gap-5 text-white lg:flex">
+        <a href="#sale" className="flex items-center gap-2.5 transition hover:text-[#f7d95f]">
+          <Icon name="gift" className="size-7 text-white" />
+          <span className="leading-none">
+            <span className="block text-[16px] font-black">Offers</span>
+            <span className="mt-1 block text-[12px] font-medium text-white">Latest Offers</span>
+          </span>
+        </a>
+        <a href="#eid-deal" className="flex items-center gap-2.5 transition hover:text-[#f7d95f]">
+          <Icon name="flashSolid" className="eid-deal-flash size-6 text-white" />
+          <span className="leading-none">
+            <span className="block text-[16px] font-black">Eid Deal</span>
+            <span className="mt-1 block text-[12px] font-medium text-white">Special Deals</span>
+          </span>
+        </a>
+      </div>
+      <span className="hidden h-8 w-px shrink-0 bg-[#111827] lg:block" />
+      <div className="hidden items-center gap-6 text-white lg:flex">
+        <a href="#wishlist" aria-label="Wishlist" className="relative transition hover:text-[#f7d95f]">
+          <Icon name="heart" className="size-7" />
+          <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
+        </a>
+        <a href="#compare" aria-label="Compare" className="transition hover:text-[#f7d95f]">
+          <Icon name="trend" className="size-7" />
+        </a>
+        <a href="#cart" aria-label="Cart" className="relative transition hover:text-[#f7d95f]">
+          <Icon name="cart" className="size-7" />
+          <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
+        </a>
+        <a href="#signin" aria-label="Sign in" className="transition hover:text-[#f7d95f]">
+          <Icon name="userMinimal" className="size-7" />
+        </a>
+      </div>
+      <button className="ml-auto hidden text-white max-lg:block" aria-label="Open menu">
+        <Icon name="menu" className="size-7" />
+      </button>
+    </div>
   );
 }
 
@@ -817,21 +951,23 @@ function TrustStrip() {
 }
 
 function HeroCategorySlider() {
-  const sliderItems = [...heroCategorySlider, ...heroCategorySlider];
-
   return (
     <section className="border-b border-[#f3d7df] bg-white py-3">
       <div className="category-marquee relative overflow-hidden">
-        <div className="category-marquee-track flex w-max items-center gap-2 px-4">
-          {sliderItems.map((item, index) => (
-            <a
-              key={`${item.label}-${index}`}
-              href={item.href}
-              className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] bg-[#ffe5ee] px-3.5 text-[14px] font-black leading-none text-[#2b2529] shadow-[inset_0_0_0_1px_rgba(255,216,226,0.9)] transition hover:bg-[#ffd5e3] hover:text-[#d41667]"
-            >
-              <span className="text-[17px] leading-none">{item.icon}</span>
-              {item.label}
-            </a>
+        <div className="category-marquee-track flex w-max items-center">
+          {[0, 1, 2, 3].map((group) => (
+            <div key={group} className="flex shrink-0 items-center gap-2 pr-2">
+              {heroCategorySlider.map((item) => (
+                <a
+                  key={`${item.label}-${group}`}
+                  href={item.href}
+                  className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] bg-[#ffe5ee] px-3.5 text-[14px] font-black leading-none text-[#2b2529] shadow-[inset_0_0_0_1px_rgba(255,216,226,0.9)] transition hover:bg-[#ffd5e3] hover:text-[#d41667]"
+                >
+                  <span className="text-[17px] leading-none">{item.icon}</span>
+                  {item.label}
+                </a>
+              ))}
+            </div>
           ))}
         </div>
       </div>
@@ -874,7 +1010,7 @@ function CategoryShowcase() {
 
 function ServiceBanner() {
   return (
-    <section className="bg-[#f5f6f8] py-[64px]">
+    <section className="bg-[#f5f6f8] py-0">
       <div className="service-banner relative min-h-[460px] overflow-hidden bg-[#060912] text-white">
         <div className="absolute inset-0 bg-[url('/japanparts-reference.png')] bg-[length:1920px_957px] bg-center opacity-25 blur-[1px]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_54%,rgba(122,40,83,0.25),transparent_32%),radial-gradient(circle_at_83%_42%,rgba(128,22,48,0.35),transparent_30%),linear-gradient(90deg,rgba(7,10,18,0.86),rgba(7,10,18,0.72),rgba(7,10,18,0.9))]" />
