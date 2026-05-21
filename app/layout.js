@@ -1,5 +1,6 @@
 import "./globals.css";
 import SiteFooter from "./SiteFooter";
+import BackToTopButton from "./BackToTopButton";
 
 export const metadata = {
   title: "JPSPARE | Premium Auto Parts & Accessories",
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col">
         {children}
         <SiteFooter />
+        <BackToTopButton />
       </body>
     </html>
   );

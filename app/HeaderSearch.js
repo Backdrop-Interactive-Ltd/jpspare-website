@@ -138,6 +138,25 @@ export default function HeaderSearch({ vehicleBrands }) {
     year: "",
   });
 
+  useEffect(() => {
+    function openVehicleFinder() {
+      setVehicleModalOpen(true);
+    }
+
+    window.addEventListener("jpspare:open-vehicle-fitment", openVehicleFinder);
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("vehicleFitment") === "1") {
+      window.setTimeout(openVehicleFinder, 120);
+      params.delete("vehicleFitment");
+      const nextQuery = params.toString();
+      const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
+
+    return () => window.removeEventListener("jpspare:open-vehicle-fitment", openVehicleFinder);
+  }, []);
+
   function handleImageChange(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -184,7 +203,7 @@ export default function HeaderSearch({ vehicleBrands }) {
 
   return (
     <>
-      <div className="relative order-3 min-w-0 basis-full lg:order-none lg:max-w-[760px] lg:flex-1">
+      <div data-vehicle-finder-root className="header-search-zoom relative order-3 min-w-0 basis-full lg:order-none lg:max-w-[760px] lg:flex-1">
         <form
           action="#parts"
           onSubmit={handleSubmit}
@@ -415,7 +434,7 @@ function SearchSuggestions({ query, recentSearches, popularSearches, quickCatego
     <div className="absolute left-0 top-[calc(100%+10px)] z-[130] max-h-[374px] w-full overflow-y-auto rounded-[9px] border border-[#e5e7eb] bg-white text-[#273246] shadow-[0_22px_50px_rgba(0,0,0,0.24)] max-sm:max-h-[360px]">
       <div className="flex h-[52px] items-center gap-3 border-b border-[#e5e7eb] bg-[#f8fafc] px-4 text-[15px] font-medium">
         <SearchIcon name="search" className="size-4 text-[#64748b]" />
-        {hasQuery ? <>Search Results for &quot;{query}&quot;</> : "Search Japan Parts"}
+        {hasQuery ? <>Search Results for &quot;{query}&quot;</> : "Search JPSPARE"}
       </div>
 
       {hasQuery ? (

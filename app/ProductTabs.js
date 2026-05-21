@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import CartDrawer from "./CartDrawer";
+import ProductQuickActions from "./ProductQuickActions";
 
 const productImages = {
   washer: "bg-[-268px_-22px]",
@@ -87,20 +89,8 @@ const viewAllLinks = {
   LUBRICANT: "/lubricant",
 };
 
-function expandProducts(products, total = 18) {
-  return Array.from({ length: total }, (_, index) => {
-    const product = products[index % products.length];
-    const round = Math.floor(index / products.length);
-
-    if (round === 0) {
-      return product;
-    }
-
-    return {
-      ...product,
-      name: `${product.name} ${round + 1}`,
-    };
-  });
+function expandProducts(products, total = 20) {
+  return Array.from({ length: total }, (_, index) => products[index % products.length]);
 }
 
 const bestSellingProducts = [
@@ -129,15 +119,47 @@ function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function Stars({ count }) {
-  if (!count) {
-    return <div className="h-[18px]" />;
-  }
-
+function CardCartIcon({ className = "size-5" }) {
   return (
-    <div className="mt-[7px] flex items-center gap-1 text-[12px] leading-none">
-      <span className="text-[15px] tracking-[-0.07em] text-[#009c91]">★★★★★</span>
-      <span className="ml-1 text-[#111827]">{count} reviews</span>
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 6h15l-2 8H8L6 3H3" />
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+    </svg>
+  );
+}
+
+export function ProductCardInfo({ product, productUrl, onAdd, isAdded = false }) {
+  return (
+    <div className="pt-[18px]">
+      <p className="text-[11px] font-bold uppercase leading-none tracking-[0.24em] text-[#ef3338]">{product.category}</p>
+      <h3 className="mt-[10px] min-h-[40px] text-[16px] font-black leading-5 text-[#111827] transition group-hover/product:text-[#e12526]">
+        <a href={productUrl} className="line-clamp-2">{product.name}</a>
+      </h3>
+      <div className="mt-4 h-px w-full bg-[#eef0f3]" />
+      <p className="mt-3 text-[10px] font-black uppercase leading-none tracking-[0.32em] text-[#a6adba]">Starting From</p>
+      <div className="mt-2 flex min-h-[28px] items-end gap-2">
+        <p className="text-[23px] font-black leading-none tracking-[-0.04em] text-[#e12526]">{product.price}</p>
+        {product.oldPrice ? <p className="pb-0.5 text-[13px] font-bold leading-none text-[#9ca3af] line-through">{product.oldPrice}</p> : null}
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <a
+          href={productUrl}
+          className="inline-flex h-[44px] flex-1 items-center justify-center gap-3 rounded-[9px] bg-[#ef3338] px-5 text-[15px] font-black !text-white shadow-[0_10px_20px_rgba(220,38,38,0.24)] transition hover:bg-[#d91f25]"
+        >
+          View Plans
+          <span className="text-[20px] leading-none">→</span>
+        </a>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="grid size-[44px] shrink-0 place-items-center rounded-[9px] border border-[#e5e7eb] bg-white text-[#111827] transition hover:border-[#f7d95f] hover:bg-[#fffafa] hover:text-[#e12526] hover:shadow-[0_10px_20px_rgba(220,38,38,0.12)]"
+          aria-label={`Add ${product.name} to cart`}
+        >
+          <CardCartIcon className="size-5" />
+          <span className="sr-only">{isAdded ? "Added" : "Add to cart"}</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -204,10 +226,12 @@ function CtaIcon({ name }) {
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState("CAR ACCESSORIES");
   const [addedItems, setAddedItems] = useState([]);
-  const visibleProducts = expandProducts(tabData[activeTab], 18);
+  const [cartProduct, setCartProduct] = useState(null);
+  const visibleProducts = expandProducts(tabData[activeTab], 20);
 
-  function handleAddToCart(productName) {
-    setAddedItems((items) => (items.includes(productName) ? items : [...items, productName]));
+  function handleAddToCart(product) {
+    setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
+    setCartProduct(product);
   }
 
   return (
@@ -243,36 +267,37 @@ export default function ProductTabs() {
           ))}
         </div>
 
-        <div className="mt-12 grid grid-cols-6 gap-x-[20px] gap-y-[44px] max-2xl:grid-cols-5 max-xl:grid-cols-4 max-lg:grid-cols-2 max-sm:mt-7 max-sm:grid-cols-1 max-sm:gap-y-6">
-          {visibleProducts.map((product) => (
-            <article key={product.name} className="group/product rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]">
+        <div className="mt-12 grid grid-cols-4 gap-x-[24px] gap-y-[44px] max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:mt-7 max-sm:grid-cols-1 max-sm:gap-y-6">
+          {visibleProducts.map((product, index) => (
+            <article key={`${product.name}-${index}`} className="group/product rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]">
               <div className="block">
                 <div className="relative overflow-hidden rounded-[6px]">
+                  {(() => {
+                    const productUrl = `/products/${slugify(product.name)}`;
+                    return (
+                      <>
                   <a
-                    href={`/products/${slugify(product.name)}`}
+                    href={productUrl}
                     className={`block aspect-square rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] ${
                       product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                     }`}
                     style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
                     aria-label={product.name}
                   />
+                  <ProductQuickActions productUrl={productUrl} productName={product.name} />
+                      </>
+                    );
+                  })()}
                   <button
                     type="button"
-                    onClick={() => handleAddToCart(product.name)}
+                    onClick={() => handleAddToCart(product)}
                     className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
                     aria-label={`Add ${product.name} to cart`}
                   >
                     {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                   </button>
                 </div>
-                <div className="pt-[18px]">
-                  <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{product.category}</p>
-                  <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                    <a href={`/products/${slugify(product.name)}`}>{product.name.replace(/ (2|3)$/u, "")}</a>
-                  </h3>
-                  <Stars count={product.reviews} />
-                  <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{product.price}</p>
-                </div>
+                <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
               </div>
             </article>
           ))}
@@ -311,15 +336,18 @@ export default function ProductTabs() {
           </span>
         </div>
       </div>
+      <CartDrawer product={cartProduct} open={Boolean(cartProduct)} onClose={() => setCartProduct(null)} />
     </section>
   );
 }
 
 export function BestSellingAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
+  const [cartProduct, setCartProduct] = useState(null);
 
-  function handleAddToCart(productName) {
-    setAddedItems((items) => (items.includes(productName) ? items : [...items, productName]));
+  function handleAddToCart(product) {
+    setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
+    setCartProduct(product);
   }
 
   return (
@@ -339,47 +367,51 @@ export function BestSellingAutoParts() {
         <div className="related-product-marquee mt-12 overflow-hidden text-left max-sm:mt-8">
           <div className="related-product-track flex w-max gap-[30px]">
           {[...bestSellingProducts, ...bestSellingProducts].map((product, index) => (
-            <article key={`${product.name}-${index}`} className="group/product w-[320px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
+            <article key={`${product.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
               <div className="relative overflow-hidden rounded-[6px]">
+                {(() => {
+                  const productUrl = `/products/${slugify(product.name)}`;
+                  return (
+                    <>
                 <a
-                  href={`/products/${slugify(product.name)}`}
+                  href={productUrl}
                   className={`block h-[320px] rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px] ${
                     product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                   }`}
                   style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
                   aria-label={product.name}
                 />
+                <ProductQuickActions productUrl={productUrl} productName={product.name} />
+                    </>
+                  );
+                })()}
                 <button
                   type="button"
-                  onClick={() => handleAddToCart(product.name)}
+                  onClick={() => handleAddToCart(product)}
                   className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
                   aria-label={`Add ${product.name} to cart`}
                 >
                   {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                 </button>
               </div>
-              <div className="pt-[18px]">
-                <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{product.category}</p>
-                <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                  <a href={`/products/${slugify(product.name)}`}>{product.name}</a>
-                </h3>
-                <Stars count={product.reviews} />
-                <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{product.price}</p>
-              </div>
+              <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
             </article>
           ))}
           </div>
         </div>
       </div>
+      <CartDrawer product={cartProduct} open={Boolean(cartProduct)} onClose={() => setCartProduct(null)} />
     </section>
   );
 }
 
 export function LatestJapaneseAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
+  const [cartProduct, setCartProduct] = useState(null);
 
-  function handleAddToCart(productName) {
-    setAddedItems((items) => (items.includes(productName) ? items : [...items, productName]));
+  function handleAddToCart(product) {
+    setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
+    setCartProduct(product);
   }
 
   return (
@@ -399,38 +431,40 @@ export function LatestJapaneseAutoParts() {
         <div className="related-product-marquee mt-12 overflow-hidden text-left max-sm:mt-8">
           <div className="related-product-track related-product-track-reverse flex w-max gap-[30px]">
           {[...latestJapaneseProducts, ...latestJapaneseProducts].map((product, index) => (
-            <article key={`${product.name}-${index}`} className="group/product w-[320px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
+            <article key={`${product.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
               <div className="relative overflow-hidden rounded-[6px]">
+                {(() => {
+                  const productUrl = `/products/${slugify(product.name)}`;
+                  return (
+                    <>
                 <a
-                  href={`/products/${slugify(product.name)}`}
+                  href={productUrl}
                   className={`block h-[320px] rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px] ${
                     product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                   }`}
                   style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
                   aria-label={product.name}
                 />
+                <ProductQuickActions productUrl={productUrl} productName={product.name} />
+                    </>
+                  );
+                })()}
                 <button
                   type="button"
-                  onClick={() => handleAddToCart(product.name)}
+                  onClick={() => handleAddToCart(product)}
                   className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
                   aria-label={`Add ${product.name} to cart`}
                 >
                   {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                 </button>
               </div>
-              <div className="pt-[18px]">
-                <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{product.category}</p>
-                <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                  <a href={`/products/${slugify(product.name)}`}>{product.name}</a>
-                </h3>
-                <Stars count={product.reviews} />
-                <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{product.price}</p>
-              </div>
+              <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
             </article>
           ))}
           </div>
         </div>
       </div>
+      <CartDrawer product={cartProduct} open={Boolean(cartProduct)} onClose={() => setCartProduct(null)} />
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FooterVehicleFitmentLink from "./FooterVehicleFitmentLink";
 
 const footerColumns = [
   {
@@ -6,7 +7,7 @@ const footerColumns = [
     links: [
       ["All Collections", "/#featured-products"],
       ["Browse Products", "/#parts"],
-      ["Deals & Offers", "/#sale"],
+      ["Deals & Offers", "/offers"],
       ["Sale Items", "/#featured-products"],
       ["Search Parts", "/#parts-inquiry"],
     ],
@@ -14,30 +15,30 @@ const footerColumns = [
   {
     title: "Company",
     links: [
-      ["About JPSPARE", "/#brands"],
-      ["Blog & News", "/#automotive-insights"],
+      ["About JPSPARE", "/about"],
+      ["Blog & News", "/blog"],
       ["Video Gallery", "/#video-gallery"],
-      ["Contact Us", "/#contact"],
+      ["Contact Us", "/help"],
     ],
   },
   {
     title: "Support",
     links: [
-      ["Track Your Order", "/#track-order"],
+      ["Track Your Order", "/track-order"],
       ["Vehicle Fitment", "/products/hitachi-shock-absorver-b3337#compatibility"],
-      ["Help Center", "/#parts-inquiry"],
-      ["Returns & Warranty", "/products/hitachi-shock-absorver-b3337#description"],
-      ["Privacy Policy", "/#privacy"],
+      ["Help Center", "/help"],
+      ["Returns & Warranty", "/returns-warranty"],
+      ["Privacy Policy", "/privacy-policy"],
     ],
   },
   {
     title: "My Account",
     links: [
-      ["Sign In", "/#signin"],
-      ["Create Account", "/#signup"],
-      ["My Account", "/#account"],
-      ["Wishlist", "/#wishlist"],
-      ["Shopping Cart", "/#cart"],
+      ["Sign In", "/signin"],
+      ["Create Account", "/create-account"],
+      ["My Account", "/dashboard"],
+      ["Wishlist", "/wishlisht"],
+      ["Shopping Cart", "/cart"],
     ],
   },
 ];
@@ -133,16 +134,22 @@ export default function SiteFooter() {
               <ul className="mt-4 space-y-3">
                 {column.links.map(([label, href], index) => (
                   <li key={label}>
-                    <Link
-                      href={href}
-                      className={[
-                        "text-[15px] text-[#c9ced8] transition hover:text-[#ff6267]",
-                        column.title === "Shop Parts" && index === 1 ? "font-semibold text-[#ff6267]" : "",
-                      ].join(" ")}
-                    >
-                      {label}
-                      {column.title === "Shop Parts" && index === 1 ? <span className="ml-2">›</span> : null}
-                    </Link>
+                    {label === "Vehicle Fitment" ? (
+                      <FooterVehicleFitmentLink className="text-[15px] text-[#c9ced8] transition hover:text-[#ff6267]">
+                        {label}
+                      </FooterVehicleFitmentLink>
+                    ) : (
+                      <Link
+                        href={href}
+                        className={[
+                          "text-[15px] text-[#c9ced8] transition hover:text-[#ff6267]",
+                          column.title === "Shop Parts" && index === 1 ? "font-semibold text-[#ff6267]" : "",
+                        ].join(" ")}
+                      >
+                        {label}
+                        {column.title === "Shop Parts" && index === 1 ? <span className="ml-2">›</span> : null}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -163,7 +170,7 @@ export default function SiteFooter() {
         <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 py-5 text-[14px] text-[#aeb5c1] max-md:flex-col">
           <p>© 2024 JPSPARE. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/#privacy" className="transition hover:text-[#ff6267]">Privacy</Link>
+            <Link href="/privacy-policy" className="transition hover:text-[#ff6267]">Privacy</Link>
             <Link href="/#terms" className="transition hover:text-[#ff6267]">Terms</Link>
             <Link href="/#cookies" className="transition hover:text-[#ff6267]">Cookies</Link>
           </div>

@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import CartDrawer from "../CartDrawer";
+import DynamicFilters, { deriveBrand, makeFacetOptions, priceRangeText } from "../DynamicFilters";
+import ProductPagination from "../ProductPagination";
+import { ProductCardInfo } from "../ProductTabs";
+import ProductQuickActions from "../ProductQuickActions";
 
 const pageData = {
   "sale-offer": {
@@ -69,27 +74,32 @@ function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function Stars({ count }) {
-  return (
-    <div className="mt-[7px] flex items-center gap-1 text-[12px] leading-none">
-      <span className="text-[15px] tracking-[-0.07em] text-[#009c91]">★★★★★</span>
-      <span className="ml-1 text-[#111827]">{count} reviews</span>
-    </div>
-  );
+const PAGE_SIZE = 20;
+const TOTAL_PAGES = 5;
+
+function expandProducts(products, total = PAGE_SIZE * TOTAL_PAGES) {
+  if (products.length === 0) {
+    return [];
+  }
+
+  return Array.from({ length: total }, (_, index) => products[index % products.length]);
 }
 
 function ProductCard({ product, isAdded, onAdd }) {
+  const productUrl = `/products/${slugify(product.name)}`;
+
   return (
     <article className="group/product rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]">
       <div className="relative overflow-hidden rounded-[6px]">
         <a
-          href={`/products/${slugify(product.name)}`}
+          href={productUrl}
           className={`block aspect-square rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] ${
             product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
           }`}
           style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
           aria-label={product.name}
         />
+        <ProductQuickActions productUrl={productUrl} productName={product.name} />
         <button
           type="button"
           onClick={() => onAdd(product.name)}
@@ -98,17 +108,7 @@ function ProductCard({ product, isAdded, onAdd }) {
           {isAdded ? "Added" : "Add To Cart"}
         </button>
       </div>
-      <div className="pt-[18px]">
-        <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{product.category}</p>
-        <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-          <a href={`/products/${slugify(product.name)}`}>{product.name}</a>
-        </h3>
-        <Stars count={product.reviews} />
-        <div className="mt-[12px] flex items-center gap-2">
-          <p className="text-[18px] font-black leading-none text-[#ff5145]">{product.price}</p>
-          {product.oldPrice && <p className="text-[14px] font-bold leading-none text-[#6b7280] line-through">{product.oldPrice}</p>}
-        </div>
-      </div>
+      <ProductCardInfo product={product} productUrl={productUrl} onAdd={() => onAdd(product)} isAdded={isAdded} />
     </article>
   );
 }
@@ -118,17 +118,40 @@ export default function CollectionPageClient({ pageKey }) {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [addedItems, setAddedItems] = useState([]);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedProductTypes, setSelectedProductTypes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cartProduct, setCartProduct] = useState(null);
+
+  const brandOptions = useMemo(() => makeFacetOptions(data.products.map((product) => deriveBrand(product.name))), [data.products]);
+  const productTypeOptions = useMemo(() => makeFacetOptions(data.products.map((product) => product.category)), [data.products]);
+  const priceText = useMemo(() => priceRangeText(data.products), [data.products]);
 
   const filteredProducts = useMemo(() => {
-    return data.products.filter((product) => {
+    const matches = data.products.filter((product) => {
       const matchesFilter = activeFilter === "All" || product.category === activeFilter;
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.category.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFilter && matchesSearch;
+      const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(deriveBrand(product.name));
+      const matchesProductType = selectedProductTypes.length === 0 || selectedProductTypes.includes(product.category);
+      return matchesFilter && matchesSearch && matchesBrand && matchesProductType;
     });
-  }, [activeFilter, data.products, searchTerm]);
 
-  function handleAddToCart(productName) {
-    setAddedItems((items) => (items.includes(productName) ? items : [...items, productName]));
+    return expandProducts(matches);
+  }, [activeFilter, data.products, searchTerm, selectedBrands, selectedProductTypes]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredProducts]);
+
+  function handleAddToCart(product) {
+    setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
+    setCartProduct(product);
+  }
+
+  function toggleSelected(setter, value) {
+    setCurrentPage(1);
+    setter((items) => (items.includes(value) ? items.filter((item) => item !== value) : [...items, value]));
   }
 
   return (
@@ -157,7 +180,10 @@ export default function CollectionPageClient({ pageKey }) {
                 <button
                   key={filter}
                   type="button"
-                  onClick={() => setActiveFilter(filter)}
+                  onClick={() => {
+                    setActiveFilter(filter);
+                    setCurrentPage(1);
+                  }}
                   className={`inline-flex h-11 shrink-0 items-center rounded-full border px-5 text-[14px] font-black transition ${
                     activeFilter === filter
                       ? "border-[#ef3338] bg-[#ef3338] text-white shadow-[0_12px_24px_rgba(220,38,38,0.2)]"
@@ -172,7 +198,10 @@ export default function CollectionPageClient({ pageKey }) {
                 <input
                   id={`${pageKey}-search`}
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="h-11 w-full rounded-full border border-[#d7dce4] px-5 text-[14px] font-semibold text-[#111827] outline-none transition placeholder:text-[#8b95a5] focus:border-[#ef3338] focus:ring-4 focus:ring-[#ef3338]/10"
                   placeholder={`Search ${data.title.toLowerCase()}`}
                 />
@@ -180,13 +209,30 @@ export default function CollectionPageClient({ pageKey }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-x-[20px] gap-y-[44px] max-2xl:grid-cols-5 max-xl:grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.name} product={product} isAdded={addedItems.includes(product.name)} onAdd={handleAddToCart} />
-            ))}
+          <div className="grid items-start gap-8 lg:grid-cols-[320px_1fr]">
+            <DynamicFilters
+              priceText={priceText}
+              brands={brandOptions}
+              productTypes={productTypeOptions}
+              selectedBrands={selectedBrands}
+              selectedProductTypes={selectedProductTypes}
+              onToggleBrand={(value) => toggleSelected(setSelectedBrands, value)}
+              onToggleProductType={(value) => toggleSelected(setSelectedProductTypes, value)}
+            />
+
+            <div className="grid grid-cols-4 gap-x-[24px] gap-y-[44px] max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1">
+              {paginatedProducts.map((product, index) => (
+                <ProductCard key={`${product.name}-${index}`} product={product} isAdded={addedItems.includes(product.name)} onAdd={() => handleAddToCart(product)} />
+              ))}
+            </div>
           </div>
+
+          {filteredProducts.length > 0 && (
+            <ProductPagination currentPage={currentPage} totalPages={TOTAL_PAGES} onPageChange={(page) => setCurrentPage(Math.min(Math.max(page, 1), TOTAL_PAGES))} />
+          )}
         </div>
       </section>
+      <CartDrawer product={cartProduct} open={Boolean(cartProduct)} onClose={() => setCartProduct(null)} />
     </main>
   );
 }

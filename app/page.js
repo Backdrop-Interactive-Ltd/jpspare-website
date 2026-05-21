@@ -5,6 +5,9 @@ import VideoGallery from "./VideoGallery";
 import CustomerReviews from "./CustomerReviews";
 import PartsInquirySection from "./PartsInquirySection";
 import HeaderSearch from "./HeaderSearch";
+import CompareHashRedirect from "./CompareHashRedirect";
+import HeaderCartButton from "./HeaderCartButton";
+import HeaderAccountButton from "./HeaderAccountButton";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -12,7 +15,6 @@ const navItems = [
   { label: "CAR PARTS", href: "/car-parts", hasMenu: true },
   { label: "TYRES", href: "/tyres", hasMenu: true },
   { label: "LUBRICANT", href: "/lubricant", hasMenu: true },
-  { label: "SALE OFFER", href: "/sale-offer" },
   { label: "BRANDS", href: "/brands" },
   { label: "MODIFICATION", href: "/modification" },
   { label: "COMBO PACKAGE", href: "/combo-package" },
@@ -31,26 +33,50 @@ const carAccessorySubcategories = [
 
 const vehicleBrands = ["Toyota", "Honda", "Nissan", "Mitsubishi", "Suzuki"];
 
+const heroSlides = [
+  { src: "/jpspare-hero-slide-1.gif", alt: "Pirelli podium cap special edition banner" },
+  { src: "/jpspare-hero-slide-2.png", alt: "Mobil online shopping delivery banner" },
+  { src: "/jpspare-hero-slide-3.jpg", alt: "Mobil 1 synthetic motor oil brand banner" },
+];
+
 const trustItems = [
   {
-    title: "Authentic Japanese Parts",
-    text: "Original from trusted Japanese manufacturers",
-    icon: "check",
+    title: "Authentic Guarantee",
+    text: "100% genuine OEM parts with authenticity certificates",
+    points: ["Verified", "coverage", "Quality inspection certified"],
+    icon: "shield",
+    popular: true,
   },
   {
-    title: "Fast Nationwide Delivery",
-    text: "Express shipping across Bangladesh within 24-48 hours",
-    icon: "bolt",
+    title: "Fast Shipping",
+    text: "Express nationwide delivery with real-time tracking",
+    points: ["Free shipping on ৳4000+", "Express delivery available", "150+ countries served"],
+    icon: "car",
   },
   {
-    title: "7-Day Easy Returns",
-    text: "Hassle-free returns and replacements with full warranty",
+    title: "Expert Support",
+    text: "24/7 technical assistance from automotive specialists",
+    points: ["Round-the-clock support", "Certified technicians", "Installation guidance"],
+    icon: "headphones",
+  },
+  {
+    title: "Easy Returns",
+    text: "30-day hassle-free returns with free return shipping",
+    points: ["30-day return policy", "Free return labels", "Quick refund processing"],
     icon: "rotate",
   },
   {
-    title: "Expert Support Team",
-    text: "Professional automotive specialists available 7 days a week",
-    icon: "headphones",
+    title: "Same-Day Processing",
+    text: "Orders processed within hours for faster delivery",
+    points: ["Same-day processing", "Real-time inventory", "Priority handling"],
+    icon: "clock",
+  },
+  {
+    title: "Best Price Promise",
+    text: "Competitive pricing with price matching guarantee",
+    points: ["Price match guarantee", "Member discounts", "Volume pricing available"],
+    icon: "award",
+    popular: true,
   },
 ];
 
@@ -309,6 +335,13 @@ function Icon({ name, className = "size-5" }) {
     ),
     arrow: <path d="M5 12h14M13 5l7 7-7 7" />,
     star: <path d="m12 3 2.6 5.5 6 .9-4.3 4.2 1 6-5.3-2.9-5.3 2.9 1-6-4.3-4.2 6-.9L12 3Z" />,
+    shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
+    award: (
+      <>
+        <circle cx="12" cy="8" r="5" />
+        <path d="M8.5 12.2 7 22l5-3 5 3-1.5-9.8" />
+      </>
+    ),
     menu: <path d="M4 7h16M4 12h16M4 17h16" />,
     tag: <path d="M20 10 14 4H5v9l6 6 9-9ZM8 8h.01" />,
     check: <path d="M20 6 9 17l-5-5" />,
@@ -713,7 +746,7 @@ function CarAccessoriesMegaMenu() {
 
 function LogoMark() {
   return (
-    <Link href="/" className="relative block h-[64px] w-[260px] shrink-0 overflow-hidden max-sm:h-[52px] max-sm:w-[210px]" aria-label="JPSPARE home">
+    <Link href="/" className="header-logo-mark relative block h-[64px] w-[260px] shrink-0 overflow-hidden max-sm:h-[52px] max-sm:w-[210px]" aria-label="JPSPARE home">
       <span className="absolute inset-0 bg-[url('/jpspare-logo-wide-clean.png')] bg-contain bg-left bg-no-repeat" />
       <span className="sr-only">JPSPARE</span>
     </Link>
@@ -771,10 +804,10 @@ export function MainNavBar({ showTrackOrder = true }) {
           ))}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-4 text-[14px] font-bold text-white max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:justify-end max-lg:gap-5 max-sm:text-[13px]">
-          <a href="#help-center" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition hover:bg-[#dd3b3f] hover:text-[#f7d95f]">
+          <Link href="/help" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition hover:bg-[#dd3b3f] hover:text-[#f7d95f]">
             <Icon name="headphones" className="size-5" />
             <span className="leading-none">HELP</span>
-          </a>
+          </Link>
           <div className="group/app relative flex h-[48px] items-center max-lg:h-auto">
             <button type="button" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition group-hover/app:bg-[#dd3b3f] group-hover/app:text-[#f7d95f]">
               <span className="leading-none">DOWNLOAD APP</span>
@@ -810,10 +843,10 @@ export function MainNavBar({ showTrackOrder = true }) {
             </div>
           </div>
           {showTrackOrder && (
-            <a href="#track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] transition hover:bg-[#fff2f2] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
+            <Link href="/track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] transition hover:bg-[#fff2f2] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
               <Icon name="package" className="size-4 !text-[#111827]" />
               <span className="leading-none !text-[#111827]">Track Order</span>
-            </a>
+            </Link>
           )}
         </div>
       </div>
@@ -838,37 +871,32 @@ function SearchHeaderBar() {
       <LogoMark />
       <TopSearch />
       <div className="hidden shrink-0 items-center gap-5 text-white lg:flex">
-        <a href="#sale" className="flex items-center gap-2.5 transition hover:text-[#f7d95f]">
+        <Link href="/offers" className="header-action-icon soft-light-sweep rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
           <Icon name="gift" className="size-7 text-white" />
           <span className="leading-none">
             <span className="block text-[16px] font-black">Offers</span>
             <span className="mt-1 block text-[12px] font-medium text-white">Latest Offers</span>
           </span>
-        </a>
-        <a href="#eid-deal" className="flex items-center gap-2.5 transition hover:text-[#f7d95f]">
+        </Link>
+        <Link href="/eid-deal" className="header-action-icon soft-light-sweep rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
           <Icon name="flashSolid" className="eid-deal-flash size-6 text-white" />
           <span className="leading-none">
             <span className="block text-[16px] font-black">Eid Deal</span>
             <span className="mt-1 block text-[12px] font-medium text-white">Special Deals</span>
           </span>
-        </a>
+        </Link>
       </div>
       <span className="hidden h-8 w-px shrink-0 bg-[#111827] lg:block" />
       <div className="hidden items-center gap-6 text-white lg:flex">
-        <a href="#wishlist" aria-label="Wishlist" className="relative transition hover:text-[#f7d95f]">
+        <Link href="/wishlisht" aria-label="Wishlist" className="header-action-icon relative">
           <Icon name="heart" className="size-7" />
           <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
-        </a>
-        <a href="#compare" aria-label="Compare" className="transition hover:text-[#f7d95f]">
+        </Link>
+        <Link href="/compare" aria-label="Compare products" title="Compare products" className="header-action-icon relative z-10 grid size-8 place-items-center">
           <Icon name="trend" className="size-7" />
-        </a>
-        <a href="#cart" aria-label="Cart" className="relative transition hover:text-[#f7d95f]">
-          <Icon name="cart" className="size-7" />
-          <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">0</span>
-        </a>
-        <a href="#signin" aria-label="Sign in" className="transition hover:text-[#f7d95f]">
-          <Icon name="userMinimal" className="size-7" />
-        </a>
+        </Link>
+        <HeaderCartButton />
+        <HeaderAccountButton />
       </div>
       <button className="ml-auto hidden text-white max-lg:block" aria-label="Open menu">
         <Icon name="menu" className="size-7" />
@@ -877,72 +905,62 @@ function SearchHeaderBar() {
   );
 }
 
-function HeroArt() {
-  return (
-    <div className="pointer-events-none absolute bottom-[64px] right-[148px] h-[545px] w-[735px] max-xl:right-6 max-xl:w-[640px] max-lg:relative max-lg:bottom-auto max-lg:right-auto max-lg:mx-auto max-lg:mt-8 max-lg:h-[420px] max-lg:w-full max-lg:max-w-[660px] max-sm:h-[300px]">
-      <div className="absolute inset-0 bg-[url('/japanparts-reference.png')] bg-[length:1920px_957px] bg-[-1038px_-230px] bg-no-repeat max-lg:bg-[length:1480px_738px] max-lg:bg-[-796px_-175px] max-sm:bg-[length:1120px_558px] max-sm:bg-[-604px_-134px]" />
-    </div>
-  );
-}
-
 function Hero() {
   return (
-    <section className="hero-bg relative min-h-[670px] overflow-hidden border-b-4 border-[#e1272b] bg-[#040404] text-white max-lg:min-h-0">
-      <div className="relative z-10 mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 pb-[175px] pt-[175px] max-lg:pb-16 max-lg:pt-16 max-sm:py-12">
-        <div className="max-w-[700px] max-lg:max-w-none">
-          <div className="mb-[25px] inline-flex h-[38px] items-center gap-2 rounded-full border border-[#ba2227] bg-[#351111]/75 px-[16px] text-[14px] font-black uppercase tracking-[0.12em] text-[#ff7070]">
-            <span className="grid size-4 place-items-center rounded-full bg-[#ff4144] text-[#2b0708]">
-              <Icon name="star" className="size-2.5 fill-current" />
-            </span>
-            Premium Quality
-          </div>
-          <h1 className="max-w-[655px] text-[48px] font-black leading-[1.24] tracking-[-0.045em] max-sm:text-[38px]">
-            Premium Automotive
-            <span className="block text-[#ff6267]">Parts &amp; Accessories</span>
-          </h1>
-          <p className="mt-[16px] max-w-[690px] text-[19px] font-normal leading-[1.55] tracking-[-0.01em] text-[#d6d6dc]">
-            Discover top-quality automotive parts from world-renowned manufacturers with guaranteed authenticity.
-          </p>
-          <div className="mt-[24px] flex flex-wrap gap-[14px]">
-            <a href="#parts" className="flex h-11 items-center gap-2 rounded-[8px] bg-[#ff3438] px-[24px] text-[15px] font-black text-white transition hover:bg-[#e8292d]">
-              <Icon name="cart" className="size-5" />
-              Shop Now
-              <Icon name="arrow" className="size-4" />
-            </a>
-            <a href="#parts" className="flex h-11 items-center gap-3 rounded-[8px] border-2 border-[#ff3438] bg-transparent px-[25px] text-[15px] font-black text-white transition hover:bg-[#ff3438]">
-              <Icon name="search" className="size-5 text-[#ff6267]" />
-              Find My Part
-              <Icon name="arrow" className="size-4 text-[#ff6267]" />
-            </a>
-          </div>
-        </div>
+    <section className="relative overflow-hidden border-b-4 border-[#e1272b] bg-[#040404]">
+      <div className="hero-banner-slider relative h-[620px] w-full max-lg:h-[430px] max-sm:h-[265px]">
+        {heroSlides.map((slide, index) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={slide.src}
+            src={slide.src}
+            alt={slide.alt}
+            suppressHydrationWarning
+            className="hero-banner-slide absolute inset-0 h-full w-full object-cover"
+            style={{ "--slide-index": index }}
+          />
+        ))}
       </div>
-      <HeroArt />
     </section>
   );
 }
 
 function TrustStrip() {
   return (
-    <section id="about" className="border-b border-[#e5e7eb] bg-[#f5f6f8]">
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-4 gap-12 px-4 sm:px-6 lg:px-8 xl:px-10 py-[64px] text-[#111827] max-lg:grid-cols-2 max-lg:gap-6 max-sm:grid-cols-1 max-sm:py-10">
+    <section id="about" className="border-b border-[#e5e7eb] bg-[#f7f8fa] py-6">
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-6 gap-8 px-4 text-[#111827] sm:px-6 lg:px-8 xl:px-10 max-xl:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
         {trustItems.map((item) => (
           <article
             key={item.title}
             tabIndex={0}
-            className="group/trust flex min-h-[128px] items-center gap-4 rounded-[10px] border border-transparent bg-transparent p-4 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fff5f5] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:-translate-y-1 focus:border-[#f7d95f] focus:bg-[#fff5f5] focus:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:outline-none active:border-[#f7d95f] active:bg-[#fff5f5]"
+            className={`group/trust relative min-h-[190px] rounded-[10px] border bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-1 hover:border-[#5d1f1f] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:-translate-y-1 focus:border-[#5d1f1f] focus:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:outline-none ${
+              item.popular ? "border-[#5d1f1f]" : "border-[#dfe5ec]"
+            }`}
           >
+            {item.popular ? (
+              <span className="absolute -right-2 -top-2 rounded-full bg-[#ef3338] px-2.5 py-1 text-[11px] font-black leading-none text-white shadow-[0_8px_18px_rgba(239,51,56,0.24)]">
+                Popular
+              </span>
+            ) : null}
             <span
-              className="grid size-12 shrink-0 place-items-center rounded-[12px] border border-[#f7d95f] bg-[#fff8e6] text-[#ef3437] transition duration-200 group-hover/trust:bg-[#fff3d1] group-focus/trust:bg-[#fff3d1]"
+              className={`grid size-9 shrink-0 place-items-center rounded-[10px] transition duration-200 ${
+                item.popular
+                  ? "bg-[#ffe1e1] text-[#ef3338]"
+                  : "bg-[#f3f4f7] text-[#334155] group-hover/trust:bg-[#ffe8e8] group-hover/trust:text-[#ef3338] group-focus/trust:bg-[#ffe8e8] group-focus/trust:text-[#ef3338]"
+              }`}
             >
-              <Icon name={item.icon} className="size-6" />
+              <Icon name={item.icon} className="size-4.5" />
             </span>
-            <div>
-              <h2 className="max-w-[190px] text-[18px] font-black leading-[1.18] text-[#111827] transition group-hover/trust:text-[#d4161b] group-focus/trust:text-[#d4161b]">
-                {item.title}
-              </h2>
-              <p className="mt-2 max-w-[220px] text-[15px] leading-[1.55] text-[#4b5563]">{item.text}</p>
-            </div>
+            <h2 className="mt-3 text-[15px] font-black leading-[1.2] text-[#111827]">{item.title}</h2>
+            <p className="mt-2 text-[12.5px] leading-[1.5] text-[#4b5563]">{item.text}</p>
+            <ul className="mt-3 space-y-1.5">
+              {item.points.map((point) => (
+                <li key={point} className="flex items-center gap-1.5 text-[11px] font-medium leading-snug text-[#6b7280]">
+                  <Icon name="check" className="size-3 shrink-0 text-[#10b981]" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
           </article>
         ))}
       </div>
@@ -979,7 +997,7 @@ function CategoryShowcase() {
   return (
     <section id="categories" className="bg-white py-20 max-sm:py-14">
       <div className="mx-auto mb-14 w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 text-center max-sm:mb-10">
-        <div className="inline-flex h-[44px] items-center gap-2 rounded-[10px] bg-[#ef3338] px-7 text-[14px] font-black uppercase tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)] max-sm:h-auto max-sm:px-5 max-sm:py-3 max-sm:text-[12px]">
+        <div className="soft-light-sweep inline-flex h-[44px] items-center gap-2 rounded-[10px] bg-[#ef3338] px-7 text-[14px] font-black uppercase tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)] max-sm:h-auto max-sm:px-5 max-sm:py-3 max-sm:text-[12px]">
           <span className="text-[17px]">☆</span>
           Handpicked Category
         </div>
@@ -1170,13 +1188,13 @@ function AutomotiveInsightsSection() {
           ))}
         </div>
 
-        <a
-          href="#automotive-insights"
+        <Link
+          href="/blog"
           className="mt-12 inline-flex h-[58px] items-center justify-center gap-3 rounded-[10px] bg-[#ef2d32] px-9 text-[16px] font-black text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)] transition hover:bg-[#d3191d]"
         >
           View All Articles
           <Icon name="arrow" className="size-4" />
-        </a>
+        </Link>
       </div>
     </section>
   );
@@ -1185,6 +1203,7 @@ function AutomotiveInsightsSection() {
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-[#111827]">
+      <CompareHashRedirect />
       <TopDealBar />
       <Header />
       <Hero />

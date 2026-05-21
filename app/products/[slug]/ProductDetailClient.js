@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ProductCardInfo } from "../../ProductTabs";
+import ProductQuickActions from "../../ProductQuickActions";
 
 const fallbackProduct = {
   title: "Liqui Moly Octane Booster - 200mL",
@@ -313,15 +315,6 @@ function StarRow({ className = "" }) {
   return <div className={`tracking-[0.08em] text-[#0f8f83] ${className}`}>★★★★★</div>;
 }
 
-function ProductCardStars({ count }) {
-  return (
-    <div className="mt-[12px] flex items-center gap-1.5 text-[12px]">
-      <span className="text-[#0f9f8f]">★★★★★</span>
-      <span className="text-[#111827]">{count} reviews</span>
-    </div>
-  );
-}
-
 function ProductReviews() {
   return (
     <section id="product-reviews" className="scroll-mt-24 bg-white px-5 py-20 max-sm:px-4 max-sm:py-12">
@@ -605,6 +598,7 @@ export default function ProductDetailClient({ slug }) {
   const [addedBuyingNow, setAddedBuyingNow] = useState([]);
   const [wishlisted, setWishlisted] = useState(false);
   const [activeInfoTab, setActiveInfoTab] = useState("Description");
+  const [isStickyCartVisible, setIsStickyCartVisible] = useState(false);
   const saleTotal = `৳${(quantity * 4680).toLocaleString("en-US")}.00`;
   const handleRelatedAdd = (productName) => {
     setAddedRelated((items) => (items.includes(productName) ? items : [...items, productName]));
@@ -612,6 +606,17 @@ export default function ProductDetailClient({ slug }) {
   const handleBuyingNowAdd = (productName) => {
     setAddedBuyingNow((items) => (items.includes(productName) ? items : [...items, productName]));
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsStickyCartVisible(window.scrollY > 260);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <main className="min-h-screen bg-white text-black">
@@ -689,13 +694,14 @@ export default function ProductDetailClient({ slug }) {
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
           <div className="related-product-track flex w-max gap-[30px]">
             {[...relatedProducts, ...relatedProducts].map((item, index) => (
-            <article key={`${item.name}-${index}`} className="group/product w-[320px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
+            <article key={`${item.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
               <div className="relative overflow-hidden rounded-[6px]">
                 <Link
                   href={`/products/${slugify(item.name)}`}
                   className={`block h-[300px] rounded-[6px] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px]`}
                   aria-label={item.name}
                 />
+                <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
                 <button
                   type="button"
                   onClick={() => handleRelatedAdd(item.name)}
@@ -705,14 +711,12 @@ export default function ProductDetailClient({ slug }) {
                   {addedRelated.includes(item.name) ? "Added" : "Add To Cart"}
                 </button>
               </div>
-              <div className="pt-[18px]">
-                <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{item.category}</p>
-                <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                  <Link href={`/products/${slugify(item.name)}`}>{item.name}</Link>
-                </h3>
-                <ProductCardStars count={item.reviews} />
-                <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{item.price}</p>
-              </div>
+              <ProductCardInfo
+                product={item}
+                productUrl={`/products/${slugify(item.name)}`}
+                onAdd={() => handleRelatedAdd(item.name)}
+                isAdded={addedRelated.includes(item.name)}
+              />
             </article>
           ))}
           </div>
@@ -736,13 +740,14 @@ export default function ProductDetailClient({ slug }) {
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
           <div className="related-product-track related-product-track-reverse flex w-max gap-[30px]">
             {[...buyingNowProducts, ...buyingNowProducts].map((item, index) => (
-              <article key={`${item.name}-${index}`} className="group/product w-[320px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
+              <article key={`${item.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
                 <div className="relative overflow-hidden rounded-[6px]">
                   <Link
                     href={`/products/${slugify(item.name)}`}
                     className={`block h-[300px] rounded-[6px] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px]`}
                     aria-label={item.name}
                   />
+                  <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
                   <button
                     type="button"
                     onClick={() => handleBuyingNowAdd(item.name)}
@@ -752,21 +757,21 @@ export default function ProductDetailClient({ slug }) {
                     {addedBuyingNow.includes(item.name) ? "Added" : "Add To Cart"}
                   </button>
                 </div>
-                <div className="pt-[18px]">
-                  <p className="text-[11px] font-bold uppercase leading-none text-[#657792]">{item.category}</p>
-                  <h3 className="mt-[11px] min-h-[20px] truncate text-[15.5px] font-black leading-5 text-[#273955] transition group-hover/product:text-[#e12526]">
-                    <Link href={`/products/${slugify(item.name)}`}>{item.name}</Link>
-                  </h3>
-                  <ProductCardStars count={item.reviews} />
-                  <p className="mt-[12px] text-[18px] font-black leading-none text-[#ff5145]">{item.price}</p>
-                </div>
+                <ProductCardInfo
+                  product={item}
+                  productUrl={`/products/${slugify(item.name)}`}
+                  onAdd={() => handleBuyingNowAdd(item.name)}
+                  isAdded={addedBuyingNow.includes(item.name)}
+                />
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="sticky bottom-0 z-50 border-t border-[#e5e7eb] bg-white">
+      <div className={`fixed inset-x-0 bottom-0 z-[110] border-t border-[#e5e7eb] bg-white shadow-[0_-12px_34px_rgba(15,23,42,0.10)] transition-all duration-150 ease-out ${
+        isStickyCartVisible ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"
+      }`}>
         <div className="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-5 py-4 max-md:flex-col max-md:items-stretch max-sm:px-4 max-sm:py-3">
           <div className="flex min-w-0 items-center gap-4 max-sm:gap-3">
             <div className="size-14 shrink-0 bg-[url('/product-detail-reference.jpg')] bg-[length:1920px_5260px] bg-[-730px_-170px] max-sm:size-11" />

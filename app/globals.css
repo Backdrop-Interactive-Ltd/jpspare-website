@@ -88,6 +88,28 @@ select {
     linear-gradient(90deg, #030303 0%, #050506 42%, #140305 100%);
 }
 
+.hero-banner-slide {
+  opacity: 0;
+  animation: hero-banner-cycle 45s ease-in-out infinite;
+  animation-delay: calc(var(--slide-index) * 15s);
+}
+
+@keyframes hero-banner-cycle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  2.5%,
+  30.8% {
+    opacity: 1;
+  }
+
+  33.333% {
+    opacity: 0;
+  }
+}
+
 .category-marquee {
   mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
 }
@@ -149,9 +171,101 @@ select {
 }
 
 .eid-deal-flash {
-  animation: eid-flash-blink 1s ease-in-out infinite;
+  animation: eid-flash-blink 1.05s ease-in-out infinite;
+  color: #f7d95f;
   fill: currentColor;
   stroke-width: 0;
+  transform-origin: center;
+}
+
+.header-action-icon {
+  color: #ffffff;
+  transition:
+    color 180ms ease,
+    transform 240ms ease,
+    filter 180ms ease;
+  transform-origin: center;
+}
+
+.header-action-icon:hover,
+.header-action-icon:focus-visible {
+  color: #f7d95f;
+  filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.32));
+  transform: scale(1.1);
+}
+
+.header-action-icon:active {
+  transform: scale(0.94);
+}
+
+.header-search-zoom {
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease;
+  transform-origin: center;
+}
+
+.header-search-zoom:hover,
+.header-search-zoom:focus-within {
+  transform: scale(1.015);
+  box-shadow: 0 14px 30px rgba(220, 38, 38, 0.18);
+}
+
+.header-logo-mark {
+  isolation: isolate;
+  transition: transform 240ms ease;
+  transform-origin: center;
+}
+
+.header-logo-mark:hover,
+.header-logo-mark:focus-visible {
+  transform: scale(1.055);
+}
+
+.header-logo-mark::after {
+  content: "";
+  position: absolute;
+  inset: -20% -28%;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(112deg, transparent 32%, rgba(255, 255, 255, 0.025) 43%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.03) 57%, transparent 68%);
+  opacity: 0.42;
+  transform: translateX(-118%) skewX(-16deg);
+  transition: transform 360ms ease-out, opacity 180ms ease;
+}
+
+.header-logo-mark:hover::after,
+.header-logo-mark:focus-visible::after {
+  opacity: 0.56;
+  transform: translateX(118%) skewX(-16deg);
+  transition-duration: 420ms, 140ms;
+}
+
+.soft-light-sweep {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.soft-light-sweep::after {
+  content: "";
+  position: absolute;
+  inset: -20% -28%;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(112deg, transparent 32%, rgba(255, 255, 255, 0.025) 43%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.03) 57%, transparent 68%);
+  opacity: 0.42;
+  transform: translateX(-118%) skewX(-16deg);
+  transition: transform 360ms ease-out, opacity 180ms ease;
+}
+
+.soft-light-sweep:hover::after,
+.soft-light-sweep:focus-visible::after {
+  opacity: 0.56;
+  transform: translateX(118%) skewX(-16deg);
+  transition-duration: 420ms, 140ms;
 }
 
 .brand-marquee:hover .brand-marquee-track,
@@ -172,13 +286,15 @@ select {
 @keyframes eid-flash-blink {
   0%,
   100% {
-    opacity: 1;
-    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+    opacity: 0.92;
+    transform: scale(0.92);
+    filter: drop-shadow(0 0 8px rgba(247, 217, 95, 0.72));
   }
 
   50% {
-    opacity: 0.38;
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.75));
+    opacity: 1;
+    transform: scale(1.16);
+    filter: drop-shadow(0 0 12px rgba(247, 217, 95, 0.82));
   }
 }
 
