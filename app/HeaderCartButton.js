@@ -1,15 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartDrawer from "./CartDrawer";
-
-const headerCartProduct = {
-  name: "TOKICO Front Left Shock Absorber B3337",
-  price: "Tk 4,680.00",
-  brand: "TOKICO",
-  category: "SUSPENSION",
-  crop: "bg-[-494px_-15px]",
-};
 
 function CartIcon({ className = "size-7" }) {
   return (
@@ -21,14 +13,42 @@ function CartIcon({ className = "size-7" }) {
 
 export default function HeaderCartButton() {
   const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCount() {
+      const response = await fetch("/api/cart", { cache: "no-store" });
+      if (!response.ok || !active) return;
+      const data = await response.json();
+      setCount(data.cart?.count || 0);
+    }
+
+    function handleCartChange(event) {
+      if (event.detail?.count !== undefined) {
+        setCount(event.detail.count);
+      } else {
+        loadCount();
+      }
+    }
+
+    loadCount();
+    window.addEventListener("jpspare-cart-change", handleCartChange);
+
+    return () => {
+      active = false;
+      window.removeEventListener("jpspare-cart-change", handleCartChange);
+    };
+  }, []);
 
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label="Open shopping cart" className="header-action-icon relative">
         <CartIcon />
-        <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">1</span>
+        <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#111827] text-[11px] font-black leading-none text-white">{count}</span>
       </button>
-      <CartDrawer product={headerCartProduct} open={open} onClose={() => setOpen(false)} />
+      <CartDrawer open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

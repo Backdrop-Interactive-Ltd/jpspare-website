@@ -1,6 +1,5 @@
 import "./globals.css";
-import SiteFooter from "./SiteFooter";
-import BackToTopButton from "./BackToTopButton";
+import PublicChrome from "./PublicChrome";
 
 export const metadata = {
   title: "JPSPARE | Premium Auto Parts & Accessories",
@@ -12,8 +11,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
-        <SiteFooter />
-        <BackToTopButton />
+        <PublicChrome />
       </body>
     </html>
   );

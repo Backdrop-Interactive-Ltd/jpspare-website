@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { addProductToCart, addProductToWishlist } from "../../commerce-client";
 import { ProductCardInfo } from "../../ProductTabs";
 import ProductQuickActions from "../../ProductQuickActions";
 
@@ -600,11 +601,32 @@ export default function ProductDetailClient({ slug }) {
   const [activeInfoTab, setActiveInfoTab] = useState("Description");
   const [isStickyCartVisible, setIsStickyCartVisible] = useState(false);
   const saleTotal = `৳${(quantity * 4680).toLocaleString("en-US")}.00`;
-  const handleRelatedAdd = (productName) => {
+  const handleRelatedAdd = async (item) => {
+    const productName = item.name || item.title;
     setAddedRelated((items) => (items.includes(productName) ? items : [...items, productName]));
+    await addProductToCart(item);
   };
-  const handleBuyingNowAdd = (productName) => {
+  const handleBuyingNowAdd = async (item) => {
+    const productName = item.name || item.title;
     setAddedBuyingNow((items) => (items.includes(productName) ? items : [...items, productName]));
+    await addProductToCart(item);
+  };
+  const handleMainAdd = async () => {
+    setAdded(true);
+    await addProductToCart(
+      {
+        ...product,
+        title: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
+        name: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
+        price: "Tk 4,680.00",
+        oldPrice: "Tk 7,800.00",
+        brand: "HITACHI",
+        category: "Shock Absorber",
+        image: "/product-gallery-reference.png",
+        slug: "hitachi-shock-absorver-b3337",
+      },
+      quantity
+    );
   };
 
   useEffect(() => {
@@ -644,13 +666,23 @@ export default function ProductDetailClient({ slug }) {
                 <button className="text-[#f19397]" onClick={() => setQuantity(quantity + 1)}>＋</button>
               </div>
               <button disabled className="h-12 rounded-[10px] bg-[#f3989d] text-[16px] font-black text-white opacity-95">Out of Stock</button>
-              <button onClick={() => setAdded(true)} className="h-12 rounded-[10px] bg-[#df8b8f] text-[16px] font-black text-white transition hover:bg-[#d3191d]">{added ? "Added" : "Buy Now"} ›</button>
+              <button onClick={handleMainAdd} className="h-12 rounded-[10px] bg-[#df8b8f] text-[16px] font-black text-white transition hover:bg-[#d3191d]">{added ? "Added" : "Buy Now"} ›</button>
             </div>
             <button className="mt-3 h-12 w-full rounded-[10px] bg-[#2f74f3] text-[16px] font-black text-white transition hover:bg-[#1d5ed7]">
               ▭ Calculate EMI <span className="ml-2 rounded-full bg-white/25 px-2 py-1 text-[12px]">15 Banks</span>
             </button>
             <div className="mt-3 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
-              <button onClick={() => setWishlisted(!wishlisted)} className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:bg-[#fff8e6]">
+              <button onClick={async () => {
+                setWishlisted(!wishlisted);
+                await addProductToWishlist({
+                  ...product,
+                  title: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
+                  name: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
+                  price: "Tk 4,680.00",
+                  image: "/product-gallery-reference.png",
+                  slug: "hitachi-shock-absorver-b3337",
+                });
+              }} className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:bg-[#fff8e6]">
                 ♡ {wishlisted ? "Wishlisted" : "Wishlist"}
               </button>
               <button className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:bg-[#fff8e6]">⌯ Share</button>
@@ -704,7 +736,7 @@ export default function ProductDetailClient({ slug }) {
                 <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
                 <button
                   type="button"
-                  onClick={() => handleRelatedAdd(item.name)}
+                  onClick={() => handleRelatedAdd(item)}
                   className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
                   aria-label={`Add ${item.name} to cart`}
                 >
@@ -714,7 +746,7 @@ export default function ProductDetailClient({ slug }) {
               <ProductCardInfo
                 product={item}
                 productUrl={`/products/${slugify(item.name)}`}
-                onAdd={() => handleRelatedAdd(item.name)}
+                onAdd={() => handleRelatedAdd(item)}
                 isAdded={addedRelated.includes(item.name)}
               />
             </article>
@@ -750,7 +782,7 @@ export default function ProductDetailClient({ slug }) {
                   <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
                   <button
                     type="button"
-                    onClick={() => handleBuyingNowAdd(item.name)}
+                    onClick={() => handleBuyingNowAdd(item)}
                     className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
                     aria-label={`Add ${item.name} to cart`}
                   >
@@ -760,7 +792,7 @@ export default function ProductDetailClient({ slug }) {
                 <ProductCardInfo
                   product={item}
                   productUrl={`/products/${slugify(item.name)}`}
-                  onAdd={() => handleBuyingNowAdd(item.name)}
+                  onAdd={() => handleBuyingNowAdd(item)}
                   isAdded={addedBuyingNow.includes(item.name)}
                 />
               </article>
@@ -786,7 +818,7 @@ export default function ProductDetailClient({ slug }) {
               {quantity}
               <button onClick={() => setQuantity(quantity + 1)}>＋</button>
             </div>
-            <button onClick={() => setAdded(true)} className="h-12 bg-black px-12 font-black text-white hover:bg-[#d3191d] max-sm:h-11 max-sm:flex-1 max-sm:px-4 max-sm:text-[13px]">Add to cart</button>
+            <button onClick={handleMainAdd} className="h-12 bg-black px-12 font-black text-white hover:bg-[#d3191d] max-sm:h-11 max-sm:flex-1 max-sm:px-4 max-sm:text-[13px]">Add to cart</button>
           </div>
         </div>
       </div>

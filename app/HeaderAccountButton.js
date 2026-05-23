@@ -15,8 +15,16 @@ export default function HeaderAccountButton() {
   const [href, setHref] = useState("/signin");
 
   useEffect(() => {
-    const syncAuthRoute = () => {
-      setHref(localStorage.getItem("jpspare-auth") === "true" ? "/dashboard" : "/signin");
+    const syncAuthRoute = async () => {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        if (response.ok) {
+          localStorage.setItem("jpspare-auth", "true");
+          setHref("/account");
+          return;
+        }
+      } catch {}
+      setHref(localStorage.getItem("jpspare-auth") === "true" ? "/account" : "/signin");
     };
 
     syncAuthRoute();
@@ -30,7 +38,7 @@ export default function HeaderAccountButton() {
   }, []);
 
   return (
-    <Link href={href} aria-label={href === "/dashboard" ? "Account dashboard" : "Sign in"} className="header-action-icon">
+    <Link href={href} aria-label={href === "/account" ? "Account dashboard" : "Sign in"} className="header-action-icon">
       <UserIcon />
     </Link>
   );

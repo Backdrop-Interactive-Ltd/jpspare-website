@@ -8,6 +8,8 @@ import HeaderSearch from "./HeaderSearch";
 import CompareHashRedirect from "./CompareHashRedirect";
 import HeaderCartButton from "./HeaderCartButton";
 import HeaderAccountButton from "./HeaderAccountButton";
+import HeroBannerSlider from "./HeroBannerSlider";
+import DynamicLogoMark from "./DynamicLogoMark";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -744,17 +746,12 @@ function CarAccessoriesMegaMenu() {
   );
 }
 
-function LogoMark() {
-  return (
-    <Link href="/" className="header-logo-mark relative block h-[64px] w-[260px] shrink-0 overflow-hidden max-sm:h-[52px] max-sm:w-[210px]" aria-label="JPSPARE home">
-      <span className="absolute inset-0 bg-[url('/jpspare-logo-wide-clean.png')] bg-contain bg-left bg-no-repeat" />
-      <span className="sr-only">JPSPARE</span>
-    </Link>
-  );
+function LogoMark({ logo }) {
+  return <DynamicLogoMark logo={logo} />;
 }
 
-function TopSearch() {
-  return <HeaderSearch vehicleBrands={vehicleBrands} />;
+function TopSearch({ placeholderTexts }) {
+  return <HeaderSearch vehicleBrands={vehicleBrands} placeholderTexts={placeholderTexts} />;
 }
 
 export function MainNavBar({ showTrackOrder = true }) {
@@ -854,22 +851,22 @@ export function MainNavBar({ showTrackOrder = true }) {
   );
 }
 
-export function Header() {
+export function Header({ settings }) {
   return (
     <>
       <div className="sticky top-0 z-[100] bg-[#111827] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]">
-        <SearchHeaderBar />
+        <SearchHeaderBar settings={settings} />
       </div>
       <MainNavBar />
     </>
   );
 }
 
-function SearchHeaderBar() {
+function SearchHeaderBar({ settings }) {
   return (
     <div className="mx-auto flex h-[82px] w-full max-w-[1600px] items-center gap-8 px-4 sm:px-6 lg:px-8 xl:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:gap-4 max-lg:py-3">
-      <LogoMark />
-      <TopSearch />
+      <LogoMark logo={settings?.logo} />
+      <TopSearch placeholderTexts={settings?.searchPlaceholders} />
       <div className="hidden shrink-0 items-center gap-5 text-white lg:flex">
         <Link href="/offers" className="header-action-icon soft-light-sweep rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
           <Icon name="gift" className="size-7 text-white" />
@@ -908,19 +905,7 @@ function SearchHeaderBar() {
 function Hero() {
   return (
     <section className="relative overflow-hidden border-b-4 border-[#e1272b] bg-[#040404]">
-      <div className="hero-banner-slider relative h-[620px] w-full max-lg:h-[430px] max-sm:h-[265px]">
-        {heroSlides.map((slide, index) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={slide.src}
-            src={slide.src}
-            alt={slide.alt}
-            suppressHydrationWarning
-            className="hero-banner-slide absolute inset-0 h-full w-full object-cover"
-            style={{ "--slide-index": index }}
-          />
-        ))}
-      </div>
+      <HeroBannerSlider fallbackSlides={heroSlides} />
     </section>
   );
 }

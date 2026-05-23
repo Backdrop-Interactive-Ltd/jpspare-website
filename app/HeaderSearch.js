@@ -66,7 +66,7 @@ function useTypewriterPlaceholder(texts) {
   }, []);
 
   useEffect(() => {
-    const currentText = texts[textIndex];
+    const currentText = texts[textIndex] || texts[0] || "";
     const isComplete = characterIndex === currentText.length;
     const isEmpty = characterIndex === 0;
     const delay = isComplete && !isDeleting ? 1450 : isEmpty && isDeleting ? 360 : isDeleting ? 34 : 58;
@@ -89,7 +89,7 @@ function useTypewriterPlaceholder(texts) {
     return () => window.clearTimeout(timer);
   }, [characterIndex, isDeleting, textIndex, texts]);
 
-  const typedText = texts[textIndex].slice(0, characterIndex);
+  const typedText = (texts[textIndex] || texts[0] || "").slice(0, characterIndex);
 
   return `${typedText}${showCursor ? " |" : ""}`;
 }
@@ -124,12 +124,19 @@ function SearchIcon({ name, className = "size-4" }) {
   );
 }
 
-export default function HeaderSearch({ vehicleBrands }) {
+export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
   const [imageName, setImageName] = useState("");
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const animatedPlaceholder = useTypewriterPlaceholder(searchPlaceholders);
+  const [remotePlaceholderTexts, setRemotePlaceholderTexts] = useState([]);
+  const activePlaceholders =
+    Array.isArray(placeholderTexts) && placeholderTexts.length
+      ? placeholderTexts
+      : remotePlaceholderTexts.length
+        ? remotePlaceholderTexts
+        : searchPlaceholders;
+  const animatedPlaceholder = useTypewriterPlaceholder(activePlaceholders);
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
   const [vehicleStep, setVehicleStep] = useState(1);
   const [vehicleSelection, setVehicleSelection] = useState({
@@ -137,6 +144,25 @@ export default function HeaderSearch({ vehicleBrands }) {
     model: "",
     year: "",
   });
+
+  useEffect(() => {
+    if (Array.isArray(placeholderTexts) && placeholderTexts.length) return undefined;
+
+    let mounted = true;
+
+    fetch("/api/homepage", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!mounted) return;
+        const cmsTexts = payload?.cms?.header?.searchPlaceholders;
+        if (Array.isArray(cmsTexts) && cmsTexts.length) setRemotePlaceholderTexts(cmsTexts);
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [placeholderTexts]);
 
   useEffect(() => {
     function openVehicleFinder() {

@@ -48,20 +48,34 @@ export default function CreateAccountPageClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const updateField = (field) => (value) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
       setMessage("Passwords do not match.");
       return;
     }
-    localStorage.setItem("jpspare-auth", "true");
-    window.dispatchEvent(new Event("jpspare-auth-change"));
-    router.push("/dashboard");
+    setLoading(true);
+    setMessage("");
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    if (response.ok) {
+      localStorage.setItem("jpspare-auth", "true");
+      window.dispatchEvent(new Event("jpspare-auth-change"));
+      router.push("/account");
+    } else {
+      const data = await response.json().catch(() => ({}));
+      setMessage(data.error || "Account creation failed.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -128,8 +142,8 @@ export default function CreateAccountPageClient() {
 
           {message && <p className={`mt-4 rounded-[8px] px-3 py-2 text-[13px] font-semibold ${message.includes("not") ? "bg-[#fff1f1] text-[#c8191f]" : "bg-[#ecfdf3] text-[#027a48]"}`}>{message}</p>}
 
-          <button type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827]">
-            Create Account
+          <button disabled={loading} type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827] disabled:cursor-not-allowed disabled:opacity-70">
+            {loading ? "Creating..." : "Create Account"}
             <Icon name="arrowRight" className="size-5" />
           </button>
 

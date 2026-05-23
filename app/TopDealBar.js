@@ -9,18 +9,57 @@ const dealMessages = [
   <>Shop Over 5000 Tk Get FREE Delivery</>,
 ];
 
-export default function TopDealBar() {
+function renderDealMessage(text) {
+  const value = String(text || "");
+  if (!value.includes("70%")) return value;
+  const [before, after] = value.split("70%");
+  return (
+    <>
+      {before}
+      <span className="font-black">70%</span>
+      {after}
+    </>
+  );
+}
+
+export default function TopDealBar({ announcement }) {
   const [visible, setVisible] = useState(true);
   const [messageIndex, setMessageIndex] = useState(0);
   const [phase, setPhase] = useState("entering");
+  const [remoteAnnouncement, setRemoteAnnouncement] = useState(null);
+  const activeAnnouncement = announcement ?? remoteAnnouncement;
+  const messages =
+    activeAnnouncement && activeAnnouncement.enabled === false
+      ? []
+      : activeAnnouncement
+        ? [activeAnnouncement.text, activeAnnouncement.secondaryText].filter(Boolean).map(renderDealMessage)
+        : dealMessages;
+  const link = activeAnnouncement?.buttonLink || "#sale";
 
   useEffect(() => {
-    if (!visible) return undefined;
+    if (announcement !== undefined) return undefined;
+
+    let mounted = true;
+
+    fetch("/api/homepage", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (mounted && payload?.cms?.announcement) setRemoteAnnouncement(payload.cms.announcement);
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [announcement]);
+
+  useEffect(() => {
+    if (!visible || !messages.length) return undefined;
 
     const enterTimer = window.setTimeout(() => setPhase("center"), 450);
     const exitTimer = window.setTimeout(() => setPhase("exiting"), 10450);
     const nextTimer = window.setTimeout(() => {
-      setMessageIndex((current) => (current + 1) % dealMessages.length);
+      setMessageIndex((current) => (current + 1) % messages.length);
       setPhase("entering");
     }, 11200);
 
@@ -29,9 +68,9 @@ export default function TopDealBar() {
       window.clearTimeout(exitTimer);
       window.clearTimeout(nextTimer);
     };
-  }, [messageIndex, visible]);
+  }, [messageIndex, visible, messages.length]);
 
-  if (!visible) {
+  if (!visible || !messages.length) {
     return null;
   }
 
@@ -45,10 +84,10 @@ export default function TopDealBar() {
   return (
     <div className="relative z-50 flex h-11 items-center justify-center overflow-hidden bg-[#111827] px-14 text-white">
       <a
-        href="#sale"
+        href={link}
         className={`whitespace-nowrap text-center text-[16px] font-semibold leading-none tracking-[-0.01em] transition-all duration-700 ease-in-out ${phaseClass}`}
       >
-        {dealMessages[messageIndex]}
+        {messages[messageIndex]}
       </a>
       <button
         type="button"

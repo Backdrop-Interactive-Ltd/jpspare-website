@@ -1,15 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-
-function parsePrice(price) {
-  const match = String(price).replace(/,/g, "").match(/(\d+(?:\.\d+)?)/);
-  return match ? Number(match[1]) : 0;
-}
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 function formatPrice(value) {
-  return `৳${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `৳${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function Icon({ name, className = "size-5" }) {
@@ -31,27 +26,73 @@ function Icon({ name, className = "size-5" }) {
   );
 }
 
-function ProductImage({ product }) {
-  if (!product) {
-    return null;
-  }
-
+function ProductImage({ item }) {
   return (
-    <div
-      className={`size-[74px] shrink-0 rounded-[10px] bg-white bg-no-repeat ${
-        product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:720px_338px] ${product.crop || "bg-center"}`
-      }`}
-      style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
-    />
+    <div className="size-[74px] shrink-0 overflow-hidden rounded-[10px] bg-white">
+      <img src={item.thumbnail || "/jpspare-logo.png"} alt={item.title} className="size-full object-cover" />
+    </div>
   );
 }
 
-export default function CartDrawer({ product, open, onClose }) {
-  const [quantity, setQuantity] = useState(1);
-  const unitPrice = parsePrice(product?.price || 0);
-  const subtotal = useMemo(() => unitPrice * quantity, [quantity, unitPrice]);
+export default function CartDrawer({ open, onClose }) {
+  const [cart, setCart] = useState({ items: [], subtotal: 0, count: 0 });
+  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const subtotal = useMemo(() => Number(cart.subtotal || 0), [cart.subtotal]);
 
-  if (!open || !product) {
+  async function loadCart() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/cart", { cache: "no-store" });
+      if (response.ok) {
+        const data = await response.json();
+        setCart(data.cart);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (open) loadCart();
+  }, [open]);
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (event.detail) setCart(event.detail);
+      else loadCart();
+    };
+    window.addEventListener("jpspare-cart-change", handler);
+    return () => window.removeEventListener("jpspare-cart-change", handler);
+  }, []);
+
+  function updateItem(itemId, quantity) {
+    startTransition(async () => {
+      const response = await fetch(`/api/cart/items/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCart(data.cart);
+        window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+      }
+    });
+  }
+
+  function removeItem(itemId) {
+    startTransition(async () => {
+      const response = await fetch(`/api/cart/items/${itemId}`, { method: "DELETE" });
+      if (response.ok) {
+        const data = await response.json();
+        setCart(data.cart);
+        window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+      }
+    });
+  }
+
+  if (!open) {
     return null;
   }
 
@@ -65,7 +106,7 @@ export default function CartDrawer({ product, open, onClose }) {
             <span className="grid size-10 place-items-center rounded-[11px] bg-[#ef3338] text-white">
               <Icon name="cart" className="size-5" />
             </span>
-            <h2 className="text-[18px] font-black text-[#111827]">Shopping Cart (1)</h2>
+            <h2 className="text-[18px] font-black text-[#111827]">Shopping Cart ({cart.count || 0})</h2>
           </div>
           <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full text-[#667085] transition hover:bg-[#f3f4f6] hover:text-[#111827]" aria-label="Close cart">
             <Icon name="close" className="size-5" />
@@ -78,39 +119,48 @@ export default function CartDrawer({ product, open, onClose }) {
             You qualify for free shipping!
           </div>
 
-          <article className="rounded-[10px] bg-[#fafafa] p-4">
-            <div className="flex items-start gap-4">
-              <ProductImage product={product} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-[#111827]">{product.name}</h3>
-                    <p className="mt-2 text-[12px] font-bold uppercase text-[#7b8495]">{product.brand || product.category}</p>
-                    <p className="mt-1 text-[12px] text-[#6b7280]">• Default Title</p>
-                  </div>
-                  <button type="button" className="shrink-0 text-[#ef3338] transition hover:text-[#b91c1c]" aria-label="Remove item">
-                    <Icon name="trash" className="size-4" />
-                  </button>
-                </div>
+          {loading ? <p className="py-10 text-center text-sm font-bold text-[#667085]">Loading cart...</p> : null}
 
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div className="flex h-[38px] min-w-[108px] items-center justify-between rounded-[7px] border border-[#d6dce5] bg-white px-2 text-[15px]">
-                    <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="grid size-7 place-items-center text-[#9aa3b2] hover:text-[#ef3338]" aria-label="Decrease quantity">
-                      −
-                    </button>
-                    <span className="font-semibold text-[#111827]">{quantity}</span>
-                    <button type="button" onClick={() => setQuantity((value) => value + 1)} className="grid size-7 place-items-center text-[#7b8495] hover:text-[#ef3338]" aria-label="Increase quantity">
-                      +
-                    </button>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[16px] font-black text-[#111827]">{formatPrice(subtotal)}</p>
-                    <p className="mt-1 text-[12px] text-[#6b7280]">{formatPrice(unitPrice)} each</p>
+          {!loading && !cart.items.length ? (
+            <div className="rounded-[10px] border border-dashed border-[#d0d5dd] p-8 text-center">
+              <p className="text-lg font-black text-[#111827]">Your cart is empty</p>
+              <p className="mt-2 text-sm font-semibold text-[#667085]">Add products from the store to start checkout.</p>
+            </div>
+          ) : null}
+
+          <div className="space-y-4">
+            {cart.items.map((item) => (
+              <article key={item.id} className="rounded-[10px] bg-[#fafafa] p-4">
+                <div className="flex items-start gap-4">
+                  <ProductImage item={item} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-[#111827]">{item.title}</h3>
+                        <p className="mt-2 text-[12px] font-bold uppercase text-[#7b8495]">{item.sku || "JPSPARE"}</p>
+                        <p className="mt-1 text-[12px] text-[#6b7280]">• Default Title</p>
+                      </div>
+                      <button type="button" onClick={() => removeItem(item.id)} className="shrink-0 text-[#ef3338] transition hover:text-[#b91c1c]" aria-label="Remove item">
+                        <Icon name="trash" className="size-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex items-end justify-between gap-3">
+                      <div className="flex h-[38px] min-w-[108px] items-center justify-between rounded-[7px] border border-[#d6dce5] bg-white px-2 text-[15px]">
+                        <button disabled={isPending} type="button" onClick={() => updateItem(item.id, Math.max(1, item.quantity - 1))} className="grid size-7 place-items-center text-[#9aa3b2] hover:text-[#ef3338]" aria-label="Decrease quantity">−</button>
+                        <span className="font-semibold text-[#111827]">{item.quantity}</span>
+                        <button disabled={isPending} type="button" onClick={() => updateItem(item.id, item.quantity + 1)} className="grid size-7 place-items-center text-[#7b8495] hover:text-[#ef3338]" aria-label="Increase quantity">+</button>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[16px] font-black text-[#111827]">{formatPrice(item.total)}</p>
+                        <p className="mt-1 text-[12px] text-[#6b7280]">{formatPrice(item.unitPrice)} each</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </article>
+              </article>
+            ))}
+          </div>
 
           <div className="mt-6 grid grid-cols-3 rounded-[10px] bg-[#fff0f0] px-4 py-5 text-center text-[#8b3300]">
             {[
@@ -120,10 +170,7 @@ export default function CartDrawer({ product, open, onClose }) {
             ].map(([icon, title, line]) => (
               <div key={title} className="flex flex-col items-center gap-2">
                 <Icon name={icon} className="size-6 text-[#ef3338]" />
-                <p className="text-[12px] leading-4">
-                  {title}
-                  {line && <span className="block">{line}</span>}
-                </p>
+                <p className="text-[12px] leading-4">{title}{line && <span className="block">{line}</span>}</p>
               </div>
             ))}
           </div>
@@ -131,28 +178,19 @@ export default function CartDrawer({ product, open, onClose }) {
 
         <footer className="border-t border-[#e5e7eb] px-6 py-6">
           <div className="space-y-4 text-[14px] text-[#4b5563]">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span className="font-semibold text-[#111827]">{formatPrice(subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Shipping</span>
-              <span className="font-semibold text-[#079347]">Free</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Tax</span>
-              <span className="font-semibold text-[#111827]">৳0.00</span>
-            </div>
+            <div className="flex justify-between"><span>Subtotal</span><span className="font-semibold text-[#111827]">{formatPrice(subtotal)}</span></div>
+            <div className="flex justify-between"><span>Shipping</span><span className="font-semibold text-[#079347]">Free</span></div>
+            <div className="flex justify-between"><span>Tax</span><span className="font-semibold text-[#111827]">৳0.00</span></div>
           </div>
           <div className="mt-4 flex justify-between border-t border-[#d7dce4] pt-4 text-[17px] font-black text-[#111827]">
             <span>Total</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
 
-          <button type="button" className="mt-7 flex h-[54px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[15px] font-black text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)] transition hover:bg-[#d3191d]">
+          <Link href="/checkout" onClick={onClose} className="mt-7 flex h-[54px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[15px] font-black text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)] transition hover:bg-[#d3191d]">
             <Icon name="card" className="size-5" />
             Secure Checkout
-          </button>
+          </Link>
           <Link href="/cart" onClick={onClose} className="mt-3 flex h-[54px] w-full items-center justify-center rounded-[10px] border-2 border-[#ef3338] bg-white text-[16px] font-semibold text-[#ef3338] transition hover:bg-[#fff5f5]">
             View Full Cart
           </Link>

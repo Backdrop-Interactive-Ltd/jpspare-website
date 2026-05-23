@@ -1,42 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { addProductToCart } from "../commerce-client";
 
-const initialWishlist = [
-  {
-    id: "denso-vfkbh20",
-    title: "Denso Spark Plug VFKBH20 (Toyota Hiace- TRH200V,200K)",
-    price: "৳7,900.00",
-    added: "20/05/2026",
-    crop: "bg-[-1090px_-300px]",
-    slug: "/products/hitachi-shock-absorver-b3337",
-  },
-  {
-    id: "denso-iridium-vfch16",
-    title: "DENSO IRIDIUM TOUGH VFCH16 (Noah HV, Esquire HV)",
-    price: "৳7,800.00",
-    added: "20/05/2026",
-    crop: "bg-[-1084px_-292px]",
-    slug: "/products/hitachi-shock-absorver-b3337",
-  },
-  {
-    id: "denso-vfxehc22g",
-    title: "Denso Spark Plug VFXEHC22G",
-    price: "৳8,000.00",
-    added: "20/05/2026",
-    crop: "bg-[-1008px_-298px]",
-    slug: "/products/hitachi-shock-absorver-b3337",
-  },
-  {
-    id: "tokico-b3337",
-    title: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV)",
-    price: "৳4,680.00",
-    added: "20/05/2026",
-    crop: "bg-[-1318px_-37px]",
-    slug: "/products/hitachi-shock-absorver-b3337",
-  },
-];
+function formatPrice(value = 0) {
+  return `৳${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatDate(value) {
+  if (!value) return "today";
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+}
 
 function Icon({ name, className = "size-4" }) {
   const icons = {
@@ -58,6 +33,9 @@ function Icon({ name, className = "size-4" }) {
 }
 
 function WishlistCard({ product, view, onRemove }) {
+  const href = product.productUrl || (product.slug ? `/products/${product.slug}` : "/products/hitachi-shock-absorver-b3337");
+  const image = product.image || "/products-reference.png";
+
   return (
     <article
       className={`group relative overflow-hidden rounded-[12px] border border-[#dfe5ec] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_20px_45px_rgba(239,51,56,0.12)] ${
@@ -69,32 +47,65 @@ function WishlistCard({ product, view, onRemove }) {
       </button>
 
       <Link
-        href={product.slug}
-        className={`block bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat transition duration-200 group-hover:scale-[1.012] ${
-          view === "list" ? `h-[230px] rounded-[8px] ${product.crop}` : `h-[310px] ${product.crop}`
-        }`}
+        href={href}
+        className={`block bg-white bg-contain bg-center bg-no-repeat transition duration-200 group-hover:scale-[1.012] ${view === "list" ? "h-[230px] rounded-[8px]" : "h-[310px]"}`}
+        style={{ backgroundImage: `url(${image})` }}
         aria-label={`View ${product.title}`}
       />
 
       <div className={`${view === "list" ? "flex flex-col justify-center" : "px-5 pb-5"}`}>
         <h2 className="line-clamp-2 min-h-[54px] text-[20px] font-black leading-[1.35] text-[#111827]">{product.title}</h2>
-        <p className="mt-4 text-[24px] font-black text-[#df171d]">{product.price}</p>
+        <p className="mt-4 text-[24px] font-black text-[#df171d]">{formatPrice(product.price)}</p>
         <p className="mt-4 flex items-center gap-2 text-[15px] text-[#667085]">
           <Icon name="clock" className="size-4" />
-          Added {product.added}
+          Added {formatDate(product.added)}
         </p>
-        <Link href={product.slug} className="mt-5 flex h-12 items-center justify-center rounded-[8px] bg-[#ef3f42] px-5 text-[17px] font-black text-white transition hover:bg-[#111827]">
-          View Product
-        </Link>
+        <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
+          <Link href={href} className="flex h-12 items-center justify-center rounded-[8px] bg-[#ef3f42] px-5 text-[17px] font-black text-white transition hover:bg-[#111827]">
+            View Product
+          </Link>
+          <button type="button" onClick={() => addProductToCart(product)} className="grid size-12 place-items-center rounded-[8px] border border-[#dfe5ec] text-[#111827] transition hover:border-[#f7d95f] hover:text-[#ef3338]" aria-label={`Add ${product.title} to cart`}>
+            <Icon name="cart" className="size-5" />
+          </button>
+        </div>
       </div>
     </article>
   );
 }
 
 export default function WishlistPageClient() {
-  const [items, setItems] = useState(initialWishlist);
+  const [items, setItems] = useState([]);
   const [view, setView] = useState("grid");
+  const [loading, setLoading] = useState(true);
   const itemLabel = useMemo(() => `${items.length} ${items.length === 1 ? "item" : "items"} in wishlist`, [items.length]);
+
+  async function loadWishlist() {
+    setLoading(true);
+    const response = await fetch("/api/wishlist", { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json();
+      setItems(data.items || []);
+    }
+    setLoading(false);
+  }
+
+  async function removeItem(id) {
+    const response = await fetch(`/api/wishlist/${id}`, { method: "DELETE" });
+    if (response.ok) {
+      setItems((current) => current.filter((item) => item.id !== id));
+      window.dispatchEvent(new CustomEvent("jpspare-wishlist-change"));
+    }
+  }
+
+  async function clearAll() {
+    await Promise.all(items.map((item) => fetch(`/api/wishlist/${item.id}`, { method: "DELETE" })));
+    setItems([]);
+    window.dispatchEvent(new CustomEvent("jpspare-wishlist-change"));
+  }
+
+  useEffect(() => {
+    loadWishlist();
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-[#111827]">
@@ -111,7 +122,7 @@ export default function WishlistPageClient() {
         </div>
 
         <div className="mx-auto mt-16 flex max-w-[1280px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[18px] font-medium text-[#273142]">{itemLabel}</p>
+          <p className="text-[18px] font-medium text-[#273142]">{loading ? "Loading wishlist..." : itemLabel}</p>
           <div className="flex items-center gap-6">
             <div className="flex rounded-[8px] bg-[#e5e7eb] p-1">
               <button type="button" onClick={() => setView("grid")} className={`grid size-10 place-items-center rounded-[7px] transition ${view === "grid" ? "bg-white text-[#111827] shadow-sm" : "text-[#8a94a6]"}`} aria-label="Grid view">
@@ -121,7 +132,7 @@ export default function WishlistPageClient() {
                 <Icon name="list" className="size-5" />
               </button>
             </div>
-            <button type="button" onClick={() => setItems([])} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#ef3338] transition hover:text-[#111827]">
+            <button type="button" onClick={clearAll} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#ef3338] transition hover:text-[#111827]">
               <Icon name="trash" className="size-4" />
               Clear All
             </button>
@@ -131,12 +142,12 @@ export default function WishlistPageClient() {
         {items.length ? (
           <div className={`mx-auto mt-8 max-w-[1280px] gap-6 ${view === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-4" : "grid grid-cols-1"}`}>
             {items.map((product) => (
-              <WishlistCard key={product.id} product={product} view={view} onRemove={() => setItems((current) => current.filter((item) => item.id !== product.id))} />
+              <WishlistCard key={product.id} product={product} view={view} onRemove={() => removeItem(product.id)} />
             ))}
           </div>
         ) : (
           <div className="mx-auto mt-10 max-w-[760px] rounded-[14px] border border-[#e5e7eb] bg-white px-6 py-16 text-center shadow-[0_18px_38px_rgba(15,23,42,0.06)]">
-            <h2 className="text-[30px] font-black text-[#111827]">Your wishlist is empty</h2>
+            <h2 className="text-[30px] font-black text-[#111827]">{loading ? "Loading..." : "Your wishlist is empty"}</h2>
             <p className="mt-3 text-[#667085]">Save favorite products and come back any time.</p>
           </div>
         )}

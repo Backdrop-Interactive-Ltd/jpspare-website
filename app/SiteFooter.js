@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import FooterVehicleFitmentLink from "./FooterVehicleFitmentLink";
 
@@ -86,40 +89,77 @@ function FooterIcon({ name }) {
 }
 
 export default function SiteFooter() {
+  const [footerCms, setFooterCms] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/homepage", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (active) setFooterCms(payload?.cms?.footer || null);
+      })
+      .catch(() => {
+        if (active) setFooterCms(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const footerLogo = footerCms?.footerLogo || "/jpspare-logo.png";
+  const aboutText = footerCms?.aboutText || "Authentic Japanese automotive parts with guaranteed quality and nationwide shipping.";
+  const contact = {
+    phone: footerCms?.contact?.phone || "01718914582",
+    email: footerCms?.contact?.email || "info@jpspare.com.bd",
+    address: footerCms?.contact?.address || "277 Tejgaon I/A, Dhaka -1208",
+  };
+  const socialLinks = {
+    facebook: footerCms?.socialLinks?.facebook || "#social",
+    instagram: footerCms?.socialLinks?.instagram || "#social",
+    youtube: footerCms?.socialLinks?.youtube || "#social",
+  };
+  const copyrightText = footerCms?.copyrightText || "© 2024 JPSPARE. All rights reserved.";
+
   return (
     <footer className="mt-auto bg-[#111827] text-white">
       <div className="relative overflow-hidden bg-[radial-gradient(circle_at_85%_12%,rgba(70,31,47,0.52),transparent_34%),linear-gradient(90deg,#101827,#121523)]">
         <div className="mx-auto grid w-full max-w-[1600px] grid-cols-[1.35fr_repeat(4,1fr)] gap-14 px-4 sm:px-6 lg:px-8 xl:px-10 py-12 max-lg:grid-cols-2 max-sm:grid-cols-1">
           <div>
             <Link href="/" className="block size-16 overflow-hidden rounded-[8px]" aria-label="JPSPARE home">
-              <span className="block size-full scale-[3.15] bg-[url('/jpspare-logo.png')] bg-cover bg-center" />
+              <span className="block size-full scale-[3.15] bg-cover bg-center" style={{ backgroundImage: `url(${footerLogo})` }} />
             </Link>
             <p className="mt-6 max-w-[360px] text-[15px] leading-[1.65] text-[#d1d5db]">
-              Authentic Japanese automotive parts with guaranteed quality and nationwide shipping.
+              {aboutText}
             </p>
 
             <h3 className="mt-7 text-[17px] font-black">Contact</h3>
             <div className="mt-4 space-y-3 text-[14px] text-[#cfd5df]">
-              <a href="tel:01718914582" className="flex items-center gap-3 transition hover:text-[#ff6267]">
+              <a href={`tel:${contact.phone}`} className="flex items-center gap-3 transition hover:text-[#ff6267]">
                 <span className="text-[#ff6267]"><FooterIcon name="phone" /></span>
-                01718914582
+                {contact.phone}
               </a>
-              <a href="mailto:info@jpspare.com.bd" className="flex items-center gap-3 transition hover:text-[#ff6267]">
+              <a href={`mailto:${contact.email}`} className="flex items-center gap-3 transition hover:text-[#ff6267]">
                 <span className="text-[#ff6267]"><FooterIcon name="mail" /></span>
-                info@jpspare.com.bd
+                {contact.email}
               </a>
               <p className="flex items-center gap-3">
                 <span className="text-[#ff6267]"><FooterIcon name="pin" /></span>
-                277 Tejgaon I/A, Dhaka -1208
+                {contact.address}
               </p>
             </div>
 
             <h3 className="mt-7 text-[17px] font-black">Follow Us</h3>
             <div className="mt-3 flex gap-2">
-              {["f", "◎", "▶"].map((item) => (
+              {[
+                ["f", socialLinks.facebook],
+                ["◎", socialLinks.instagram],
+                ["▶", socialLinks.youtube],
+              ].map(([item, href]) => (
                 <a
                   key={item}
-                  href="#social"
+                  href={href}
                   className="grid size-9 place-items-center rounded-[8px] bg-[#1d2735] text-[14px] font-black text-[#c7ced8] transition hover:bg-[#ef3338] hover:text-white"
                 >
                   {item}
@@ -168,7 +208,7 @@ export default function SiteFooter() {
         </div>
 
         <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 py-5 text-[14px] text-[#aeb5c1] max-md:flex-col">
-          <p>© 2024 JPSPARE. All rights reserved.</p>
+          <p>{copyrightText}</p>
           <div className="flex gap-6">
             <Link href="/privacy-policy" className="transition hover:text-[#ff6267]">Privacy</Link>
             <Link href="/#terms" className="transition hover:text-[#ff6267]">Terms</Link>

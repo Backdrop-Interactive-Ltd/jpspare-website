@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartDrawer from "./CartDrawer";
+import { addProductToCart } from "./commerce-client";
 import ProductQuickActions from "./ProductQuickActions";
 
 const productImages = {
@@ -90,7 +91,31 @@ const viewAllLinks = {
 };
 
 function expandProducts(products, total = 20) {
+  if (!products?.length) return [];
   return Array.from({ length: total }, (_, index) => products[index % products.length]);
+}
+
+function getProductTab(product) {
+  const haystack = `${product.category || ""} ${product.name || ""}`.toLowerCase();
+
+  if (/(tyre|tire|rim|wheel)/.test(haystack)) return "TYRES";
+  if (/(lubricant|engine oil|oil|coolant|fluid|atf|cvt|flush|additive)/.test(haystack)) return "LUBRICANT";
+  if (/(accessor|car care|perfume|freshener|holder|wax|shampoo|washer|interior|exterior|electronics|lifestyle)/.test(haystack)) return "CAR ACCESSORIES";
+  return "CAR PARTS";
+}
+
+function buildDisplayTabData(cmsProducts) {
+  if (!Array.isArray(cmsProducts) || cmsProducts.length === 0) return tabData;
+
+  const grouped = Object.fromEntries(tabs.map((tab) => [tab, []]));
+
+  cmsProducts.forEach((product) => {
+    grouped[getProductTab(product)].push(product);
+  });
+
+  return Object.fromEntries(
+    tabs.map((tab) => [tab, grouped[tab].length ? grouped[tab] : tabData[tab]])
+  );
 }
 
 const bestSellingProducts = [
@@ -143,13 +168,15 @@ export function ProductCardInfo({ product, productUrl, onAdd, isAdded = false })
         {product.oldPrice ? <p className="pb-0.5 text-[13px] font-bold leading-none text-[#9ca3af] line-through">{product.oldPrice}</p> : null}
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <a
-          href={productUrl}
+        <button
+          type="button"
+          onClick={onAdd}
           className="inline-flex h-[44px] flex-1 items-center justify-center gap-3 rounded-[9px] bg-[#ef3338] px-5 text-[15px] font-black !text-white shadow-[0_10px_20px_rgba(220,38,38,0.24)] transition hover:bg-[#d91f25]"
+          aria-label={`Add ${product.name} to cart`}
         >
-          View Plans
+          Add to Cart
           <span className="text-[20px] leading-none">→</span>
-        </a>
+        </button>
         <button
           type="button"
           onClick={onAdd}
@@ -223,15 +250,38 @@ function CtaIcon({ name }) {
   );
 }
 
-export default function ProductTabs() {
+export default function ProductTabs({ cmsProducts = [] }) {
   const [activeTab, setActiveTab] = useState("CAR ACCESSORIES");
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
-  const visibleProducts = expandProducts(tabData[activeTab], 20);
+  const [remoteProducts, setRemoteProducts] = useState([]);
+  const dynamicProducts = cmsProducts.length ? cmsProducts : remoteProducts;
+  const displayTabData = buildDisplayTabData(dynamicProducts);
+  const visibleProducts = expandProducts(displayTabData[activeTab], 20);
 
-  function handleAddToCart(product) {
+  useEffect(() => {
+    if (cmsProducts.length) return undefined;
+
+    let mounted = true;
+
+    fetch("/api/homepage/featured-products", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!mounted) return;
+        const products = payload?.products;
+        if (Array.isArray(products) && products.length) setRemoteProducts(products);
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [cmsProducts.length]);
+
+  async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
     setCartProduct(product);
+    await addProductToCart(product);
   }
 
   return (
@@ -273,7 +323,7 @@ export default function ProductTabs() {
               <div className="block">
                 <div className="relative overflow-hidden rounded-[6px]">
                   {(() => {
-                    const productUrl = `/products/${slugify(product.name)}`;
+                    const productUrl = `/products/${product.slug || slugify(product.name)}`;
                     return (
                       <>
                   <a
@@ -297,7 +347,7 @@ export default function ProductTabs() {
                     {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                   </button>
                 </div>
-                <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
+                <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
               </div>
             </article>
           ))}
@@ -345,9 +395,10 @@ export function BestSellingAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
 
-  function handleAddToCart(product) {
+  async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
     setCartProduct(product);
+    await addProductToCart(product);
   }
 
   return (
@@ -370,7 +421,7 @@ export function BestSellingAutoParts() {
             <article key={`${product.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
               <div className="relative overflow-hidden rounded-[6px]">
                 {(() => {
-                  const productUrl = `/products/${slugify(product.name)}`;
+                  const productUrl = `/products/${product.slug || slugify(product.name)}`;
                   return (
                     <>
                 <a
@@ -394,7 +445,7 @@ export function BestSellingAutoParts() {
                   {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                 </button>
               </div>
-              <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
+              <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
             </article>
           ))}
           </div>
@@ -409,9 +460,10 @@ export function LatestJapaneseAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
 
-  function handleAddToCart(product) {
+  async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
     setCartProduct(product);
+    await addProductToCart(product);
   }
 
   return (
@@ -434,7 +486,7 @@ export function LatestJapaneseAutoParts() {
             <article key={`${product.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
               <div className="relative overflow-hidden rounded-[6px]">
                 {(() => {
-                  const productUrl = `/products/${slugify(product.name)}`;
+                  const productUrl = `/products/${product.slug || slugify(product.name)}`;
                   return (
                     <>
                 <a
@@ -458,7 +510,7 @@ export function LatestJapaneseAutoParts() {
                   {addedItems.includes(product.name) ? "Added" : "Add To Cart"}
                 </button>
               </div>
-              <ProductCardInfo product={product} productUrl={`/products/${slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
+              <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} isAdded={addedItems.includes(product.name)} />
             </article>
           ))}
           </div>

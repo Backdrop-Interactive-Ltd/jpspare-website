@@ -41,18 +41,38 @@ export default function SignInPageClient() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const isReset = mode === "reset";
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
+    setMessage("");
     if (!isReset) {
-      localStorage.setItem("jpspare-auth", "true");
-      window.dispatchEvent(new Event("jpspare-auth-change"));
-      router.push("/dashboard");
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (response.ok) {
+        localStorage.setItem("jpspare-auth", "true");
+        window.dispatchEvent(new Event("jpspare-auth-change"));
+        router.push("/account");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setMessage(data.error || "Sign in failed.");
+      }
+      setLoading(false);
       return;
     }
-    setMessage(isReset ? "Reset link sent successfully." : "Demo sign in request submitted.");
+    const response = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setMessage(response.ok ? "Reset link foundation is ready. Check your email once SMTP is connected." : "Reset request failed.");
+    setLoading(false);
   };
 
   return (
@@ -117,7 +137,7 @@ export default function SignInPageClient() {
             )}
           </div>
 
-          {message && <p className="mt-4 rounded-[8px] bg-[#ecfdf3] px-3 py-2 text-[13px] font-semibold text-[#027a48]">{message}</p>}
+          {message && <p className={`mt-4 rounded-[8px] px-3 py-2 text-[13px] font-semibold ${message.includes("failed") || message.includes("Invalid") ? "bg-[#fff1f1] text-[#c8191f]" : "bg-[#ecfdf3] text-[#027a48]"}`}>{message}</p>}
 
           {!isReset && (
             <button type="button" onClick={() => { setMode("reset"); setMessage(""); }} className="mt-6 text-[14px] font-medium text-[#ef3338] transition hover:text-[#111827]">
@@ -125,8 +145,8 @@ export default function SignInPageClient() {
             </button>
           )}
 
-          <button type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827]">
-            {isReset ? "Send Reset Link" : "Sign In"}
+          <button disabled={loading} type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827] disabled:cursor-not-allowed disabled:opacity-70">
+            {loading ? "Please wait..." : isReset ? "Send Reset Link" : "Sign In"}
             {!isReset && <Icon name="arrowRight" className="size-5" />}
           </button>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 function Icon({ name, className = "size-6" }) {
   const icons = {
@@ -23,19 +24,13 @@ function Icon({ name, className = "size-6" }) {
   );
 }
 
-const stats = [
-  { icon: "box", value: "0", label: "Total Orders", helper: "", tone: "blue" },
-  { icon: "clock", value: "0", label: "Active Orders", helper: "Currently processing", tone: "green" },
-  { icon: "trend", value: "$0.00", label: "Total Spent", helper: "Lifetime investment", tone: "red" },
-];
-
 const actions = [
   {
     icon: "box",
     title: "My Orders",
     text: "Track orders, view history, and manage returns",
     cta: "View Orders",
-    href: "#orders",
+    href: "/account/orders",
     tone: "blue",
   },
   {
@@ -43,7 +38,7 @@ const actions = [
     title: "Track Order",
     text: "Real-time tracking for your shipments",
     cta: "Track Now",
-    href: "#track",
+    href: "/track-order",
     tone: "red",
   },
   {
@@ -51,7 +46,7 @@ const actions = [
     title: "Addresses",
     text: "Manage shipping and billing addresses",
     cta: "Manage Addresses",
-    href: "#addresses",
+    href: "/account",
     tone: "green",
     featured: true,
   },
@@ -60,7 +55,7 @@ const actions = [
     title: "Account Settings",
     text: "Update profile and security settings",
     cta: "Manage Settings",
-    href: "#settings",
+    href: "/account",
     tone: "gray",
   },
 ];
@@ -107,8 +102,47 @@ function ActionCard({ item }) {
 
 export default function DashboardPageClient() {
   const router = useRouter();
+  const [customer, setCustomer] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    let active = true;
+    async function loadAccount() {
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      if (!response.ok) {
+        localStorage.removeItem("jpspare-auth");
+        window.dispatchEvent(new Event("jpspare-auth-change"));
+        router.push("/signin");
+        return;
+      }
+      const data = await response.json();
+      const ordersResponse = await fetch("/api/orders", { cache: "no-store" });
+      const ordersData = ordersResponse.ok ? await ordersResponse.json() : { orders: [] };
+      if (active) {
+        setCustomer(data.customer);
+        setOrders(ordersData.orders || []);
+        setLoading(false);
+      }
+    }
+    loadAccount();
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  const stats = useMemo(() => {
+    const totalSpent = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const activeOrders = orders.filter((order) => !["DELIVERED", "CANCELLED"].includes(order.status)).length;
+    return [
+      { icon: "box", value: String(orders.length), label: "Total Orders", helper: "", tone: "blue" },
+      { icon: "clock", value: String(activeOrders), label: "Active Orders", helper: "Currently processing", tone: "green" },
+      { icon: "trend", value: `৳${totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, label: "Total Spent", helper: "Lifetime investment", tone: "red" },
+    ];
+  }, [orders]);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("jpspare-auth");
     window.dispatchEvent(new Event("jpspare-auth-change"));
     router.push("/signin");
@@ -145,7 +179,7 @@ export default function DashboardPageClient() {
 
           <h1 className="text-[58px] font-black leading-tight tracking-[-0.04em] text-[#111827] max-sm:text-[38px]">
             Welcome Back,
-            <span className="block text-[#df171d]">Fazlur</span>
+            <span className="block text-[#df171d]">{loading ? "..." : customer?.name || "JPSPARE Member"}</span>
           </h1>
           <p className="mx-auto mt-8 max-w-[820px] text-[22px] leading-8 text-[#4b5563] max-sm:text-[17px]">
             Manage your orders, track shipments, and access premium Japanese auto parts

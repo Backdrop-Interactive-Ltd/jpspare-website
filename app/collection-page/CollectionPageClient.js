@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import CartDrawer from "../CartDrawer";
+import { addProductToCart } from "../commerce-client";
 import DynamicFilters, { deriveBrand, makeFacetOptions, priceRangeText } from "../DynamicFilters";
 import ProductPagination from "../ProductPagination";
 import { ProductCardInfo } from "../ProductTabs";
@@ -144,9 +145,10 @@ export default function CollectionPageClient({ pageKey }) {
     return filteredProducts.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredProducts]);
 
-  function handleAddToCart(product) {
+  async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
     setCartProduct(product);
+    await addProductToCart(product);
   }
 
   function toggleSelected(setter, value) {

@@ -1,20 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-
-const cartProduct = {
-  name: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
-  brand: "HITACHI",
-  price: 4680,
-  oldPrice: 7800,
-  image: "/product-gallery-reference.png",
-};
+import { useEffect, useMemo, useState } from "react";
 
 const paymentLabels = ["VISA", "MC", "AMEX", "bKash", "Nagad", "Rocket", "DBBL", "City", "MTB", "AB", "Upay", "SSL"];
 
-function formatPrice(value) {
-  return `৳${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function formatPrice(value = 0) {
+  return `৳${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function Icon({ name, className = "size-5" }) {
@@ -39,23 +31,56 @@ function Icon({ name, className = "size-5" }) {
   );
 }
 
-function QuantityControl({ value, onDecrease, onIncrease }) {
-  return (
-    <div className="flex h-[52px] w-[170px] items-center justify-between rounded-[9px] border border-[#d7dde6] bg-white px-3 text-[18px]">
-      <button type="button" onClick={onDecrease} className="grid size-9 place-items-center text-[#9aa3b2] transition hover:text-[#ef3338]" aria-label="Decrease quantity">
-        −
-      </button>
-      <span className="font-black text-[#111827]">{value}</span>
-      <button type="button" onClick={onIncrease} className="grid size-9 place-items-center text-[#667085] transition hover:text-[#ef3338]" aria-label="Increase quantity">
-        +
-      </button>
-    </div>
-  );
-}
-
 export default function CartPageClient() {
-  const [quantity, setQuantity] = useState(1);
-  const subtotal = useMemo(() => cartProduct.price * quantity, [quantity]);
+  const [cart, setCart] = useState({ items: [], subtotal: 0, count: 0 });
+  const [loading, setLoading] = useState(true);
+  const subtotal = useMemo(() => Number(cart.subtotal || 0), [cart.subtotal]);
+
+  async function loadCart() {
+    setLoading(true);
+    const response = await fetch("/api/cart", { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json();
+      setCart(data.cart || { items: [], subtotal: 0, count: 0 });
+    }
+    setLoading(false);
+  }
+
+  async function updateQuantity(itemId, quantity) {
+    if (quantity < 1) return;
+    const response = await fetch(`/api/cart/items/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantity }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setCart(data.cart);
+      window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+    }
+  }
+
+  async function removeItem(itemId) {
+    const response = await fetch(`/api/cart/items/${itemId}`, { method: "DELETE" });
+    if (response.ok) {
+      const data = await response.json();
+      setCart(data.cart);
+      window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+    }
+  }
+
+  async function clearCart() {
+    const response = await fetch("/api/cart", { method: "DELETE" });
+    if (response.ok) {
+      const data = await response.json();
+      setCart(data.cart);
+      window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+    }
+  }
+
+  useEffect(() => {
+    loadCart();
+  }, []);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_12%_18%,rgba(247,217,95,0.07),transparent_24%),radial-gradient(circle_at_86%_60%,rgba(239,51,56,0.06),transparent_28%),#ffffff] text-[#111827]">
@@ -72,7 +97,7 @@ export default function CartPageClient() {
             </span>
             <div>
               <h1 className="text-[34px] font-black tracking-[-0.04em]">
-                Shopping Cart <span className="text-[#df171d]">({quantity > 0 ? 1 : 0})</span>
+                Shopping Cart <span className="text-[#df171d]">({cart.count || 0})</span>
               </h1>
               <p className="mt-2 text-[15px] font-medium text-[#5f6878]">Review your items and checkout</p>
             </div>
@@ -92,49 +117,57 @@ export default function CartPageClient() {
                 <Icon name="box" className="size-5 text-blue-600" />
                 You qualify for free shipping!
               </p>
-              <button type="button" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#ef3338] transition hover:text-[#111827]">
+              <button type="button" onClick={clearCart} className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#ef3338] transition hover:text-[#111827]">
                 <Icon name="trash" className="size-4" />
                 Clear
               </button>
             </div>
 
-            <article className="grid grid-cols-[140px_minmax(0,1fr)_230px] gap-8 rounded-[10px] border border-[#dfe5ec] bg-white p-6 shadow-sm max-lg:grid-cols-[120px_1fr] max-sm:grid-cols-1">
-              <Link
-                href="/products/hitachi-shock-absorver-b3337"
-                className="h-[120px] rounded-[8px] bg-white bg-[url('/product-gallery-reference.png')] bg-[length:620px_360px] bg-[-26px_-27px] bg-no-repeat"
-                aria-label={`View ${cartProduct.name}`}
-              />
-
-              <div className="min-w-0">
-                <div className="flex items-start justify-between gap-4">
-                  <Link href="/products/hitachi-shock-absorver-b3337" className="line-clamp-2 text-[21px] font-black leading-tight text-[#111827] transition hover:text-[#ef3338]">
-                    {cartProduct.name}
-                  </Link>
-                  <button type="button" className="hidden text-[#ef3338] transition hover:text-[#111827] max-lg:block" aria-label="Remove item">
-                    <Icon name="trash" />
-                  </button>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-[14px] text-[#5f6878]">
-                  <span className="rounded-[6px] bg-[#f3f4f6] px-3 py-1 font-bold text-[#4b5563]">{cartProduct.brand}</span>
-                  <span>• Default Title</span>
-                </div>
-                <p className="mt-7 text-[13px] font-black uppercase tracking-[0.14em] text-[#4b5563]">Quantity</p>
-                <div className="mt-3">
-                  <QuantityControl value={quantity} onDecrease={() => setQuantity((value) => Math.max(1, value - 1))} onIncrease={() => setQuantity((value) => value + 1)} />
-                </div>
+            {loading ? (
+              <div className="rounded-[10px] border border-[#dfe5ec] bg-white p-10 text-center font-bold text-[#667085]">Loading cart...</div>
+            ) : cart.items?.length ? (
+              <div className="space-y-4">
+                {cart.items.map((item) => (
+                  <article key={item.id} className="grid grid-cols-[140px_minmax(0,1fr)_230px] gap-8 rounded-[10px] border border-[#dfe5ec] bg-white p-6 shadow-sm max-lg:grid-cols-[120px_1fr] max-sm:grid-cols-1">
+                    <Link href={item.slug ? `/products/${item.slug}` : "#"} className="h-[120px] rounded-[8px] bg-white bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${item.image || "/products-reference.png"})` }} aria-label={`View ${item.title}`} />
+                    <div className="min-w-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <Link href={item.slug ? `/products/${item.slug}` : "#"} className="line-clamp-2 text-[21px] font-black leading-tight text-[#111827] transition hover:text-[#ef3338]">
+                          {item.title}
+                        </Link>
+                        <button type="button" onClick={() => removeItem(item.id)} className="hidden text-[#ef3338] transition hover:text-[#111827] max-lg:block" aria-label="Remove item">
+                          <Icon name="trash" />
+                        </button>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 text-[14px] text-[#5f6878]">
+                        {item.brand ? <span className="rounded-[6px] bg-[#f3f4f6] px-3 py-1 font-bold text-[#4b5563]">{item.brand}</span> : null}
+                        <span>• Default Title</span>
+                      </div>
+                      <p className="mt-7 text-[13px] font-black uppercase tracking-[0.14em] text-[#4b5563]">Quantity</p>
+                      <div className="mt-3 flex h-[52px] w-[170px] items-center justify-between rounded-[9px] border border-[#d7dde6] bg-white px-3 text-[18px]">
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="grid size-9 place-items-center text-[#9aa3b2] transition hover:text-[#ef3338]">−</button>
+                        <span className="font-black text-[#111827]">{item.quantity}</span>
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="grid size-9 place-items-center text-[#667085] transition hover:text-[#ef3338]">+</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end justify-between text-right max-lg:col-span-2 max-lg:flex-row max-lg:items-center max-sm:col-span-1 max-sm:flex-col max-sm:items-start max-sm:text-left">
+                      <button type="button" onClick={() => removeItem(item.id)} className="text-[#ef3338] transition hover:text-[#111827] max-lg:hidden" aria-label="Remove item">
+                        <Icon name="trash" />
+                      </button>
+                      <div>
+                        <p className="text-[34px] font-black tracking-[-0.04em]">{formatPrice(item.lineTotal)}</p>
+                        <p className="mt-2 text-[17px] text-[#6b7280]">{formatPrice(item.price)} each</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
-
-              <div className="flex flex-col items-end justify-between text-right max-lg:col-span-2 max-lg:flex-row max-lg:items-center max-sm:col-span-1 max-sm:flex-col max-sm:items-start max-sm:text-left">
-                <button type="button" className="text-[#ef3338] transition hover:text-[#111827] max-lg:hidden" aria-label="Remove item">
-                  <Icon name="trash" />
-                </button>
-                <div>
-                  <p className="text-[34px] font-black tracking-[-0.04em]">{formatPrice(subtotal)}</p>
-                  <p className="mt-2 text-[17px] text-[#6b7280]">{formatPrice(cartProduct.price)} each</p>
-                  <p className="mt-2 text-[16px] text-[#ef3338] line-through">{formatPrice(cartProduct.oldPrice)}</p>
-                </div>
+            ) : (
+              <div className="rounded-[10px] border border-[#dfe5ec] bg-white p-14 text-center shadow-sm">
+                <h2 className="text-[28px] font-black">Your cart is empty</h2>
+                <p className="mt-3 text-[#667085]">Add a product to begin checkout.</p>
               </div>
-            </article>
+            )}
           </div>
 
           <aside className="h-fit overflow-hidden rounded-[10px] border border-[#dfe5ec] bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
@@ -146,69 +179,30 @@ export default function CartPageClient() {
             </header>
             <div className="p-5">
               <div className="space-y-5 text-[20px] text-[#273142]">
-                <div className="flex justify-between gap-4">
-                  <span>Subtotal ({quantity > 0 ? 1 : 0} items)</span>
-                  <span className="font-black">{formatPrice(subtotal)}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Shipping</span>
-                  <span className="inline-flex items-center gap-1 font-black text-[#0a9f4a]"><Icon name="truck" className="size-4" /> Free</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Tax</span>
-                  <span className="font-black">৳0.00</span>
-                </div>
+                <div className="flex justify-between gap-4"><span>Subtotal ({cart.count || 0} items)</span><span className="font-black">{formatPrice(subtotal)}</span></div>
+                <div className="flex justify-between gap-4"><span>Shipping</span><span className="inline-flex items-center gap-1 font-black text-[#0a9f4a]"><Icon name="truck" className="size-4" /> Free</span></div>
+                <div className="flex justify-between gap-4"><span>Tax</span><span className="font-black">৳0.00</span></div>
               </div>
-              <div className="mt-6 flex justify-between border-t border-[#cfd5df] pt-6 text-[30px] font-black">
-                <span>Total</span>
-                <span>{formatPrice(subtotal)}</span>
-              </div>
+              <div className="mt-6 flex justify-between border-t border-[#cfd5df] pt-6 text-[30px] font-black"><span>Total</span><span>{formatPrice(subtotal)}</span></div>
 
-              <button type="button" className="mt-8 flex h-[60px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[20px] font-black text-white shadow-[0_14px_28px_rgba(239,51,56,0.22)] transition hover:bg-[#111827]">
-                <Icon name="card" />
-                Secure Checkout
-                <Icon name="arrowRight" />
-              </button>
+              <Link href="/checkout" className="mt-8 flex h-[60px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[20px] font-black text-white shadow-[0_14px_28px_rgba(239,51,56,0.22)] transition hover:bg-[#111827]">
+                <Icon name="card" /> Secure Checkout <Icon name="arrowRight" />
+              </Link>
 
               <div className="mt-7 flex h-[54px] items-center justify-center gap-3 rounded-[8px] bg-[#f8fafc] text-[15px] font-semibold text-[#4b5563]">
-                <Icon name="lock" className="size-5 text-emerald-500" />
-                256-bit SSL Secured Checkout
+                <Icon name="lock" className="size-5 text-emerald-500" /> 256-bit SSL Secured Checkout
               </div>
-
               <p className="mt-7 text-center text-[15px] font-medium text-[#4b5563]">We accept</p>
               <div className="mt-4 rounded-[8px] border border-[#e5e7eb] bg-white p-3">
                 <p className="mb-3 text-[11px] font-bold text-[#6b7280]">Payment Channels</p>
                 <div className="grid grid-cols-4 gap-2">
                   {paymentLabels.map((label) => (
-                    <span key={label} className="grid h-9 place-items-center rounded-[4px] border border-[#dfe5ec] bg-[#f8fafc] text-[10px] font-black text-[#273142]">
-                      {label}
-                    </span>
+                    <span key={label} className="grid h-9 place-items-center rounded-[4px] border border-[#dfe5ec] bg-[#f8fafc] text-[10px] font-black text-[#273142]">{label}</span>
                   ))}
                 </div>
               </div>
             </div>
           </aside>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1500px] bg-[#f8fafc] px-4 py-16 text-center sm:px-6 lg:px-8 xl:px-10">
-        <h2 className="text-[28px] font-black tracking-[-0.03em]">Why Choose <span className="text-[#ef3338]">JPSPARE?</span></h2>
-        <p className="mt-3 text-[15px] text-[#6b7280]">Genuine Japanese automotive parts with comprehensive service guarantee</p>
-        <div className="mt-10 grid grid-cols-4 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
-          {[
-            ["award", "Authentic Parts", "Genuine Japanese auto parts"],
-            ["shield", "Warranty", "Comprehensive coverage"],
-            ["truck", "Fast Delivery", "Quick shipping nationwide"],
-            ["lock", "Secure Payment", "SSL encrypted checkout"],
-          ].map(([icon, title, body]) => (
-            <article key={title} className="rounded-[10px] border border-[#dfe5ec] bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(239,51,56,0.1)]">
-              <span className="mx-auto grid size-14 place-items-center rounded-[12px] bg-[#fff1f1] text-[#ef3338]">
-                <Icon name={icon} className="size-7" />
-              </span>
-              <h3 className="mt-6 text-[17px] font-black">{title}</h3>
-              <p className="mt-2 text-[13px] text-[#6b7280]">{body}</p>
-            </article>
-          ))}
         </div>
       </section>
     </main>
