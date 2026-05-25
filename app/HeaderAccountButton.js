@@ -17,14 +17,17 @@ export default function HeaderAccountButton() {
   useEffect(() => {
     const syncAuthRoute = async () => {
       try {
-        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        const response = await fetch("/api/auth/me", {
+          cache: "no-store",
+          credentials: "include",
+        });
         if (response.ok) {
-          localStorage.setItem("jpspare-auth", "true");
           setHref("/account");
           return;
         }
       } catch {}
-      setHref(localStorage.getItem("jpspare-auth") === "true" ? "/account" : "/signin");
+      localStorage.removeItem("jpspare-auth");
+      setHref("/signin");
     };
 
     syncAuthRoute();

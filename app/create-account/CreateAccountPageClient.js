@@ -65,10 +65,11 @@ export default function CreateAccountPageClient() {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(form),
     });
     if (response.ok) {
-      localStorage.setItem("jpspare-auth", "true");
+      localStorage.removeItem("jpspare-auth");
       window.dispatchEvent(new Event("jpspare-auth-change"));
       router.push("/account");
     } else {

@@ -109,7 +109,10 @@ export default function DashboardPageClient() {
   useEffect(() => {
     let active = true;
     async function loadAccount() {
-      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      const response = await fetch("/api/auth/me", {
+        cache: "no-store",
+        credentials: "include",
+      });
       if (!response.ok) {
         localStorage.removeItem("jpspare-auth");
         window.dispatchEvent(new Event("jpspare-auth-change"));
@@ -117,7 +120,10 @@ export default function DashboardPageClient() {
         return;
       }
       const data = await response.json();
-      const ordersResponse = await fetch("/api/orders", { cache: "no-store" });
+      const ordersResponse = await fetch("/api/orders", {
+        cache: "no-store",
+        credentials: "include",
+      });
       const ordersData = ordersResponse.ok ? await ordersResponse.json() : { orders: [] };
       if (active) {
         setCustomer(data.customer);
@@ -142,7 +148,10 @@ export default function DashboardPageClient() {
   }, [orders]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
     localStorage.removeItem("jpspare-auth");
     window.dispatchEvent(new Event("jpspare-auth-change"));
     router.push("/signin");

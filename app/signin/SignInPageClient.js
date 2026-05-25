@@ -53,10 +53,11 @@ export default function SignInPageClient() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       if (response.ok) {
-        localStorage.setItem("jpspare-auth", "true");
+        localStorage.removeItem("jpspare-auth");
         window.dispatchEvent(new Event("jpspare-auth-change"));
         router.push("/account");
       } else {
