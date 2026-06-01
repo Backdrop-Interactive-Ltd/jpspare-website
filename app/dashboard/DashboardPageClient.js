@@ -105,30 +105,47 @@ export default function DashboardPageClient() {
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
     async function loadAccount() {
-      const response = await fetch("/api/auth/me", {
-        cache: "no-store",
-        credentials: "include",
-      });
-      if (!response.ok) {
-        localStorage.removeItem("jpspare-auth");
-        window.dispatchEvent(new Event("jpspare-auth-change"));
-        router.push("/signin");
-        return;
-      }
-      const data = await response.json();
-      const ordersResponse = await fetch("/api/orders", {
-        cache: "no-store",
-        credentials: "include",
-      });
-      const ordersData = ordersResponse.ok ? await ordersResponse.json() : { orders: [] };
-      if (active) {
-        setCustomer(data.customer);
-        setOrders(ordersData.orders || []);
-        setLoading(false);
+      try {
+        setError("");
+        const response = await fetch("/api/auth/me", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (!response.ok) {
+          localStorage.removeItem("jpspare-auth");
+          window.dispatchEvent(new Event("jpspare-auth-change"));
+          router.push("/signin");
+          return;
+        }
+        const data = await response.json();
+        const ordersResponse = await fetch("/api/orders", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (ordersResponse.status === 401) {
+          localStorage.removeItem("jpspare-auth");
+          window.dispatchEvent(new Event("jpspare-auth-change"));
+          router.push("/signin");
+          return;
+        }
+        const ordersData = ordersResponse.ok ? await ordersResponse.json() : { orders: [] };
+        if (active) {
+          setCustomer(data.customer);
+          setOrders(ordersData.orders || []);
+        }
+      } catch {
+        if (active) {
+          setError("Unable to load account data right now.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     }
     loadAccount();
@@ -146,6 +163,9 @@ export default function DashboardPageClient() {
       { icon: "trend", value: `৳${totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, label: "Total Spent", helper: "Lifetime investment", tone: "red" },
     ];
   }, [orders]);
+
+  const customerFullName = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ").trim();
+  const customerDisplayName = customerFullName || customer?.email || "JPSPARE Member";
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", {
@@ -188,11 +208,12 @@ export default function DashboardPageClient() {
 
           <h1 className="text-[58px] font-black leading-tight tracking-[-0.04em] text-[#111827] max-sm:text-[38px]">
             Welcome Back,
-            <span className="block text-[#df171d]">{loading ? "..." : customer?.name || "JPSPARE Member"}</span>
+            <span className="block text-[#df171d]">{loading ? "..." : customerDisplayName}</span>
           </h1>
           <p className="mx-auto mt-8 max-w-[820px] text-[22px] leading-8 text-[#4b5563] max-sm:text-[17px]">
             Manage your orders, track shipments, and access premium Japanese auto parts
           </p>
+          {error ? <p className="mx-auto mt-4 max-w-[820px] text-[15px] font-bold text-[#df171d]">{error}</p> : null}
         </div>
 
         <div className="relative z-10 mx-auto mt-24 grid max-w-[1220px] gap-8 md:grid-cols-3">

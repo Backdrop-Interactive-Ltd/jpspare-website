@@ -21,19 +21,42 @@ export default function AccountOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
     async function loadOrders() {
-      const response = await fetch("/api/orders", { cache: "no-store" });
-      if (response.status === 401) {
-        router.push("/signin");
-        return;
+      try {
+        setError("");
+        const response = await fetch("/api/orders", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (response.status === 401) {
+          router.push("/signin");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Unable to load orders");
+        }
+        const data = await response.json();
+        if (active) {
+          setOrders(data.orders || []);
+        }
+      } catch {
+        if (active) {
+          setError("Unable to load orders right now.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-      const data = response.ok ? await response.json() : { orders: [] };
-      setOrders(data.orders || []);
-      setLoading(false);
     }
     loadOrders();
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   return (
@@ -48,6 +71,7 @@ export default function AccountOrdersPage() {
 
         <div className="mt-10 overflow-hidden rounded-[12px] border border-[#dfe5ec] bg-white shadow-sm">
           {loading ? <p className="p-8 text-center font-bold text-[#667085]">Loading orders...</p> : null}
+          {!loading && error ? <p className="p-8 text-center font-bold text-[#df171d]">{error}</p> : null}
           {!loading && !orders.length ? <p className="p-8 text-center font-bold text-[#667085]">No orders yet.</p> : null}
           <div className="divide-y divide-[#eef0f3]">
             {orders.map((order) => (
