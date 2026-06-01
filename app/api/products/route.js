@@ -5,9 +5,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request) {
+  let hasProductFilters = false;
+
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    hasProductFilters = ["category", "q", "search", "status", "brand"].some((key) => searchParams.has(key));
     const where = {
       status: "ACTIVE",
       ...(category ? { category: { slug: category } } : {}),
@@ -20,8 +23,16 @@ export async function GET(request) {
       take: 50,
     });
 
-    return Response.json({ items: items.length ? items : fallbackProducts, fallback: items.length === 0 });
+    if (items.length) {
+      return Response.json({ items, fallback: false });
+    }
+
+    return Response.json({ items: hasProductFilters ? [] : fallbackProducts, fallback: !hasProductFilters });
   } catch {
+    if (hasProductFilters) {
+      return Response.json({ items: [], fallback: false, error: "Unable to load products" }, { status: 500 });
+    }
+
     return Response.json({ items: fallbackProducts, fallback: true });
   }
 }
