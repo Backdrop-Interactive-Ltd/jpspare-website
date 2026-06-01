@@ -59,7 +59,8 @@ function normalizeCartItems(cart) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const customer = await getCustomerSession();
+    const session = await getCustomerSession();
+    const customer = session?.customer || null;
     const cart = await getOrCreateActiveCart();
     const items = normalizeCartItems(cart);
 
