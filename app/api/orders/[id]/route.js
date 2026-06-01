@@ -6,11 +6,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(_request, { params }) {
-  const customer = await getCustomerSession();
-  if (!customer) {
+  const session = await getCustomerSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const customer = session.customer;
   const { id } = await params;
   const order = await getOrderWithDetails({
     customerId: customer.id,

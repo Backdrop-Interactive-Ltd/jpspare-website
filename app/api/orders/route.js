@@ -7,11 +7,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const customer = await getCustomerSession();
-  if (!customer) {
+  const session = await getCustomerSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const customer = session.customer;
   const orders = await prisma.order.findMany({
     where: { customerId: customer.id },
     include: { items: true, payments: { orderBy: { createdAt: "desc" } } },
