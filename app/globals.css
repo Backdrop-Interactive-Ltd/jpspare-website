@@ -198,6 +198,12 @@ select {
   transform: scale(0.94);
 }
 
+.top-deal-text {
+  font-family: var(--font-top-deal), Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .header-search-zoom {
   transition:
     transform 240ms ease,

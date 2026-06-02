@@ -18,13 +18,13 @@ function Field({ label, children, hint }) {
 }
 
 function inputClass(readOnly) {
-  return `h-12 w-full rounded-xl border border-[#d0d5dd] bg-white px-4 text-sm font-semibold text-[#111827] outline-none transition focus:border-[#ef3338] focus:ring-4 focus:ring-red-100 ${
+  return `h-12 w-full rounded-xl border border-[#d0d5dd] bg-white px-4 text-sm font-semibold text-[#111827] outline-none transition hover:border-[#ff6268] focus:border-[#ff6268] focus:ring-0 ${
     readOnly ? "cursor-not-allowed bg-[#f2f4f7] text-[#667085]" : ""
   }`;
 }
 
 function textareaClass(readOnly) {
-  return `min-h-[110px] w-full rounded-xl border border-[#d0d5dd] bg-white px-4 py-3 text-sm font-semibold text-[#111827] outline-none transition focus:border-[#ef3338] focus:ring-4 focus:ring-red-100 ${
+  return `min-h-[110px] w-full rounded-xl border border-[#d0d5dd] bg-white px-4 py-3 text-sm font-semibold text-[#111827] outline-none transition hover:border-[#ff6268] focus:border-[#ff6268] focus:ring-0 ${
     readOnly ? "cursor-not-allowed bg-[#f2f4f7] text-[#667085]" : ""
   }`;
 }
@@ -47,7 +47,7 @@ function Toggle({ label, checked, onChange, disabled }) {
   );
 }
 
-function SectionCard({ eyebrow, title, description, children }) {
+function SectionCard({ eyebrow, title, description, action, children }) {
   return (
     <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -56,6 +56,7 @@ function SectionCard({ eyebrow, title, description, children }) {
           <h3 className="mt-1 text-xl font-black text-[#111827]">{title}</h3>
           {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-[#667085]">{description}</p> : null}
         </div>
+        {action}
       </div>
       <div className="mt-6">{children}</div>
     </section>
@@ -225,7 +226,7 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     }));
   }
 
-  async function saveCms() {
+  async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
     setMessage("");
@@ -239,7 +240,7 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Unable to save homepage CMS");
       setCms(payload.cms);
-      setMessage("Homepage CMS saved successfully.");
+      setMessage(`${label} saved successfully.`);
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -259,33 +260,58 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
             </p>
             {!canManage ? <p className="mt-3 text-sm font-black text-[#ef3338]">Read-only mode for your role.</p> : null}
           </div>
-          <button
-            type="button"
-            onClick={saveCms}
-            disabled={saving || readOnly}
-            className="h-12 rounded-xl bg-[#ef3338] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Homepage"}
-          </button>
         </div>
         {message ? <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">{message}</p> : null}
       </div>
 
-      <SectionCard eyebrow="Announcement" title="Top Announcement Bar" description="Controls the rotating promo bar above the storefront header.">
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Toggle label="Enable announcement bar" checked={cms.announcement.enabled !== false} disabled={readOnly} onChange={(value) => setNested("announcement", "enabled", value)} />
-          <Field label="Primary text">
-            <input value={cms.announcement.text || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "text", event.target.value)} className={inputClass(readOnly)} />
-          </Field>
-          <Field label="Secondary rotating text">
-            <input value={cms.announcement.secondaryText || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "secondaryText", event.target.value)} className={inputClass(readOnly)} />
-          </Field>
-          <Field label="Button text">
-            <input value={cms.announcement.buttonText || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "buttonText", event.target.value)} className={inputClass(readOnly)} placeholder="Optional" />
-          </Field>
-          <Field label="Button link">
-            <input value={cms.announcement.buttonLink || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "buttonLink", event.target.value)} className={inputClass(readOnly)} />
-          </Field>
+      <SectionCard
+        eyebrow="Announcement"
+        title="Top Deal Header"
+        description="Controls the rotating promo bar above the storefront header."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Top Deal Header")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Top Header"}
+          </button>
+        }
+      >
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr_220px]">
+            <Field label="Primary text">
+              <input value={cms.announcement.text || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "text", event.target.value)} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Secondary rotating text">
+              <input value={cms.announcement.secondaryText || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "secondaryText", event.target.value)} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Time interval">
+              <div className={`flex h-12 overflow-hidden rounded-xl border border-[#d0d5dd] bg-white transition hover:border-[#ff6268] focus-within:border-[#ff6268] ${readOnly ? "bg-[#f2f4f7]" : ""}`}>
+                <input
+                  type="number"
+                  min="2.5"
+                  max="30"
+                  step="0.5"
+                  value={(Number(cms.announcement.rotationIntervalMs) || 10450) / 1000}
+                  disabled={readOnly}
+                  onChange={(event) => setNested("announcement", "rotationIntervalMs", Math.round(Number(event.target.value) * 1000))}
+                  className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm font-semibold text-[#111827] outline-none disabled:cursor-not-allowed disabled:text-[#667085]"
+                />
+                <span className="grid w-12 place-items-center border-l border-[#d0d5dd] bg-[#f8fafc] text-xs font-black text-[#667085]">sec</span>
+              </div>
+            </Field>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+            <Field label="Button text">
+              <input value={cms.announcement.buttonText || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "buttonText", event.target.value)} className={inputClass(readOnly)} placeholder="Optional" />
+            </Field>
+            <Field label="Button link">
+              <input value={cms.announcement.buttonLink || ""} disabled={readOnly} onChange={(event) => setNested("announcement", "buttonLink", event.target.value)} className={inputClass(readOnly)} />
+            </Field>
+            <Toggle label="Enabled" checked={cms.announcement.enabled !== false} disabled={readOnly} onChange={(value) => setNested("announcement", "enabled", value)} />
+          </div>
         </div>
       </SectionCard>
 
