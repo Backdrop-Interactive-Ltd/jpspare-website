@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import TrustStrip from "../TrustStrip";
 
 const paymentLabels = ["VISA", "MC", "AMEX", "bKash", "Nagad", "Rocket", "DBBL", "City", "MTB", "AB", "Upay", "SSL"];
 
@@ -205,6 +206,7 @@ export default function CartPageClient() {
           </aside>
         </div>
       </section>
+      <TrustStrip />
     </main>
   );
 }

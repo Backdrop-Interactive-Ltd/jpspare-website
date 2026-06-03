@@ -41,47 +41,6 @@ const heroSlides = [
   { src: "/jpspare-hero-slide-3.jpg", alt: "Mobil 1 synthetic motor oil brand banner" },
 ];
 
-const trustItems = [
-  {
-    title: "Authentic Guarantee",
-    text: "100% genuine OEM parts with authenticity certificates",
-    points: ["Verified", "coverage", "Quality inspection certified"],
-    icon: "shield",
-    popular: true,
-  },
-  {
-    title: "Fast Shipping",
-    text: "Express nationwide delivery with real-time tracking",
-    points: ["Free shipping on ৳4000+", "Express delivery available", "150+ countries served"],
-    icon: "car",
-  },
-  {
-    title: "Expert Support",
-    text: "24/7 technical assistance from automotive specialists",
-    points: ["Round-the-clock support", "Certified technicians", "Installation guidance"],
-    icon: "headphones",
-  },
-  {
-    title: "Easy Returns",
-    text: "30-day hassle-free returns with free return shipping",
-    points: ["30-day return policy", "Free return labels", "Quick refund processing"],
-    icon: "rotate",
-  },
-  {
-    title: "Same-Day Processing",
-    text: "Orders processed within hours for faster delivery",
-    points: ["Same-day processing", "Real-time inventory", "Priority handling"],
-    icon: "clock",
-  },
-  {
-    title: "Best Price Promise",
-    text: "Competitive pricing with price matching guarantee",
-    points: ["Price match guarantee", "Member discounts", "Volume pricing available"],
-    icon: "award",
-    popular: true,
-  },
-];
-
 const carPartCategories = [
   {
     title: "BRAKES",
@@ -250,6 +209,15 @@ const categoryShowcase = [
       { label: "Body Parts", crop: "bg-[-1554px_-325px]" },
       { label: "Battery", crop: "bg-[-1294px_-492px]" },
       { label: "Wiper Blade", crop: "bg-[-1164px_-248px]" },
+    ],
+  },
+  {
+    title: "Service Essentials",
+    items: [
+      { label: "Air Filter", crop: "bg-[-1038px_-440px]" },
+      { label: "Oil Filter", crop: "bg-[-936px_-502px]" },
+      { label: "Fuel Pump", crop: "bg-[-1510px_-360px]" },
+      { label: "Horn", crop: "bg-[-1248px_-246px]" },
     ],
   },
 ];
@@ -465,27 +433,29 @@ function slugify(value) {
 
 function CategoryCard({ category }) {
   return (
-    <article className={`group/card min-h-[134px] rounded-[7px] border border-[#eeeeee] bg-white p-3.5 transition duration-200 hover:-translate-y-0.5 ${categoryTone(category.tone)}`}>
+    <article className={`group/card min-h-[134px] rounded-[10px] border border-[#e7ebf0] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.035)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#fffdfd] ${categoryTone(category.tone)}`}>
       <div className="flex items-start gap-3">
-        <span className={`grid size-8 shrink-0 place-items-center rounded-[7px] ${iconTone(category.tone)}`}>
+        <span className={`grid size-9 shrink-0 place-items-center rounded-[9px] ring-1 ring-black/[0.03] ${iconTone(category.tone)}`}>
           <Icon name={category.icon} className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <a href={`#${slugify(category.title)}`} className="block text-[14px] font-black leading-[1.1] text-[#111827] transition group-hover/card:text-current">
             {category.title}
           </a>
-          <div className="mt-3 h-0.5 w-0 bg-current transition-all duration-200 group-hover/card:w-12" />
+          <div className="mt-2.5 h-0.5 w-6 rounded-full bg-[#ef3338]/70 transition-all duration-200 group-hover/card:w-14 group-hover/card:bg-current" />
         </div>
       </div>
       {category.links.length > 0 && (
-        <ul className="mt-3 space-y-1.5 text-[12.5px] font-medium leading-4 text-[#1f2937]">
+        <ul className="mt-4 grid gap-1.5 text-[12.5px] font-semibold leading-4 text-[#334155]">
           {category.links.map((link) => (
             <li key={link}>
               <a
                 href={`#${slugify(link)}`}
-                className="flex items-center gap-1.5 rounded px-1.5 py-1 transition hover:bg-[#fff1f1] hover:text-current"
+                className="flex items-center gap-2 rounded-[7px] px-2 py-1.5 transition hover:bg-[#fff1f1] hover:text-[#ef3338]"
               >
-                <span className="size-2 rounded-full border border-current opacity-60" />
+                <span className="grid size-3 place-items-center rounded-full border border-[#ef3338]/30 bg-[#fff5f5]">
+                  <span className="size-1 rounded-full bg-[#ef3338]" />
+                </span>
                 {link}
               </a>
             </li>
@@ -717,30 +687,37 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
 
 function CarAccessoriesMegaMenu() {
   return (
-    <div className="invisible absolute left-[calc(50%-696px)] top-full z-[120] min-h-[569px] w-[1272px] translate-y-0 rounded-b-[10px] bg-white px-6 py-6 text-[#111827] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 max-xl:left-6 max-xl:w-[calc(100vw-48px)] max-lg:hidden">
-      <div className="flex items-center gap-3">
-        <span className="grid size-8 place-items-center rounded-[8px] bg-[#ffefef] text-[#ef3338]">
-          <Icon name="car" className="size-4" />
+    <div className="invisible absolute left-1/2 top-full z-[120] w-[1450px] -translate-x-1/2 overflow-hidden rounded-b-[14px] border border-[#f0d5d8] bg-[#fbfcfd] text-[#111827] opacity-0 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-2xl:left-4 max-2xl:w-[calc(100vw-32px)] max-2xl:translate-x-0 max-lg:hidden">
+      <div className="flex min-h-[86px] items-center justify-between gap-6 border-b border-[#f0d5d8] bg-[linear-gradient(90deg,#ffffff_0%,#fff7f7_62%,#fff0f0_100%)] px-7">
+        <div className="flex items-center gap-4">
+          <span className="grid size-11 place-items-center rounded-[12px] bg-[#ef3338] text-white shadow-[0_14px_26px_rgba(239,51,56,0.22)]">
+            <Icon name="car" className="size-5" />
+          </span>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#ef3338]">Browse Collection</p>
+            <h3 className="mt-1 text-[22px] font-black leading-none tracking-[-0.03em]">Car Accessories</h3>
+          </div>
+        </div>
+        <span className="hidden rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00] xl:inline-flex">
+          Interior • Exterior • Care • Lifestyle
         </span>
-        <div>
-          <h3 className="text-[18px] font-black leading-none">Car Accessories</h3>
-          <span className="mt-3 block h-0.5 w-12 bg-[#ef3338]" />
-        </div>
       </div>
-      <div className="mt-5 grid grid-cols-4 gap-4">
-        {carAccessorySubcategories.map((category) => (
-          <CategoryCard key={category.title} category={category} />
-        ))}
-      </div>
-      <div className="mt-5 flex items-center justify-between rounded-[10px] border border-[#ffd9d9] bg-[#fff5f5] p-4">
-        <div>
-          <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#ef3338]">Accessories Collection</p>
-          <p className="mt-1 text-[15px] font-bold text-[#111827]">Browse interior, exterior, electronics, care and lifestyle items.</p>
+      <div className="p-7">
+        <div className="grid grid-cols-4 gap-4">
+          {carAccessorySubcategories.map((category) => (
+            <CategoryCard key={category.title} category={category} />
+          ))}
         </div>
-        <a href="/car-accessories" className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d3191d]">
-          View All Accessories
-          <Icon name="arrow" className="size-4" />
-        </a>
+        <div className="mt-5 flex items-center justify-between gap-6 rounded-[12px] border border-[#ffd6d6] bg-white p-4 shadow-[0_12px_28px_rgba(239,51,56,0.06)]">
+          <div className="min-w-0">
+            <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#ef3338]">Accessories Collection</p>
+            <p className="mt-1 text-[15px] font-bold text-[#111827]">Browse interior, exterior, electronics, care and lifestyle items.</p>
+          </div>
+          <a href="/car-accessories" className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[10px] bg-[#ef3338] px-6 text-[14px] font-black text-white shadow-[0_14px_24px_rgba(239,51,56,0.2)] transition hover:bg-[#111827]">
+            View All Accessories
+            <Icon name="arrow" className="size-4" />
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -910,49 +887,6 @@ function Hero() {
   );
 }
 
-function TrustStrip() {
-  return (
-    <section id="about" className="border-b border-[#e5e7eb] bg-[#f7f8fa] py-6">
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-6 gap-8 px-4 text-[#111827] sm:px-6 lg:px-8 xl:px-10 max-xl:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
-        {trustItems.map((item) => (
-          <article
-            key={item.title}
-            tabIndex={0}
-            className={`group/trust relative min-h-[190px] rounded-[10px] border bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-1 hover:border-[#5d1f1f] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:-translate-y-1 focus:border-[#5d1f1f] focus:shadow-[0_16px_34px_rgba(220,38,38,0.12)] focus:outline-none ${
-              item.popular ? "border-[#5d1f1f]" : "border-[#dfe5ec]"
-            }`}
-          >
-            {item.popular ? (
-              <span className="absolute -right-2 -top-2 rounded-full bg-[#ef3338] px-2.5 py-1 text-[11px] font-black leading-none text-white shadow-[0_8px_18px_rgba(239,51,56,0.24)]">
-                Popular
-              </span>
-            ) : null}
-            <span
-              className={`grid size-9 shrink-0 place-items-center rounded-[10px] transition duration-200 ${
-                item.popular
-                  ? "bg-[#ffe1e1] text-[#ef3338]"
-                  : "bg-[#f3f4f7] text-[#334155] group-hover/trust:bg-[#ffe8e8] group-hover/trust:text-[#ef3338] group-focus/trust:bg-[#ffe8e8] group-focus/trust:text-[#ef3338]"
-              }`}
-            >
-              <Icon name={item.icon} className="size-4.5" />
-            </span>
-            <h2 className="mt-3 text-[15px] font-black leading-[1.2] text-[#111827]">{item.title}</h2>
-            <p className="mt-2 text-[12.5px] leading-[1.5] text-[#4b5563]">{item.text}</p>
-            <ul className="mt-3 space-y-1.5">
-              {item.points.map((point) => (
-                <li key={point} className="flex items-center gap-1.5 text-[11px] font-medium leading-snug text-[#6b7280]">
-                  <Icon name="check" className="size-3 shrink-0 text-[#10b981]" />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function HeroCategorySlider() {
   return (
     <section className="border-b border-[#f3d7df] bg-white py-3">
@@ -980,19 +914,8 @@ function HeroCategorySlider() {
 
 function CategoryShowcase() {
   return (
-    <section id="categories" className="bg-white py-20 max-sm:py-14">
-      <div className="mx-auto mb-14 w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 text-center max-sm:mb-10">
-        <div className="soft-light-sweep inline-flex h-[44px] items-center gap-2 rounded-[10px] bg-[#ef3338] px-7 text-[14px] font-black uppercase tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)] max-sm:h-auto max-sm:px-5 max-sm:py-3 max-sm:text-[12px]">
-          <span className="text-[17px]">☆</span>
-          Handpicked Category
-        </div>
-        <h2 className="mt-8 text-[48px] font-black leading-none tracking-[-0.06em] text-[#111827] max-lg:text-[40px] max-sm:text-[30px]">
-          <span>Organized By Category <span className="text-[#df2026]">For</span></span>
-          <span className="block text-[#df2026]">Easy Shopping</span>
-        </h2>
-        <span className="mx-auto mt-7 block h-1 w-24 rounded-full bg-[#ef3338]" />
-      </div>
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-4 gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 max-xl:grid-cols-2 max-sm:grid-cols-1">
+    <section id="categories" className="bg-white py-10 max-sm:py-8">
+      <div className="mx-auto grid w-full max-w-[1880px] grid-cols-5 gap-4 px-3 sm:px-4 lg:px-5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
         {categoryShowcase.map((group) => (
           <article key={group.title} className="rounded-[6px] border border-[#dfe4ea] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#f7b1c9] hover:shadow-[0_14px_28px_rgba(236,0,116,0.09)]">
             <h2 className="mb-[14px] text-[16px] font-black leading-5 text-[#ec0074]">{group.title}</h2>
@@ -1193,7 +1116,6 @@ export default function Home() {
       <Header />
       <Hero />
       <HeroCategorySlider />
-      <TrustStrip />
       <CategoryShowcase />
       <ProductTabs />
       <ServiceBanner />

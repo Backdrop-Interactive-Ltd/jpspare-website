@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/db";
 import { CATALOG_MANAGE_ROLES, CATALOG_READ_ROLES, categoryInclude, serializeCategory } from "../../../../lib/admin/catalogPayload";
 import { requireAdminPage } from "../../../../lib/auth/admin";
 import { hasRole } from "../../../../lib/auth/rbac";
+import SeedFrontendCategoriesButton from "./SeedFrontendCategoriesButton";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -101,6 +102,8 @@ export default async function AdminCategoriesPage({ searchParams }) {
         </select>
         <button className="h-11 rounded-xl bg-[#111827] px-5 text-sm font-black text-white">Filter</button>
       </form>
+
+      {canManage ? <SeedFrontendCategoriesButton /> : null}
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">

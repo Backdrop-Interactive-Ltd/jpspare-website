@@ -7,10 +7,7 @@ export default function DynamicLogoMark({ logo }) {
   const [logoSrc, setLogoSrc] = useState(logo || "/jpspare-logo-wide-clean.png");
 
   useEffect(() => {
-    if (logo) {
-      setLogoSrc(logo);
-      return undefined;
-    }
+    if (logo) return undefined;
 
     let mounted = true;
 
@@ -29,8 +26,8 @@ export default function DynamicLogoMark({ logo }) {
   }, [logo]);
 
   return (
-    <Link href="/" className="jpspare-logo-sweep block h-16 w-[178px] shrink-0 transition-transform duration-300 hover:scale-[1.035]" aria-label="JPSPARE home">
-      <img src={logoSrc} alt="JPSPARE" className="h-full w-full object-contain" />
+    <Link href="/" className="header-logo-mark relative block h-[72px] w-[216px] shrink-0 overflow-hidden rounded-[8px] transition-transform duration-300 max-lg:h-16 max-lg:w-[188px] max-sm:h-[58px] max-sm:w-[168px]" aria-label="JPSPARE home">
+      <img src={logo || logoSrc} alt="JPSPARE" className="h-full w-full object-contain" />
     </Link>
   );
 }

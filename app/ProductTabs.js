@@ -191,6 +191,54 @@ export function ProductCardInfo({ product, productUrl, onAdd, isAdded = false })
   );
 }
 
+function FeaturedOfferBanners() {
+  return (
+    <div className="mb-14 grid gap-4 max-sm:mb-9 lg:grid-cols-2">
+      <a href="/combo-package" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#fff3da_0%,#ffe4b7_50%,#fff4df_100%)] px-8 py-7 shadow-[0_12px_30px_rgba(245,158,11,0.10)] ring-1 ring-[#f7d95f]/45 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(245,158,11,0.18)] max-sm:min-h-[220px] max-sm:px-5">
+        <div className="relative z-10 max-w-[58%] max-sm:max-w-[72%]">
+          <p className="text-[15px] font-black uppercase tracking-[0.12em] text-[#242424]">Exclusive</p>
+          <h3 className="mt-1 text-[42px] font-black uppercase leading-[0.9] tracking-[-0.04em] text-[#ef3338] max-xl:text-[34px] max-sm:text-[30px]">
+            Combo Offers!
+          </h3>
+          <p className="mt-3 text-[20px] font-black text-[#2b2529] max-sm:text-[16px]">Save More, For Your Car</p>
+        </div>
+        <div className="absolute right-6 top-5 z-10 flex gap-5 max-sm:right-3 max-sm:top-10 max-sm:gap-2">
+          <span className="grid h-[118px] w-[118px] place-items-center rounded-full bg-white/70 text-center text-[12px] font-black text-[#ef3338] shadow-[0_12px_26px_rgba(17,24,39,0.12)] ring-1 ring-white/80 max-sm:h-[92px] max-sm:w-[92px]">
+            Engine Oil<br />Filter<br />Combo
+          </span>
+          <span className="grid h-[118px] w-[118px] place-items-center rounded-full bg-white/70 text-center text-[12px] font-black text-[#ef3338] shadow-[0_12px_26px_rgba(17,24,39,0.12)] ring-1 ring-white/80 max-sm:h-[92px] max-sm:w-[92px]">
+            Flamingo<br />Car Care<br />Combo
+          </span>
+        </div>
+        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_60%_42%,rgba(255,255,255,0.95),transparent_22%),radial-gradient(circle_at_85%_72%,rgba(239,51,56,0.13),transparent_30%)]" />
+      </a>
+
+      <a href="/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
+        <div className="relative z-10 ml-auto max-w-[47%] text-right max-sm:max-w-[58%]">
+          <p className="text-[22px] font-black uppercase leading-none tracking-[-0.03em] text-[#2b2529] max-sm:text-[18px]">Clean & Shine</p>
+          <h3 className="mt-1 text-[44px] font-black uppercase leading-[0.88] tracking-[0.02em] text-white max-xl:text-[36px] max-sm:text-[30px]">
+            Car Care
+          </h3>
+          <p className="mt-1 text-[35px] font-black uppercase leading-none tracking-[0.16em] text-[#2b2529] max-xl:text-[27px] max-sm:text-[22px]">Essentials</p>
+        </div>
+        <div className="absolute left-8 top-7 z-10 flex items-end gap-2 max-sm:left-4 max-sm:top-12">
+          {["SOFT99", "3M", "Flamingo", "Bullson"].map((brand) => (
+            <span key={brand} className="grid h-12 min-w-[74px] place-items-center rounded-[5px] bg-white px-2 text-[12px] font-black text-[#ef3338] shadow-[0_8px_18px_rgba(17,24,39,0.12)] max-xl:min-w-[58px] max-xl:text-[10px] max-sm:h-10">
+              {brand}
+            </span>
+          ))}
+        </div>
+        <div className="absolute bottom-4 left-8 flex gap-2 max-sm:left-4">
+          {["/accessory-car-shampoo.jpeg", "/accessory-hard-wax.jpeg", "/accessory-ac-pro.jpeg", "/accessory-windshield-washer.jpeg"].map((image) => (
+            <span key={image} className="block size-14 rounded-[6px] bg-white bg-cover bg-center shadow-[0_8px_18px_rgba(17,24,39,0.18)] ring-1 ring-white/70 max-sm:size-12" style={{ backgroundImage: `url(${image})` }} />
+          ))}
+        </div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_78%,rgba(255,255,255,0.2),transparent_26%),radial-gradient(circle_at_76%_18%,rgba(255,255,255,0.18),transparent_24%)]" />
+      </a>
+    </div>
+  );
+}
+
 function TabIcon({ name }) {
   const common = "size-4";
 
@@ -285,7 +333,10 @@ export default function ProductTabs({ cmsProducts = [] }) {
   }
 
   return (
-    <section id="featured-products" className="bg-white pt-[72px] pb-16 max-sm:pt-10">
+    <section id="featured-products" className="bg-white pt-10 pb-16 max-sm:pt-8">
+      <div className="mx-auto w-full max-w-[1880px] px-3 sm:px-4 lg:px-5">
+        <FeaturedOfferBanners />
+      </div>
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="mx-auto mb-14 max-w-[980px] text-center max-sm:mb-9">
           <div className="inline-flex h-[44px] items-center gap-2 rounded-[10px] bg-[#ef3338] px-7 text-[14px] font-black uppercase tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)] max-sm:h-auto max-sm:px-5 max-sm:py-3 max-sm:text-[12px]">
@@ -297,24 +348,6 @@ export default function ProductTabs({ cmsProducts = [] }) {
             Premium Quality <span className="text-[#df2026]">Featured Premium Products</span>
           </h2>
           <span className="mx-auto mt-7 block h-1 w-24 rounded-full bg-[#ef3338]" />
-        </div>
-
-        <div className="mx-auto flex w-fit max-w-full items-center justify-start gap-3 overflow-x-auto rounded-full bg-[#fff6f6]/70 p-2 shadow-[0_12px_30px_rgba(220,38,38,0.08)] sm:justify-center">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-6 py-3 text-[15px] font-black leading-none tracking-[0.02em] transition max-sm:px-4 max-sm:text-[13px] ${
-                activeTab === tab
-                  ? "border-[#ef3338] bg-[#ef3338] text-white shadow-[0_14px_28px_rgba(220,38,38,0.24)]"
-                  : "border-[#ef3338]/35 bg-white/45 text-[#263755] hover:border-[#ef3338] hover:bg-white hover:text-[#df2026]"
-              }`}
-            >
-              <TabIcon name={tabIcons[tab]} />
-              {tab}
-            </button>
-          ))}
         </div>
 
         <div className="mt-12 grid grid-cols-4 gap-x-[24px] gap-y-[44px] max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:mt-7 max-sm:grid-cols-1 max-sm:gap-y-6">

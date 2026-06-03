@@ -219,12 +219,16 @@ select {
 
 .header-logo-mark {
   isolation: isolate;
-  transition: transform 240ms ease;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.16));
+  transition:
+    filter 220ms ease,
+    transform 240ms ease;
   transform-origin: center;
 }
 
 .header-logo-mark:hover,
 .header-logo-mark:focus-visible {
+  filter: drop-shadow(0 10px 20px rgba(239, 51, 56, 0.22));
   transform: scale(1.055);
 }
 
@@ -292,15 +296,15 @@ select {
 @keyframes eid-flash-blink {
   0%,
   100% {
-    opacity: 0.92;
-    transform: scale(0.92);
-    filter: drop-shadow(0 0 8px rgba(247, 217, 95, 0.72));
+    opacity: 0.9;
+    transform: scale(0.94);
+    filter: drop-shadow(0 0 5px rgba(247, 217, 95, 0.38));
   }
 
   50% {
     opacity: 1;
-    transform: scale(1.16);
-    filter: drop-shadow(0 0 12px rgba(247, 217, 95, 0.82));
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 10px rgba(247, 217, 95, 0.58));
   }
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import TrustStrip from "../TrustStrip";
 
 const paymentMethods = [
   { value: "CASH_ON_DELIVERY", title: "Cash on Delivery", detail: "Pay when your parts arrive" },
@@ -308,6 +309,7 @@ export default function CheckoutPageClient() {
           </aside>
         </form>
       </section>
+      <TrustStrip />
     </main>
   );
 }

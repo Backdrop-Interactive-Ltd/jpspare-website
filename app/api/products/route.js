@@ -10,10 +10,22 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    const query = (searchParams.get("q") || searchParams.get("search") || "").trim();
     hasProductFilters = ["category", "q", "search", "status", "brand"].some((key) => searchParams.has(key));
     const where = {
       status: "ACTIVE",
       ...(category ? { category: { slug: category } } : {}),
+      ...(query
+        ? {
+            OR: [
+              { title: { contains: query, mode: "insensitive" } },
+              { description: { contains: query, mode: "insensitive" } },
+              { sku: { contains: query, mode: "insensitive" } },
+              { category: { name: { contains: query, mode: "insensitive" } } },
+              { brand: { name: { contains: query, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
     };
 
     const items = await prisma.product.findMany({

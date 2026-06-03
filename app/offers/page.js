@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OffersBestSellingClient from "./OffersBestSellingClient";
 import TopDealBar from "../TopDealBar";
 import { Header } from "../page";
 
@@ -73,15 +74,10 @@ export default function OffersPage() {
     <>
       <TopDealBar />
       <Header />
-      <main className="bg-[#eef0f5] py-8 text-[#111827]">
-        <section className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 text-center">
-            <span className="inline-flex rounded-full bg-white px-5 py-2 text-[12px] font-black uppercase tracking-[0.16em] text-[#ef3338] shadow-sm">Latest Offers</span>
-            <h1 className="mt-4 text-[38px] font-black tracking-[-0.04em] max-sm:text-[30px]">
-              JPSPARE <span className="text-[#ef3338]">Deals</span>
-            </h1>
-          </div>
+      <main className="bg-[#eef0f5] text-[#111827]">
+        <OffersBestSellingClient />
 
+        <section className="mx-auto w-full max-w-[1180px] px-4 pb-10 sm:px-6 lg:px-8">
           <div className="grid grid-cols-3 gap-x-9 gap-y-12 max-lg:grid-cols-2 max-sm:grid-cols-1">
             {offers.map(([title, description, date, channel, accent, label], index) => (
               <article key={`${title}-${date}`} className="bg-white shadow-[0_8px_22px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,23,42,0.13)]">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { searchCatalog } from "../lib/searchCatalog";
 
 const vehicleMakes = [
   "Alfa Romeo",
@@ -22,6 +23,7 @@ const vehicleMakes = [
 
 const vehicleModels = ["GHIBLI", "Levante", "Quattroporte", "GranTurismo"];
 const vehicleYears = ["2020", "2021", "2022", "2023", "2024"];
+const vehicleSteps = ["Make", "Model", "Year", "Finish"];
 const searchPlaceholders = [
   "Search for authentic parts...",
   "Search for accessories...",
@@ -34,23 +36,25 @@ const searchPlaceholders = [
   "Search for engine oil...",
   "Search for detailing products...",
 ];
-const popularSearches = ["Brake Pads", "Oil Filters", "Spark Plugs", "Headlights", "Car Batteries", "Air Filters"];
-const recentSearches = ["Air Filters"];
-const quickCategories = [
-  { label: "Engine", icon: "🔧", tone: "bg-[#dbeafe] text-[#2563eb]" },
-  { label: "Brakes", icon: "🛑", tone: "bg-[#fee2e2] text-[#dc2626]" },
-  { label: "Electrical", icon: "⚡", tone: "bg-[#ffe4e6] text-[#e11d48]" },
-  { label: "Suspension", icon: "🚗", tone: "bg-[#dcfce7] text-[#16a34a]" },
+const popularSearchSignals = [
+  { label: "Brake Pads", searches: 98, purchases: 72 },
+  { label: "Oil Filters", searches: 92, purchases: 68 },
+  { label: "Spark Plugs", searches: 86, purchases: 61 },
+  { label: "Headlights", searches: 82, purchases: 54 },
+  { label: "Car Batteries", searches: 78, purchases: 58 },
+  { label: "Air Filters", searches: 74, purchases: 52 },
+  { label: "Engine Oil", searches: 72, purchases: 63 },
+  { label: "Brake Shoes", searches: 66, purchases: 49 },
+  { label: "Wiper Blades", searches: 63, purchases: 44 },
+  { label: "AC Filter", searches: 59, purchases: 47 },
+  { label: "Shock Absorber", searches: 57, purchases: 41 },
+  { label: "Car Perfume", searches: 54, purchases: 46 },
+  { label: "Tyres", searches: 52, purchases: 39 },
+  { label: "Car Shampoo", searches: 49, purchases: 42 },
+  { label: "Fuel Cleaner", searches: 46, purchases: 37 },
+  { label: "LED Bulbs", searches: 43, purchases: 34 },
 ];
-const searchProducts = [
-  { name: "AUTOGYM CAR CARE KIT", price: "৳10,500.00", tag: "Product", image: "/accessory-hard-wax.jpeg" },
-  { name: "Carall Eldran Rizer Car Perfume 200ML", price: "৳1,950.00", tag: "Product", image: "/accessory-luxe-air-freshener.jpeg" },
-  { name: "Flamingo AC Pro Air Conditioner Cleaner", price: "৳650.00", tag: "Product", image: "/accessory-ac-pro.jpeg" },
-  { name: "Kangaroo Car Shampoo 650ml", price: "৳720.00", tag: "Product", image: "/accessory-car-shampoo.jpeg" },
-  { name: "Premium Ceramic Brake Pad Set Toyota", price: "৳4,850.00", tag: "Product", image: "/accessory-wide-angle-holder.jpeg" },
-  { name: "Liqui Moly Engine Flush Plus - 300mL", price: "৳850.00", tag: "Product", image: "/accessory-windshield-washer.jpeg" },
-];
-
+const recentSearchStorageKey = "jpspare:recent-searches";
 function useTypewriterPlaceholder(texts) {
   const [textIndex, setTextIndex] = useState(0);
   const [characterIndex, setCharacterIndex] = useState(0);
@@ -94,7 +98,31 @@ function useTypewriterPlaceholder(texts) {
   return `${typedText}${showCursor ? " |" : ""}`;
 }
 
+function calculatePopularSearches(recentSearches) {
+  const recentBoosts = new Map();
+  recentSearches.forEach((item, index) => {
+    recentBoosts.set(item.toLowerCase(), 14 - index * 2);
+  });
+
+  return popularSearchSignals
+    .map((item) => ({
+      label: item.label,
+      score: item.searches * 0.58 + item.purchases * 0.42 + (recentBoosts.get(item.label.toLowerCase()) || 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 14)
+    .map((item) => item.label);
+}
+
 function SearchIcon({ name, className = "size-4" }) {
+  if (name === "chevron") {
+    return (
+      <svg className={className} viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m1 1.5 5 5 5-5" />
+      </svg>
+    );
+  }
+
   if (name === "camera") {
     return (
       <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
@@ -106,12 +134,16 @@ function SearchIcon({ name, className = "size-4" }) {
 
   if (name === "car") {
     return (
-      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M5 13h14l-1.5-4.5A2 2 0 0 0 15.6 7H8.4a2 2 0 0 0-1.9 1.5L5 13Z" />
-        <path d="M4 13v4h2" />
-        <path d="M20 13v4h-2" />
-        <circle cx="8" cy="17" r="1.5" />
-        <circle cx="16" cy="17" r="1.5" />
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6.4 8.6 7.7 5.8c.3-.7 1-1.1 1.8-1.1h5c.8 0 1.5.4 1.8 1.1l1.3 2.8" />
+        <path d="M5 10.1c0-1 .8-1.8 1.8-1.8h10.4c1 0 1.8.8 1.8 1.8v5.8c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4v-5.8Z" />
+        <path d="M7.4 10.2h9.2" />
+        <path d="M8.2 13.6h7.6" />
+        <path d="M9.1 15.6h5.8" />
+        <path d="M7.1 12.7h2.1" />
+        <path d="M14.8 12.7h2.1" />
+        <path d="M7 17.3v1.2" />
+        <path d="M17 17.3v1.2" />
       </svg>
     );
   }
@@ -129,6 +161,16 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const suggestionsCloseTimer = useRef(null);
+  const [recentSearches, setRecentSearches] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const storedSearches = JSON.parse(window.localStorage.getItem(recentSearchStorageKey) || "[]");
+      return Array.isArray(storedSearches) ? storedSearches.filter((item) => typeof item === "string").slice(0, 6) : [];
+    } catch {
+      return [];
+    }
+  });
   const [remotePlaceholderTexts, setRemotePlaceholderTexts] = useState([]);
   const activePlaceholders =
     Array.isArray(placeholderTexts) && placeholderTexts.length
@@ -144,6 +186,28 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     model: "",
     year: "",
   });
+
+  function saveRecentSearch(value) {
+    const nextSearch = String(value || "").trim();
+    if (!nextSearch) return;
+
+    setRecentSearches((current) => {
+      const next = [nextSearch, ...current.filter((item) => item.toLowerCase() !== nextSearch.toLowerCase())].slice(0, 6);
+      window.localStorage.setItem(recentSearchStorageKey, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function clearRecentSearches() {
+    setRecentSearches([]);
+    window.localStorage.removeItem(recentSearchStorageKey);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (suggestionsCloseTimer.current) window.clearTimeout(suggestionsCloseTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (Array.isArray(placeholderTexts) && placeholderTexts.length) return undefined;
@@ -190,6 +254,22 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     setStatus("Image ready for visual search");
   }
 
+  function openSearchSuggestions() {
+    if (suggestionsCloseTimer.current) {
+      window.clearTimeout(suggestionsCloseTimer.current);
+      suggestionsCloseTimer.current = null;
+    }
+    setSuggestionsOpen(true);
+  }
+
+  function closeSearchSuggestionsSoon() {
+    if (suggestionsCloseTimer.current) window.clearTimeout(suggestionsCloseTimer.current);
+    suggestionsCloseTimer.current = window.setTimeout(() => {
+      setSuggestionsOpen(false);
+      suggestionsCloseTimer.current = null;
+    }, 90);
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -202,7 +282,12 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     }
 
     if (keyword || vehicle !== "Search By Vehicle") {
-      setStatus("Searching demo products");
+      if (keyword) saveRecentSearch(keyword);
+      if (keyword) {
+        window.location.href = `/search?q=${encodeURIComponent(keyword)}`;
+      } else {
+        setStatus("Searching demo products");
+      }
       return;
     }
 
@@ -211,8 +296,15 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
 
   function handleSuggestionSelect(value) {
     setQuery(value);
-    setStatus(`Searching demo products for ${value}`);
+    saveRecentSearch(value);
     setSuggestionsOpen(false);
+    window.location.href = `/search?q=${encodeURIComponent(value)}`;
+  }
+
+  function handleProductSuggestionSelect(product) {
+    saveRecentSearch(product.name);
+    setSuggestionsOpen(false);
+    window.location.href = `/products/${product.slug}`;
   }
 
   function handleVehicleComplete() {
@@ -224,8 +316,9 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
   const selectedVehicle = [vehicleSelection.make, vehicleSelection.model, vehicleSelection.year].filter(Boolean).join(" ");
   const normalizedQuery = query.trim().toLowerCase();
   const matchedProducts = normalizedQuery
-    ? searchProducts.filter((product) => product.name.toLowerCase().includes(normalizedQuery) || product.tag.toLowerCase().includes(normalizedQuery))
+    ? searchCatalog(normalizedQuery, 5)
     : [];
+  const calculatedPopularSearches = calculatePopularSearches(recentSearches);
 
   return (
     <>
@@ -233,13 +326,19 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
         <form
           action="#parts"
           onSubmit={handleSubmit}
-          className={`flex h-12 min-w-0 overflow-hidden rounded-[16px] border bg-white text-[#4b5563] shadow-[0_12px_24px_rgba(0,0,0,0.2)] transition max-sm:h-11 max-sm:rounded-[12px] ${suggestionsOpen ? "border-[#ff6268] ring-2 ring-[#ff6268]/30" : "border-white/70"}`}
+          className={`flex h-12 min-w-0 overflow-hidden rounded-[16px] border bg-white text-[#4b5563] shadow-[0_12px_24px_rgba(0,0,0,0.2)] transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)] focus-within:border-[#f7d95f] focus-within:shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)] max-sm:h-11 max-sm:rounded-[12px] ${suggestionsOpen ? "border-[#f7d95f] ring-1 ring-[#f7d95f]/20 shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)]" : "border-[#ef3338]"}`}
           aria-label="Search products by keyword, vehicle, or image"
         >
-          <div className="flex min-w-0 flex-1 items-center border-r border-[#edf0f5] max-sm:min-w-[220px]">
-            <label className="relative grid h-full w-[58px] shrink-0 place-items-center border-r border-[#d9dee7] bg-[#111827] text-white max-sm:w-[48px]">
-              <span className={`grid size-10 cursor-pointer place-items-center rounded-[8px] transition hover:bg-white/10 max-sm:size-9 ${imageName ? "bg-white/10" : ""}`} title="Upload or capture product photo">
-                <SearchIcon name="camera" className="size-6 max-sm:size-5" />
+          <div
+            className="group flex min-w-0 flex-1 items-center border-r border-[#edf0f5] transition hover:bg-[#fff3f3] max-sm:min-w-[220px]"
+            onMouseEnter={openSearchSuggestions}
+            onMouseLeave={closeSearchSuggestionsSoon}
+          >
+            <label className="group/camera relative grid h-full w-[58px] shrink-0 place-items-center border-r border-[#d9dee7] bg-[#111827] text-white max-sm:w-[48px]">
+              <span className={`grid size-10 cursor-pointer place-items-center transition group-hover/camera:text-[#f7d95f] max-sm:size-9 ${imageName ? "text-[#f7d95f]" : ""}`} title="Upload or capture product photo">
+                <span className="grid place-items-center transition duration-300 group-hover/camera:scale-110 group-hover/camera:rotate-[-8deg] group-hover/camera:drop-shadow-[0_0_10px_rgba(247,217,95,0.58)]">
+                  <SearchIcon name="camera" className="size-6 max-sm:size-5" />
+                </span>
               </span>
               <input
                 name="productImage"
@@ -257,11 +356,8 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
-                setSuggestionsOpen(true);
               }}
-              onFocus={() => setSuggestionsOpen(true)}
-              onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 130)}
-              className="min-w-0 flex-1 bg-transparent px-5 text-[16px] tracking-[0.01em] outline-none placeholder:text-[#9ca3af] max-sm:px-3 max-sm:text-[14px]"
+              className="min-w-0 flex-1 origin-left bg-transparent px-5 text-[16px] tracking-[0.01em] outline-none transition duration-300 placeholder:text-[#9ca3af] group-hover:scale-[1.015] group-hover:animate-pulse max-sm:px-3 max-sm:text-[14px]"
               placeholder={imageName ? imageName : animatedPlaceholder}
               autoComplete="off"
             />
@@ -272,22 +368,26 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
           <button
             type="button"
             onClick={() => setVehicleModalOpen(true)}
-            className="flex w-[224px] shrink-0 items-center gap-2 bg-[#fafbfc] px-3 text-left text-sm font-semibold text-[#4b5563] transition hover:bg-[#fff3f3] hover:text-[#e1272c] max-sm:w-[164px] max-sm:px-2.5 max-sm:text-[12px]"
+            className="group flex w-[224px] shrink-0 items-center gap-2 bg-[#fafbfc] px-3 text-left text-sm font-semibold text-[#4b5563] transition hover:bg-[#fff3f3] hover:text-[#e1272c] max-sm:w-[164px] max-sm:px-2.5 max-sm:text-[12px]"
             aria-label="Search by vehicle"
           >
             <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[#e5e7eb] text-[#111827]">
               <SearchIcon name="car" className="size-3.5" />
             </span>
-            <span className="min-w-0 flex-1 truncate">{selectedVehicle || "Search By Vehicle"}</span>
-            <span className="text-[#a3a7ae]">⌄</span>
+            <span className="inline-flex min-w-0 flex-1 origin-left items-center gap-1.5 transition duration-300 group-hover:scale-[1.04] group-hover:animate-pulse">
+              <span className="min-w-0 truncate">{selectedVehicle || "Search By Vehicle"}</span>
+              <SearchIcon name="chevron" className="size-[11px] shrink-0 translate-y-px text-[#a3a7ae]" />
+            </span>
           </button>
 
           <button
             type="submit"
-            className="grid w-16 shrink-0 place-items-center bg-gradient-to-r from-[#ff4247] to-[#ff7417] text-white transition hover:brightness-105 max-sm:w-12"
+            className="group grid w-16 shrink-0 place-items-center bg-gradient-to-r from-[#ff4247] to-[#ff7417] text-white transition hover:brightness-105 max-sm:w-12"
             aria-label="Search"
           >
-            <SearchIcon name="search" className="size-6 max-sm:size-5" />
+            <span className="grid place-items-center transition duration-300 group-hover:scale-110 group-hover:rotate-[-8deg] group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]">
+              <SearchIcon name="search" className="size-6 max-sm:size-5" />
+            </span>
           </button>
         </form>
 
@@ -295,10 +395,13 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
           <SearchSuggestions
             query={query}
             recentSearches={recentSearches}
-            popularSearches={popularSearches}
-            quickCategories={quickCategories}
+            popularSearches={calculatedPopularSearches}
             products={matchedProducts}
             onSelect={handleSuggestionSelect}
+            onProductSelect={handleProductSuggestionSelect}
+            onClearRecent={clearRecentSearches}
+            onMouseEnter={openSearchSuggestions}
+            onMouseLeave={closeSearchSuggestionsSoon}
           />
         ) : null}
       </div>
@@ -343,124 +446,135 @@ function VehicleFinderModal({
   onSelectModel,
   onSelectYear,
 }) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 py-6 backdrop-blur-[5px]">
-      <div className="w-full max-w-[768px] overflow-hidden rounded-[10px] border border-white/80 border-t-[#ff4247] bg-white shadow-[0_28px_70px_rgba(0,0,0,0.45)]">
-        <div className="flex min-h-[118px] items-center justify-between bg-[#111827] px-6 text-white max-sm:min-h-[96px] max-sm:px-4">
-          <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-[8px] bg-gradient-to-br from-[#ff6268] to-[#ed252b] text-[#111827]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-[7px]">
+      <div className="w-full max-w-[780px] overflow-hidden rounded-[18px] border border-white/20 bg-white shadow-[0_32px_90px_rgba(0,0,0,0.52)]">
+        <div className="relative flex min-h-[104px] items-center justify-between overflow-hidden bg-[#ef3338] px-7 text-white max-sm:min-h-[92px] max-sm:px-4">
+          <span className="pointer-events-none absolute inset-y-0 right-0 w-44 bg-[linear-gradient(120deg,transparent,rgba(0,0,0,0.18))]" />
+          <div className="flex items-center gap-3.5">
+            <span className="grid size-11 place-items-center rounded-[12px] bg-white text-black shadow-[0_16px_32px_rgba(0,0,0,0.18)]">
               <SearchIcon name="car" className="size-5" />
             </span>
             <div>
-              <h3 className="text-[20px] font-extrabold leading-tight max-sm:text-[18px]">Vehicle Parts Finder</h3>
-              <p className="mt-6 text-[15px] text-white/85 max-sm:mt-3 max-sm:text-[13px]">
-                <span className="text-[#ff6268]">✣</span> Find compatible parts
+              <h3 className="text-[21px] font-black leading-tight tracking-[-0.01em] max-sm:text-[18px]">Vehicle Parts Finder</h3>
+              <p className="mt-2 flex items-center gap-2 text-[14px] font-semibold text-white/88 max-sm:text-[13px]">
+                <span className="size-1.5 rounded-full bg-black" /> Find compatible parts fast
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-full text-3xl font-light text-white/90 transition hover:bg-white/10" aria-label="Close vehicle finder">
+          <button type="button" onClick={onClose} className="relative grid size-9 place-items-center rounded-full text-2xl font-light leading-none text-black/75 transition hover:bg-white/20 hover:text-black" aria-label="Close vehicle finder">
             ×
           </button>
         </div>
 
-        <div className="max-h-[calc(100vh-154px)] overflow-y-auto px-6 py-7 max-sm:px-4">
-          <StepDots step={step} />
+        <div className="max-h-[calc(100vh-140px)] overflow-y-auto bg-[#fafbfc] px-7 py-6 max-sm:px-4">
+          <StepDots step={step} onChangeStep={onChangeStep} />
+
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={() => onChangeStep(step - 1)}
+              className="mb-5 inline-flex h-9 items-center gap-2 rounded-full border border-[#111827]/15 bg-white px-4 text-[13px] font-black text-[#111827] transition hover:border-[#ef3338] hover:text-[#ef3338]"
+            >
+              ← Back
+            </button>
+          ) : null}
 
           {step > 1 ? <SelectionPanel selection={selection} /> : null}
 
-          <VehicleSectionHeader
-            icon="car"
-            title="Vehicle Make"
-            showChange={step > 1}
-            onChange={() => onChangeStep(1)}
-          />
-
           {step === 1 ? (
-            <div className="mt-8 grid grid-cols-5 gap-3 max-md:grid-cols-3 max-sm:grid-cols-2">
-              {vehicleMakes.map((make) => (
-                <VehicleMakeCard key={make} make={make} selected={selection.make === make} onClick={() => onSelectMake(make)} />
-              ))}
-            </div>
-          ) : (
-            <SelectedBox label={`${selection.make} Selected`} />
-          )}
+            <>
+              <VehicleSectionHeader
+                icon="car"
+                title="Vehicle Make"
+                showChange={false}
+                onChange={() => onChangeStep(1)}
+              />
+              <div className="mt-6 grid grid-cols-5 gap-3 max-md:grid-cols-3 max-sm:grid-cols-2">
+                {vehicleMakes.map((make) => (
+                  <VehicleMakeCard key={make} make={make} selected={selection.make === make} onClick={() => onSelectMake(make)} />
+                ))}
+              </div>
+            </>
+          ) : null}
 
-          {step >= 2 ? (
+          {step === 2 ? (
             <>
               <VehicleSectionHeader
                 icon="gear"
                 title="Vehicle Model"
-                showChange={step > 2}
+                showChange={false}
                 onChange={() => onChangeStep(2)}
               />
-              {step === 2 ? (
-                <div className="mt-8 flex flex-wrap gap-3">
-                  {vehicleModels.map((model) => (
-                    <ChoiceCard key={model} selected={selection.model === model} onClick={() => onSelectModel(model)}>
-                      {model}
-                    </ChoiceCard>
-                  ))}
-                </div>
-              ) : (
-                <SelectedBox label={`${selection.model} SELECTED`} />
-              )}
+              <div className="mt-6 flex flex-wrap gap-3">
+                {vehicleModels.map((model) => (
+                  <ChoiceCard key={model} selected={selection.model === model} onClick={() => onSelectModel(model)}>
+                    {model}
+                  </ChoiceCard>
+                ))}
+              </div>
             </>
           ) : null}
 
-          {step >= 3 ? (
+          {step === 3 ? (
             <>
               <VehicleSectionHeader
                 icon="calendar"
                 title="Manufacturing Year"
-                showChange={step > 3}
+                showChange={false}
                 onChange={() => onChangeStep(3)}
               />
-              {step === 3 ? (
-                <div className="mt-8 flex flex-wrap gap-3">
-                  {vehicleYears.map((year) => (
-                    <ChoiceCard key={year} selected={selection.year === year} onClick={() => onSelectYear(year)}>
-                      {year}
-                    </ChoiceCard>
-                  ))}
-                </div>
-              ) : (
-                <SelectedBox label={`${selection.year} Selected`} />
-              )}
+              <div className="mt-6 flex flex-wrap gap-3">
+                {vehicleYears.map((year) => (
+                  <ChoiceCard key={year} selected={selection.year === year} onClick={() => onSelectYear(year)}>
+                    {year}
+                  </ChoiceCard>
+                ))}
+              </div>
             </>
           ) : null}
 
           {step === 4 ? (
-            <div className="mt-6 rounded-[10px] border border-[#f2d943] bg-[#fff1f1] px-6 py-7 text-center max-sm:px-4">
-              <h4 className="text-[20px] font-extrabold text-[#111827]">Ready to Find Parts!</h4>
-              <p className="mt-4 text-[15px] text-[#4b5563]">Search for parts compatible with your {selection.make} {selection.model} ({selection.year})</p>
-              <div className="mt-5 flex items-center justify-center gap-3 max-sm:flex-col">
-                <button type="button" onClick={onComplete} className="inline-flex h-12 items-center justify-center gap-3 rounded-[8px] bg-[#ef3439] px-7 text-[16px] font-extrabold text-white shadow-[0_12px_24px_rgba(239,52,57,0.25)] transition hover:bg-[#d3191d] max-sm:w-full">
+            <div className="mt-6 rounded-[16px] border border-[#111827]/10 bg-white px-6 py-7 text-center shadow-[0_18px_40px_rgba(17,24,39,0.08)] max-sm:px-4">
+              <span className="mx-auto grid size-11 place-items-center rounded-[12px] bg-[#111827] text-[#f7d95f]">
+                <SearchIcon name="car" className="size-5" />
+              </span>
+              <h4 className="mt-4 text-[20px] font-black text-[#111827]">Ready to Find Parts</h4>
+              <p className="mt-3 text-[15px] font-semibold text-[#647084]">Search for parts compatible with your {selection.make} {selection.model} ({selection.year})</p>
+              <div className="mt-6 flex items-center justify-center gap-3 max-sm:flex-col">
+                <button type="button" onClick={onComplete} className="inline-flex h-12 items-center justify-center gap-3 rounded-[12px] bg-[#ef3338] px-7 text-[15px] font-black text-white shadow-[0_16px_30px_rgba(239,51,56,0.24)] transition hover:-translate-y-0.5 hover:bg-[#d3191d] max-sm:w-full">
                   <SearchIcon name="search" className="size-5" />
                   Find Compatible Parts
                   <span>→</span>
                 </button>
-                <button type="button" onClick={onStartOver} className="inline-flex h-12 items-center justify-center gap-2 rounded-[8px] border border-[#cfd6e0] bg-white px-5 text-[14px] font-extrabold text-[#111827] transition hover:border-[#ef3439] hover:text-[#ef3439] max-sm:w-full">
+                <button type="button" onClick={onStartOver} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] border border-[#111827]/15 bg-white px-5 text-[14px] font-black text-[#111827] transition hover:border-[#ef3338] hover:text-[#ef3338] max-sm:w-full">
                   ↻ Start Over
                 </button>
               </div>
             </div>
           ) : null}
 
-          {step > 1 ? <AdvancedOptions /> : null}
+          {step > 1 ? <AdvancedOptions open={advancedOpen} onToggle={() => setAdvancedOpen((current) => !current)} /> : null}
         </div>
       </div>
     </div>
   );
 }
 
-function SearchSuggestions({ query, recentSearches, popularSearches, quickCategories, products, onSelect }) {
+function SearchSuggestions({ query, recentSearches, popularSearches, products, onSelect, onProductSelect, onClearRecent, onMouseEnter, onMouseLeave }) {
   const hasQuery = query.trim().length > 0;
 
   return (
-    <div className="absolute left-0 top-[calc(100%+10px)] z-[130] max-h-[374px] w-full overflow-y-auto rounded-[9px] border border-[#e5e7eb] bg-white text-[#273246] shadow-[0_22px_50px_rgba(0,0,0,0.24)] max-sm:max-h-[360px]">
-      <div className="flex h-[52px] items-center gap-3 border-b border-[#e5e7eb] bg-[#f8fafc] px-4 text-[15px] font-medium">
-        <SearchIcon name="search" className="size-4 text-[#64748b]" />
-        {hasQuery ? <>Search Results for &quot;{query}&quot;</> : "Search JPSPARE"}
+    <div
+      className="absolute left-0 top-[calc(100%+10px)] z-[130] max-h-[360px] w-full overflow-y-auto rounded-[12px] border border-[#e4e8ef] bg-white text-[#273246] shadow-[0_22px_46px_rgba(0,0,0,0.22)] max-sm:max-h-[340px]"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="flex h-11 items-center gap-3 border-b border-[#eef1f5] bg-white px-4 text-[14px] font-semibold">
+        <SearchIcon name="search" className="size-4 text-[#94a3b8]" />
+        {hasQuery ? <>Search &quot;{query}&quot;</> : "Search JPSPARE"}
       </div>
 
       {hasQuery ? (
@@ -469,104 +583,106 @@ function SearchSuggestions({ query, recentSearches, popularSearches, quickCatego
             type="button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(query)}
-            className="flex w-full items-center gap-4 bg-[#fff1f1] px-6 py-5 text-left transition hover:bg-[#ffe8e8]"
+            className="flex w-full items-center gap-3 border-b border-[#eef1f5] bg-white px-4 py-3 text-left transition hover:bg-[#fff8f8]"
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-[8px] bg-[#fff36d] text-[#ef3338]">
-              <SearchIcon name="search" className="size-5" />
+            <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[#111827] text-[#f7d95f]">
+              <SearchIcon name="search" className="size-4" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-medium text-[#111827]">Search all products for &quot;{query}&quot;</span>
-              <span className="mt-2 block text-[13px] text-[#6b7280]">View all matching results</span>
+              <span className="block text-[14px] font-black text-[#111827]">Search all products for &quot;{query}&quot;</span>
+              <span className="mt-1 block text-[12px] text-[#6b7280]">View matching products</span>
             </span>
-            <span className="text-[24px] text-[#ef3338]">→</span>
+            <span className="text-[18px] text-[#ef3338]">→</span>
           </button>
 
           <div className="divide-y divide-[#eef0f4]">
-            {(products.length ? products : searchProducts.slice(0, 3)).map((product) => (
+            {products.map((product) => (
               <button
                 key={product.name}
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => onSelect(product.name)}
-                className="flex w-full items-center gap-4 px-6 py-4 text-left transition hover:bg-[#fffafa]"
+                onClick={() => onProductSelect(product)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#fafbfc]"
               >
                 <span
-                  className="block size-[64px] shrink-0 rounded-[8px] bg-cover bg-center bg-no-repeat shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)]"
-                  style={{ backgroundImage: `url(${product.image})` }}
+                  className={`block size-12 shrink-0 rounded-[8px] bg-white bg-no-repeat shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)] ${
+                    product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
+                  }`}
+                  style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold text-[#111827]">{product.name}</span>
-                  <span className="mt-2 block text-[20px] font-black text-[#ef3338]">{product.price}</span>
-                  <span className="mt-2 inline-flex rounded-full bg-[#dbeafe] px-2 py-1 text-[12px] font-medium text-[#2563eb]">◇ {product.tag}</span>
+                  <span className="block truncate text-[14px] font-semibold text-[#111827]">{product.name}</span>
+                  <span className="mt-1 block text-[15px] font-black text-[#ef3338]">{product.price}</span>
                 </span>
-                <span className="text-[28px] text-[#aab2bf]">→</span>
+                <span className="text-[18px] text-[#aab2bf]">→</span>
               </button>
             ))}
+            {!products.length ? (
+              <p className="px-4 py-3 text-[13px] font-semibold text-[#9aa3af]">No product suggestions found</p>
+            ) : null}
           </div>
         </div>
       ) : (
         <div>
-          <div className="border-b border-[#e5e7eb] px-4 py-4">
-            <div className="mb-4 flex items-center justify-between text-[15px] font-medium">
-              <span className="flex items-center gap-2 text-[#374151]">
+          <div className="border-b border-[#eef1f5] px-4 py-3">
+            <div className="mb-2 flex items-center justify-between text-[13px] font-semibold">
+              <span className="flex items-center gap-2 text-[#4b5563]">
                 <span className="text-[#94a3b8]">◷</span>
                 Recent Searches
               </span>
-              <button type="button" className="text-[12px] text-[#6b7280] transition hover:text-[#ef3338]">Clear</button>
+              {recentSearches.length ? (
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={onClearRecent}
+                  className="text-[12px] font-semibold text-[#6b7280] transition hover:text-[#ef3338]"
+                >
+                  Clear
+                </button>
+              ) : null}
             </div>
-            {recentSearches.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => onSelect(item)}
-                className="flex h-9 items-center gap-3 rounded-[6px] px-2 text-[15px] font-medium text-[#374151] transition hover:bg-[#fff1f1] hover:text-[#ef3338]"
-              >
-                <span className="text-[#94a3b8]">◷</span>
-                {item}
-              </button>
-            ))}
+            {recentSearches.length ? (
+              <div className="flex max-w-full items-center gap-2 overflow-hidden whitespace-nowrap">
+                {recentSearches.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => onSelect(item)}
+                    className="inline-flex h-8 max-w-[145px] shrink-0 items-center gap-1.5 rounded-full border border-[#e4e8ef] bg-white px-3 text-[13px] font-semibold text-[#374151] transition hover:border-[#ef3338] hover:text-[#ef3338]"
+                  >
+                    <span className="text-[#94a3b8]">◷</span>
+                    <span className="truncate">{item}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] font-medium text-[#9aa3af]">No recent searches</p>
+            )}
           </div>
 
-          <div className="bg-[#fff5f5] px-6 py-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="flex items-center gap-2 text-[15px] font-black text-[#273246]">
+          <div className="px-4 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="flex items-center gap-2 text-[14px] font-black text-[#273246]">
                 <span className="text-[#ef3338]">↗</span>
                 Popular Searches
               </h4>
-              <span className="text-[13px] text-[#ef3338]">Trending</span>
+              <span className="rounded-full bg-[#fff3f3] px-2 py-1 text-[11px] font-black text-[#ef3338]">Trending</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+            <div className="flex max-h-[72px] flex-wrap gap-2 overflow-hidden">
               {popularSearches.map((item, index) => (
                 <button
                   key={item}
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => onSelect(item)}
-                  className={`h-[46px] rounded-[7px] border bg-white px-3 text-left text-[14px] font-medium transition hover:border-[#f7d95f] hover:text-[#ef3338] ${
-                    index === 0 ? "border-[#f7d95f] text-[#d3191d] shadow-[0_8px_18px_rgba(220,38,38,0.08)]" : "border-[#dfe3ea] text-[#374151]"
+                  className={`inline-flex h-8 items-center rounded-full border bg-white px-3 text-[13px] font-semibold transition hover:border-[#ef3338] hover:text-[#ef3338] ${
+                    index === 0 ? "border-[#f7d95f] text-[#d3191d]" : "border-[#e4e8ef] text-[#374151]"
                   }`}
                 >
                   {item}
                 </button>
               ))}
-            </div>
-            <div className="mt-6 border-t border-[#f7d95f] pt-4">
-              <p className="mb-3 text-[12px] font-medium text-[#4b5563]">Quick Categories:</p>
-              <div className="flex flex-wrap gap-2">
-                {quickCategories.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => onSelect(item.label)}
-                    className={`inline-flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-medium ${item.tone}`}
-                  >
-                    <span>{item.icon}</span>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
@@ -575,15 +691,28 @@ function SearchSuggestions({ query, recentSearches, popularSearches, quickCatego
   );
 }
 
-function StepDots({ step }) {
+function StepDots({ step, onChangeStep }) {
   return (
-    <div className="mb-7 flex items-center justify-center gap-3">
+    <div className="mb-7 flex items-center justify-center gap-2">
       {[1, 2, 3, 4].map((number, index) => (
-        <div key={number} className="flex items-center gap-3">
-          <span className={`grid size-8 place-items-center rounded-full text-sm font-extrabold shadow-sm ${number <= step ? "bg-[#ef3439] text-white" : "bg-[#f1f3f7] text-[#9ca3af]"}`}>
-            {number}
-          </span>
-          {index < 3 ? <span className={`h-[3px] w-8 rounded-full ${number < step ? "bg-[#ef3439]" : "bg-[#dfe3ea]"}`} /> : null}
+        <div key={number} className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (number <= step) onChangeStep(number);
+            }}
+            disabled={number > step}
+            className={`inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-full px-3 text-[12px] font-black transition ${
+              number <= step
+                ? "bg-[#111827] text-white shadow-[0_12px_26px_rgba(17,24,39,0.18)] hover:-translate-y-0.5 hover:bg-[#ef3338]"
+                : "cursor-not-allowed bg-white text-[#9aa3af] ring-1 ring-[#e4e8ef]"
+            }`}
+            aria-label={`Go to vehicle ${vehicleSteps[number - 1]}`}
+          >
+            <span className={`grid size-5 place-items-center rounded-full text-[11px] ${number <= step ? "bg-[#ef3338] text-white" : "bg-[#f3f5f8] text-[#9aa3af]"}`}>{number}</span>
+            <span className="hidden sm:inline">{vehicleSteps[number - 1]}</span>
+          </button>
+          {index < 3 ? <span className={`h-px w-6 rounded-full ${number < step ? "bg-[#ef3338]" : "bg-[#dfe3ea]"}`} /> : null}
         </div>
       ))}
     </div>
@@ -592,13 +721,13 @@ function StepDots({ step }) {
 
 function SelectionPanel({ selection }) {
   return (
-    <div className="mb-8 rounded-[10px] border border-[#f2d943] bg-[#fff1f1] px-4 py-4">
-      <p className="flex items-center gap-2 text-[14px] font-extrabold text-[#111827]">
-        <span className="text-[#ef3439]">◴</span> Your Selection
+    <div className="mb-7 rounded-[14px] border border-[#252b36]/10 bg-white px-4 py-4 shadow-[0_14px_30px_rgba(17,24,39,0.05)]">
+      <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.14em] text-[#ef3338]">
+        <span className="h-1.5 w-5 rounded-full bg-[#f7d95f]" /> Your Selection
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {[selection.make, selection.model, selection.year].filter(Boolean).map((item) => (
-          <span key={item} className="rounded-[7px] border border-[#f2d943] bg-white px-3 py-1 text-sm font-medium text-[#111827]">
+          <span key={item} className="rounded-full border border-[#ef3338]/20 bg-[#fff7f7] px-3 py-1 text-sm font-black text-[#111827]">
             {item}
           </span>
         ))}
@@ -609,27 +738,18 @@ function SelectionPanel({ selection }) {
 
 function VehicleSectionHeader({ icon, title, showChange, onChange }) {
   return (
-    <div className="mt-7 flex items-center justify-between">
-      <h4 className="flex items-center gap-2 text-[19px] font-extrabold text-[#111827]">
-        <span className="text-[#ef3439]">
+    <div className="mt-6 flex items-center justify-between">
+      <h4 className="flex items-center gap-3 text-[18px] font-black text-[#111827]">
+        <span className="grid size-8 place-items-center rounded-[9px] bg-[#111827] text-[#f7d95f] shadow-[0_12px_24px_rgba(17,24,39,0.14)]">
           {icon === "calendar" ? "▣" : icon === "gear" ? "⚙" : <SearchIcon name="car" className="size-4" />}
         </span>
         {title}
       </h4>
       {showChange ? (
-        <button type="button" onClick={onChange} className="text-sm font-medium text-[#e1272c] transition hover:text-[#b91217]">
+        <button type="button" onClick={onChange} className="rounded-full border border-[#ef3338]/25 bg-white px-3 py-1 text-xs font-black text-[#ef3338] transition hover:border-[#ef3338] hover:bg-[#fff3f3]">
           Change
         </button>
       ) : null}
-    </div>
-  );
-}
-
-function SelectedBox({ label }) {
-  return (
-    <div className="mt-8 flex h-16 items-center gap-3 rounded-[7px] border border-[#96f0b8] bg-[#ecfff4] px-4 text-[20px] font-extrabold text-[#145c31] max-sm:text-[16px]">
-      <span className="text-2xl text-[#10b35d]">✓</span>
-      {label}
     </div>
   );
 }
@@ -639,10 +759,11 @@ function VehicleMakeCard({ make, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-[94px] flex-col items-center justify-center gap-3 rounded-[7px] border bg-white px-2 text-center text-[14px] font-extrabold transition hover:border-[#ff6268] hover:text-[#d3191d] hover:shadow-[0_14px_28px_rgba(239,52,57,0.16)] ${
-        selected ? "border-[#ff6268] text-[#d3191d] shadow-[0_14px_28px_rgba(239,52,57,0.16)]" : "border-[#dfe3ea] text-[#111827]"
+      className={`group/vehicle relative flex h-[90px] flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[14px] border bg-white px-2 text-center text-[14px] font-bold transition duration-200 hover:-translate-y-0.5 hover:border-[#ef3338] hover:text-[#d3191d] hover:shadow-[0_18px_34px_rgba(17,24,39,0.1)] ${
+        selected ? "border-[#ef3338] text-[#d3191d] shadow-[0_18px_34px_rgba(17,24,39,0.1)]" : "border-[#dfe3ea] text-[#111827]"
       }`}
     >
+      <span className={`absolute inset-x-0 top-0 h-1 transition ${selected ? "bg-[#ef3338]" : "bg-transparent group-hover/vehicle:bg-[#f7d95f]"}`} />
       <BrandMark make={make} selected={selected} />
       <span>{make}</span>
     </button>
@@ -652,12 +773,12 @@ function VehicleMakeCard({ make, selected, onClick }) {
 function BrandMark({ make, selected }) {
   const initials = make.split(" ").map((word) => word[0]).join("").slice(0, 2);
   if (["Audi", "Bmw", "Honda", "Lexus", "Maserati", "Mazda", "Mitsubishi", "Nissan", "Porsche", "Toyota"].includes(make)) {
-    return <span className={`text-[24px] font-black leading-none ${selected ? "text-[#ef3439]" : "text-black"}`}>{initials}</span>;
+    return <span className={`text-[22px] font-black leading-none ${selected ? "text-[#ef3338]" : "text-[#111827]"}`}>{initials}</span>;
   }
 
   return (
-    <span className={`${selected ? "text-[#ef3439]" : "text-black"}`}>
-      <SearchIcon name="car" className="size-6" />
+    <span className={`${selected ? "text-[#ef3338]" : "text-[#111827]"}`}>
+      <SearchIcon name="car" className="size-5" />
     </span>
   );
 }
@@ -667,8 +788,8 @@ function ChoiceCard({ selected, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`grid h-[60px] min-w-[134px] place-items-center rounded-[7px] border px-6 text-[15px] font-extrabold transition hover:border-[#ff6268] hover:text-[#d3191d] hover:shadow-[0_14px_28px_rgba(239,52,57,0.16)] ${
-        selected ? "border-[#ff6268] text-[#d3191d]" : "border-[#dfe3ea] text-[#111827]"
+      className={`grid h-[52px] min-w-[128px] place-items-center rounded-[14px] border bg-white px-5 text-[15px] font-black transition hover:-translate-y-0.5 hover:border-[#ef3338] hover:text-[#d3191d] hover:shadow-[0_16px_28px_rgba(17,24,39,0.08)] ${
+        selected ? "border-[#ef3338] text-[#d3191d] shadow-[inset_0_3px_0_#ef3338]" : "border-[#dfe3ea] text-[#111827]"
       }`}
     >
       {children}
@@ -676,32 +797,41 @@ function ChoiceCard({ selected, onClick, children }) {
   );
 }
 
-function AdvancedOptions() {
+function AdvancedOptions({ open, onToggle }) {
   return (
     <div className="mt-6">
-      <button type="button" className="flex items-center gap-2 text-[15px] font-extrabold text-[#ef3439]">
-        ⌘ Advanced Options <span>⌃</span>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-2 text-[14px] font-black text-[#111827] transition hover:text-[#ef3338]"
+        aria-expanded={open}
+      >
+        <span className="text-[#ef3338]">⌘</span> Advanced Options
+        <SearchIcon name="chevron" className={`size-[11px] text-[#ef3338] transition duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
-      <div className="mt-3 rounded-[7px] border border-[#dfe3ea] bg-[#fafbfc] p-4">
-        <p className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#111827]">
-          <span className="text-[#ef3439]">⌘</span> Advanced Options
-        </p>
-        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-          <label className="block text-sm font-extrabold text-[#374151]">
-            Chassis Code (Optional)
-            <input className="mt-2 h-10 w-full rounded-[7px] border border-[#cfd6e0] bg-white px-3 outline-none transition focus:border-[#ef3439]" />
-          </label>
-          <label className="block text-sm font-extrabold text-[#374151]">
-            Engine Type (Optional)
-            <select className="mt-2 h-10 w-full rounded-[7px] border border-[#cfd6e0] bg-white px-3 outline-none transition focus:border-[#ef3439]">
-              <option></option>
-              <option>2000cc</option>
-              <option>2500cc</option>
-              <option>Hybrid</option>
-            </select>
-          </label>
+
+      {open ? (
+        <div className="mt-3 rounded-[16px] border border-[#e4e8ef] bg-white p-4 shadow-[0_14px_30px_rgba(17,24,39,0.05)]">
+          <p className="mb-4 flex items-center gap-2 text-sm font-black text-[#111827]">
+            <span className="h-1.5 w-5 rounded-full bg-[#f7d95f]" /> Advanced Options
+          </p>
+          <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+            <label className="block text-sm font-black text-[#374151]">
+              Chassis Code (Optional)
+              <input className="mt-2 h-11 w-full rounded-[12px] border border-[#cfd6e0] bg-[#fafbfc] px-3 outline-none transition hover:border-[#ef3338] focus:border-[#ef3338]" />
+            </label>
+            <label className="block text-sm font-black text-[#374151]">
+              Engine Type (Optional)
+              <select className="mt-2 h-11 w-full rounded-[12px] border border-[#cfd6e0] bg-[#fafbfc] px-3 outline-none transition hover:border-[#ef3338] focus:border-[#ef3338]">
+                <option></option>
+                <option>2000cc</option>
+                <option>2500cc</option>
+                <option>Hybrid</option>
+              </select>
+            </label>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
