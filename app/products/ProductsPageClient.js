@@ -96,7 +96,7 @@ function ProductsPagination({ currentPage, totalPages, onPageChange }) {
   );
 }
 
-export default function ProductsPageClient({ initialFilters }) {
+export default function ProductsPageClient({ initialFilters, basePath = "/products", lockedCategory = false, title = "All Products" }) {
   const router = useRouter();
   const [filters, setFilters] = useState({
     q: initialFilters.q || "",
@@ -150,11 +150,11 @@ export default function ProductsPageClient({ initialFilters }) {
   function updateUrl(nextFilters, page = 1) {
     const params = new URLSearchParams();
     if (nextFilters.q) params.set("q", nextFilters.q);
-    if (nextFilters.category) params.set("category", nextFilters.category);
+    if (!lockedCategory && nextFilters.category) params.set("category", nextFilters.category);
     if (nextFilters.brand) params.set("brand", nextFilters.brand);
     if (nextFilters.sort !== "newest") params.set("sort", nextFilters.sort);
     if (page > 1) params.set("page", String(page));
-    router.replace(params.size ? `/products?${params}` : "/products", { scroll: false });
+    router.replace(params.size ? `${basePath}?${params}` : basePath, { scroll: false });
   }
 
   function applyFilters(event) {
@@ -165,7 +165,7 @@ export default function ProductsPageClient({ initialFilters }) {
   }
 
   function clearFilters() {
-    const nextFilters = { q: "", category: "", brand: "", sort: "newest" };
+    const nextFilters = { q: "", category: lockedCategory ? initialFilters.category || "" : "", brand: "", sort: "newest" };
     setFilters(nextFilters);
     setAppliedFilters(nextFilters);
     setCurrentPage(1);
@@ -194,12 +194,12 @@ export default function ProductsPageClient({ initialFilters }) {
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#ef3338]">JPSPARE Catalog</p>
-            <h1 className="mt-2 text-[30px] font-black text-[#111827] sm:text-[38px]">All Products</h1>
+            <h1 className="mt-2 text-[30px] font-black text-[#111827] sm:text-[38px]">{title}</h1>
             <p className="mt-2 text-[14px] text-[#64748b]">{pagination.total} products available</p>
           </div>
         </div>
 
-        <form onSubmit={applyFilters} className="mt-8 grid gap-3 rounded-[8px] border border-[#e5e7eb] bg-[#f8fafc] p-4 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto_auto]">
+        <form onSubmit={applyFilters} className={`mt-8 grid gap-3 rounded-[8px] border border-[#e5e7eb] bg-[#f8fafc] p-4 md:grid-cols-2 ${lockedCategory ? "xl:grid-cols-[2fr_1fr_1fr_auto_auto]" : "xl:grid-cols-[2fr_1fr_1fr_1fr_auto_auto]"}`}>
           <input
             type="search"
             value={filters.q}
@@ -207,12 +207,14 @@ export default function ProductsPageClient({ initialFilters }) {
             placeholder="Search products"
             className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
           />
-          <input
-            value={filters.category}
-            onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
-            placeholder="Category slug or name"
-            className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
-          />
+          {!lockedCategory ? (
+            <input
+              value={filters.category}
+              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
+              placeholder="Category slug or name"
+              className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
+            />
+          ) : null}
           <input
             value={filters.brand}
             onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}

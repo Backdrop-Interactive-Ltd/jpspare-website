@@ -396,7 +396,7 @@ export function FeaturedOfferBanners() {
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_60%_42%,rgba(255,255,255,0.95),transparent_22%),radial-gradient(circle_at_85%_72%,rgba(239,51,56,0.13),transparent_30%)]" />
       </a>
 
-      <a href="/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
+      <a href="/collections/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
         <div className="relative z-10 ml-auto max-w-[47%] text-right max-sm:max-w-[58%]">
           <p className="text-[22px] font-black uppercase leading-none tracking-[-0.03em] text-[#2b2529] max-sm:text-[18px]">Clean & Shine</p>
           <h3 className="mt-1 text-[44px] font-black uppercase leading-[0.88] tracking-[0.02em] text-white max-xl:text-[36px] max-sm:text-[30px]">
@@ -613,7 +613,7 @@ export function BestSellingAutoParts() {
           </div>
           <a
             href="/products"
-            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[4px] bg-[#f05a24] px-4 text-[11px] font-black leading-none text-white transition hover:bg-[#ef3338] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
           >
             View all
           </a>
@@ -684,7 +684,7 @@ export function LatestJapaneseAutoParts() {
           </div>
           <a
             href="/offers"
-            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[4px] bg-[#f05a24] px-4 text-[11px] font-black leading-none text-white transition hover:bg-[#ef3338] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
           >
             View all
           </a>

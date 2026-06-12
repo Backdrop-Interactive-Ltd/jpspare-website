@@ -9,12 +9,12 @@ const demoAccessoryBrands = [
   { id: "demo-joyroom", name: "Joyroom", slug: "joyroom", mark: "JOYROOM", tone: "bg-[#2563eb] text-white" },
   { id: "demo-kangaroo", name: "Kangaroo", slug: "kangaroo", mark: "KANGAROO", tone: "bg-[#ff7a1a] text-white" },
   { id: "demo-philips", name: "Philips", slug: "philips", mark: "PHILIPS", tone: "bg-[#1554a3] text-white" },
-  { id: "demo-liqui-moly", name: "Liqui Moly", slug: "liqui-moly", mark: "LIQUI MOLY", tone: "bg-[#e12526] text-white" },
   { id: "demo-3m", name: "3M", slug: "3m", mark: "3M", tone: "bg-[#f4f4f5] text-[#e12526]" },
   { id: "demo-soft99", name: "SOFT99", slug: "soft99", mark: "SOFT99", tone: "bg-[#111827] text-white" },
   { id: "demo-bullson", name: "Bullson", slug: "bullson", mark: "Bullson", tone: "bg-[#ef3338] text-white" },
-  { id: "demo-mobil", name: "Mobil 1", slug: "mobil-1", mark: "Mobil 1", tone: "bg-white text-[#1554a3] ring-1 ring-[#e5e7eb]" },
-  { id: "demo-chevron", name: "Chevron", slug: "chevron", mark: "CHEVRON", tone: "bg-[#1d4ed8] text-white" },
+  { id: "demo-baseus", name: "Baseus", slug: "baseus", mark: "BASEUS", tone: "bg-[#111827] text-[#f7d95f]" },
+  { id: "demo-turtle-wax", name: "Turtle Wax", slug: "turtle-wax", mark: "TURTLE WAX", tone: "bg-[#15803d] text-white" },
+  { id: "demo-meguiars", name: "Meguiar's", slug: "meguiars", mark: "Meguiar's", tone: "bg-[#f7d95f] text-[#111827]" },
 ];
 
 const demoBrandSets = {
@@ -162,7 +162,7 @@ export default function CategoryBrandRecommendations({ category, limit = 12, col
 
   useEffect(() => {
     if (!scrollable || loading || visibleBrands.length <= visibleCount) return undefined;
-    const timer = window.setInterval(() => slide(1), 2800);
+    const timer = window.setInterval(() => slide(1), 5000);
     return () => window.clearInterval(timer);
   }, [scrollable, loading, visibleBrands.length, visibleCount]);
 

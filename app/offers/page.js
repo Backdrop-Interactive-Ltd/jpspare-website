@@ -1,7 +1,6 @@
 import Link from "next/link";
 import OffersBestSellingClient from "./OffersBestSellingClient";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
 
 export const metadata = {
   title: "Offers | JPSPARE",
@@ -69,11 +68,29 @@ function OfferPoster({ title, accent, label, index }) {
   );
 }
 
+function OffersHeader() {
+  return (
+    <header className="sticky top-0 z-[100] bg-[#111827] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)]">
+      <div className="mx-auto flex h-[82px] w-full max-w-[1720px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-10 max-sm:h-auto max-sm:flex-wrap max-sm:py-3">
+        <Link href="/" className="block h-[78px] w-[238px] shrink-0 overflow-hidden rounded-[8px] transition-transform duration-300 hover:scale-[1.02] max-lg:h-[68px] max-lg:w-[202px] max-sm:h-[60px] max-sm:w-[176px]" aria-label="JPSPARE home">
+          <img src="/jpspare-logo-wide-clean.png" alt="JPSPARE" className="h-full w-full object-contain" />
+        </Link>
+        <nav className="flex min-w-0 flex-wrap items-center justify-end gap-3 text-[14px] font-bold max-sm:w-full max-sm:justify-start max-sm:text-[13px]">
+          <Link href="/" className="rounded-[7px] px-2 py-2 transition hover:bg-white/10 hover:text-[#f7d95f]">Home</Link>
+          <Link href="/products" className="rounded-[7px] px-2 py-2 transition hover:bg-white/10 hover:text-[#f7d95f]">Products</Link>
+          <Link href="/offers" className="rounded-[7px] bg-[#ef3338] px-3 py-2 text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)]">Offers</Link>
+          <Link href="/track-order" className="rounded-[9px] bg-white px-4 py-2 font-black text-[#111827] transition hover:bg-[#fff2f2]">Track Order</Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
 export default function OffersPage() {
   return (
     <>
       <TopDealBar />
-      <Header />
+      <OffersHeader />
       <main className="bg-[#eef0f5] text-[#111827]">
         <OffersBestSellingClient />
 

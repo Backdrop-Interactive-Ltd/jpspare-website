@@ -35,7 +35,7 @@ export default function AccessoryRecommendationScroller({ items, visibleCount = 
 
   useEffect(() => {
     if (items.length <= visibleCount) return undefined;
-    const timer = window.setInterval(() => slide(1), 2600);
+    const timer = window.setInterval(() => slide(1), 5000);
     return () => window.clearInterval(timer);
   }, [items.length, visibleCount]);
 

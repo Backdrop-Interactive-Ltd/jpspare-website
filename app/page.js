@@ -18,10 +18,10 @@ import PartsInquirySection from "./PartsInquirySection";
 
 const navItems = [
   { label: "HOME", href: "/" },
-  { label: "CAR ACCESSORIES", href: "/car-accessories", hasMenu: true },
-  { label: "CAR PARTS", href: "/car-parts", hasMenu: true },
-  { label: "TYRES", href: "/tyres", hasMenu: true },
-  { label: "LUBRICANT", href: "/lubricant", hasMenu: true },
+  { label: "CAR ACCESSORIES", href: "/collections/car-accessories", hasMenu: true },
+  { label: "CAR PARTS", href: "/collections/car-parts", hasMenu: true },
+  { label: "TYRES", href: "/collections/tyres", hasMenu: true },
+  { label: "LUBRICANT", href: "/collections/lubricant", hasMenu: true },
   { label: "BRANDS", href: "/brands" },
   { label: "MODIFICATION", href: "/modification" },
   { label: "PARTS QUOTE", href: "/parts-quote" },
@@ -704,7 +704,7 @@ function MegaRecommendationBrandSplit({ recommendedItems, brandCategory }) {
 
 function CarPartsMegaMenu() {
   return (
-    <MegaMenuShell topLabel="Brakes • Filters • Electrical • Engine" href="/car-parts">
+    <MegaMenuShell topLabel="Brakes • Filters • Electrical • Engine" href="/collections/car-parts">
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
           <MegaRecommendationBrandSplit recommendedItems={recommendedCarParts} brandCategory="car-parts" />
@@ -724,7 +724,7 @@ function CarPartsMegaMenu() {
 
 function TyresMegaMenu() {
   return (
-    <MegaMenuShell topLabel="Brand • Rim Size • Tyre Care • Accessories" href="/tyres">
+    <MegaMenuShell topLabel="Brand • Rim Size • Tyre Care • Accessories" href="/collections/tyres">
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
           <MegaRecommendationBrandSplit recommendedItems={recommendedTyres} brandCategory="tyres" />
@@ -768,7 +768,7 @@ function TyresMegaMenu() {
 
 function LubricantMegaMenu() {
   return (
-    <MegaMenuShell topLabel="Engine Oil • Transmission • Coolant • Brands" href="/lubricant">
+    <MegaMenuShell topLabel="Engine Oil • Transmission • Coolant • Brands" href="/collections/lubricant">
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
           <MegaRecommendationBrandSplit recommendedItems={recommendedLubricants} brandCategory="lubricant" />
@@ -821,7 +821,7 @@ function CarAccessoriesMegaMenu() {
           Interior • Exterior • Care • Lifestyle
         </span>
         <a
-          href="/car-accessories"
+          href="/collections/car-accessories"
           className="inline-flex h-8 shrink-0 items-center gap-2 rounded-[7px] bg-[#ef3338] px-4 text-[10px] font-black uppercase tracking-[0.04em] text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d]"
         >
           View More
@@ -851,7 +851,7 @@ function CarAccessoriesMegaMenu() {
                     <Icon name="tag" className="size-3.5" />
                   </span>
                   <div className="min-w-0">
-                    <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">Shop By Brand</h4>
+                    <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">Popular Brand</h4>
                     <span className="mt-1.5 block h-0.5 w-7 rounded-full bg-[#ef3338]/80 transition-all duration-200 group-hover/category:w-11 group-hover/category:bg-[#ef3338]" />
                   </div>
                 </div>
@@ -866,8 +866,8 @@ function CarAccessoriesMegaMenu() {
                     <Icon name="grid" className="size-4" />
                   </span>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">Browse Collection</p>
-                    <h4 className="mt-0.5 text-[17px] font-black leading-none text-[#111827]">Shop Accessories By Category</h4>
+                    <h4 className="text-[17px] font-black leading-none text-[#111827]">SHOP BY CATEGORY</h4>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">Browse Collection</p>
                   </div>
                 </div>
                 <span className="rounded-full border border-[#f0cfd2] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#ef3338]">
@@ -1053,17 +1053,17 @@ function SearchHeaderBar({ settings }) {
       <LogoMark logo={settings?.logo} />
       <TopSearch placeholderTexts={settings?.searchPlaceholders} />
       <div className="hidden shrink-0 items-center gap-5 text-white lg:ml-auto lg:flex">
-        <Link href="/offers" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
+        <a href="/offers" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
           <Icon name="gift" className="size-7 text-white" />
           <span className="leading-none">
             <span className="block text-[16px] font-black">Offers</span>
             <span className="mt-1 block text-[12px] font-medium text-white">Latest Offers</span>
           </span>
-        </Link>
-        <Link href="/eid-deal" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
+        </a>
+        <Link href="/mega-deal" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
           <Icon name="flashSolid" className="eid-deal-flash size-6 text-white" />
           <span className="leading-none">
-            <span className="block text-[16px] font-black">Eid Deal</span>
+            <span className="block text-[16px] font-black">Mega Deal</span>
             <span className="mt-1 block text-[12px] font-medium text-white">Special Deals</span>
           </span>
         </Link>
@@ -1090,7 +1090,7 @@ function Hero() {
           <HeroBannerSlider fallbackSlides={heroSlides} className="h-[440px] max-lg:h-[390px] max-sm:h-[245px]" />
         </div>
         <Link
-          href="/car-accessories"
+          href="/collections/car-accessories"
           className="group relative min-h-[440px] overflow-hidden rounded-none bg-[#111827] text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)] max-lg:min-h-[220px] max-sm:min-h-[180px]"
           aria-label="Shop emergency car accessories"
         >

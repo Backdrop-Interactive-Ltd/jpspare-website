@@ -670,16 +670,14 @@ function SearchSuggestions({ query, recentSearches, popularSearches, products, o
               </h4>
               <span className="rounded-full bg-[#fff3f3] px-2 py-1 text-[11px] font-black text-[#ef3338]">Trending</span>
             </div>
-            <div className="flex max-h-[72px] flex-wrap gap-2 overflow-hidden">
-              {popularSearches.map((item, index) => (
+            <div className="flex max-h-[70px] flex-wrap gap-1.5 overflow-hidden py-1">
+              {popularSearches.map((item) => (
                 <button
                   key={item}
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => onSelect(item)}
-                  className={`inline-flex h-8 items-center rounded-full border bg-white px-3 text-[13px] font-semibold transition hover:border-[#ef3338] hover:text-[#ef3338] ${
-                    index === 0 ? "border-[#f7d95f] text-[#d3191d]" : "border-[#e4e8ef] text-[#374151]"
-                  }`}
+                  className="inline-flex h-7 items-center rounded-full border border-[#e5eaf1] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-2.5 text-[12px] font-bold text-[#374151] shadow-[0_6px_14px_rgba(15,23,42,0.04)] transition hover:scale-[1.04] hover:border-[#ef3338] hover:bg-[#fff5f5] hover:text-[#ef3338] hover:shadow-[0_10px_18px_rgba(239,51,56,0.10)]"
                 >
                   {item}
                 </button>
