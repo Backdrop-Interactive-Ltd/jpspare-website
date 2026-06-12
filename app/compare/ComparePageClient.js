@@ -1,38 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const initialProducts = [
-  {
-    id: "advics-a8n006",
-    rank: "#1",
-    title: "Advics Brake Shoe A8N006",
-    brand: "ADVICS",
-    price: 4650,
-    partNumber: "N/A",
-    category: "Auto Part",
-    rating: 4.5,
-    availability: "In Stock",
-    description:
-      "Achieves both excellent brake performance and low NV. Stable brake effectiveness, long life, and excellent NV performance for daily driving.",
-    crop: "bg-[-236px_-8px]",
-  },
-  {
-    id: "advics-b8n027",
-    rank: "#2",
-    title: "Advics Brake Shoe B8N027",
-    brand: "ADVICS",
-    price: 4400,
-    partNumber: "N/A",
-    category: "Brake Shoe",
-    rating: 4.5,
-    availability: "In Stock",
-    description:
-      "Achieves both excellent brake performance and low NV. Stable brake effectiveness, long life, and excellent NV performance for city and highway use.",
-    crop: "bg-[-236px_-8px]",
-  },
-];
+const PRODUCT_COMPARE_SELECTION_KEY = "jpspare-product-compare-selection";
+const PRODUCT_COMPARE_ITEMS_KEY = "jpspare-product-compare-items";
+
+function parsePrice(value) {
+  if (typeof value === "number") return value;
+  const numericValue = Number(String(value || "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function readCompareProducts() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const storedItems = window.localStorage.getItem(PRODUCT_COMPARE_ITEMS_KEY);
+    const parsedItems = storedItems ? JSON.parse(storedItems) : [];
+    if (!Array.isArray(parsedItems)) return [];
+
+    return parsedItems
+      .filter((item) => item && (item.name || item.title))
+      .slice(0, 3)
+      .map((item, index) => ({
+        id: item.key || item.slug || `compare-${index}`,
+        slug: item.slug || item.key || "",
+        rank: `#${index + 1}`,
+        title: item.title || item.name,
+        brand: item.brand || "JPSPARE",
+        price: parsePrice(item.price),
+        partNumber: item.partNumber || "N/A",
+        category: item.category || "Auto Part",
+        rating: Number(item.reviews || item.rating) || 4.5,
+        availability: item.availability || "In Stock",
+        description: item.description || "Selected product ready for side-by-side comparison.",
+        image: item.image || "",
+        crop: item.crop || "",
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function writeCompareProducts(products) {
+  if (typeof window === "undefined") return;
+
+  const selection = products.map((product) => product.id).filter(Boolean);
+  const items = products.map((product) => ({
+    key: product.id,
+    slug: product.slug,
+    title: product.title,
+    name: product.title,
+    brand: product.brand,
+    price: product.price,
+    category: product.category,
+    image: product.image,
+    crop: product.crop,
+    reviews: product.rating,
+  }));
+
+  window.localStorage.setItem(PRODUCT_COMPARE_SELECTION_KEY, JSON.stringify(selection));
+  window.localStorage.setItem(PRODUCT_COMPARE_ITEMS_KEY, JSON.stringify(items));
+  window.dispatchEvent(new CustomEvent("jpspare-compare-change", { detail: { count: selection.length } }));
+}
 
 function Icon({ name, className = "size-4" }) {
   const icons = {
@@ -63,17 +94,22 @@ function formatPrice(value) {
 }
 
 function CompareProductCard({ product, quantity, added, onAdd, onRemove, onQuantity }) {
+  const productHref = product.slug ? `/products/${product.slug}` : "/products";
+
   return (
     <article className="overflow-hidden rounded-[12px] border border-[#edf0f4] bg-white shadow-[0_18px_38px_rgba(15,23,42,0.10)]">
       <div className="relative h-[250px] overflow-hidden bg-[#f8fafc]">
-        <div className={`h-full w-full bg-[url('/products-reference.png')] bg-[length:1460px_684px] bg-no-repeat ${product.crop}`} />
+        <div
+          className={`h-full w-full bg-no-repeat ${product.image ? "bg-contain bg-center" : `bg-[url('/products-reference.png')] bg-[length:1460px_684px] ${product.crop}`}`}
+          style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
+        />
         <span className="absolute left-4 top-4 rounded-full bg-[#ef3338] px-3 py-2 text-[13px] font-black text-white shadow-lg">{product.rank}</span>
         <span className="absolute left-16 top-4 rounded-full bg-[#22c55e] px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white">In Stock</span>
         <button type="button" onClick={onRemove} className="absolute right-4 top-4 grid size-9 place-items-center rounded-full border border-[#e5e7eb] bg-white text-[#64748b] shadow-lg transition hover:border-[#ef3338] hover:text-[#ef3338]" aria-label={`Remove ${product.title}`}>
           <Icon name="x" className="size-4" />
         </button>
         <div className="absolute bottom-4 left-4 flex overflow-hidden rounded-[6px] border border-[#e5e7eb] bg-white shadow-lg">
-          <Link href={`/products/${product.id}`} className="grid size-10 place-items-center text-[#475467] transition hover:bg-[#fff5f5] hover:text-[#ef3338]" aria-label={`View ${product.title}`}>
+          <Link href={productHref} className="grid size-10 place-items-center text-[#475467] transition hover:bg-[#fff5f5] hover:text-[#ef3338]" aria-label={`View ${product.title}`}>
             <Icon name="eye" className="size-[17px]" />
           </Link>
           <button type="button" className="grid size-10 place-items-center border-l border-[#edf0f3] text-[#475467] transition hover:bg-[#fff5f5] hover:text-[#ef3338]" aria-label={`Wishlist ${product.title}`}>
@@ -139,6 +175,9 @@ function StatCard({ product }) {
 }
 
 function ComparisonTable({ products }) {
+  const tableGridStyle = {
+    gridTemplateColumns: `240px repeat(${products.length}, minmax(0, 1fr))`,
+  };
   const rows = [
     { label: "Price", dot: "bg-[#ef3338]", render: (product) => <span className="text-[20px] font-black text-[#ef3338]">{formatPrice(product.price)}</span> },
     { label: "Part Number", dot: "bg-[#3b82f6]", render: (product) => <span className="inline-block w-full rounded-[6px] bg-[#f3f5f8] px-3 py-1 text-[13px] font-bold text-[#667085]">{product.partNumber}</span> },
@@ -161,7 +200,7 @@ function ComparisonTable({ products }) {
 
       <div className="min-w-full overflow-x-auto">
         <div className="min-w-[760px]">
-          <div className="grid grid-cols-[240px_repeat(2,minmax(0,1fr))] border-b border-[#e8edf3] bg-[#f8fafc]">
+          <div className="grid border-b border-[#e8edf3] bg-[#f8fafc]" style={tableGridStyle}>
             <div className="px-8 py-5 text-[13px] font-black uppercase tracking-wide text-[#172033]">Features</div>
             {products.map((product) => (
               <div key={product.id} className="flex items-center gap-2 px-8 py-5 text-[13px] font-black uppercase tracking-wide text-[#172033]">
@@ -171,7 +210,7 @@ function ComparisonTable({ products }) {
             ))}
           </div>
           {rows.map((row) => (
-            <div key={row.label} className="grid grid-cols-[240px_repeat(2,minmax(0,1fr))] border-b border-[#edf0f4] last:border-b-0">
+            <div key={row.label} className="grid border-b border-[#edf0f4] last:border-b-0" style={tableGridStyle}>
               <div className="flex items-center gap-3 px-8 py-6 text-[14px] font-black text-[#172033]">
                 <span className={`size-2 rounded-full ${row.dot}`} />
                 {row.label}
@@ -190,11 +229,17 @@ function ComparisonTable({ products }) {
 }
 
 export default function ComparePageClient() {
-  const [products, setProducts] = useState(initialProducts);
-  const [quantities, setQuantities] = useState(() => Object.fromEntries(initialProducts.map((product) => [product.id, 1])));
+  const [products, setProducts] = useState([]);
+  const [quantities, setQuantities] = useState({});
   const [added, setAdded] = useState({});
 
   const comparedText = useMemo(() => `${products.length}/3`, [products.length]);
+
+  useEffect(() => {
+    const selectedProducts = readCompareProducts();
+    setProducts(selectedProducts);
+    setQuantities(Object.fromEntries(selectedProducts.map((product) => [product.id, 1])));
+  }, []);
 
   const updateQuantity = (productId, delta) => {
     setQuantities((current) => ({
@@ -204,7 +249,18 @@ export default function ComparePageClient() {
   };
 
   const removeProduct = (productId) => {
-    setProducts((current) => current.filter((product) => product.id !== productId));
+    setProducts((current) => {
+      const nextProducts = current.filter((product) => product.id !== productId);
+      writeCompareProducts(nextProducts);
+      return nextProducts;
+    });
+  };
+
+  const clearProducts = () => {
+    setProducts([]);
+    setQuantities({});
+    setAdded({});
+    writeCompareProducts([]);
   };
 
   return (
@@ -220,7 +276,7 @@ export default function ComparePageClient() {
             <h1 className="text-[38px] font-black leading-tight tracking-[-0.02em] text-[#172033] sm:text-[44px]">
               Product <span className="text-[#ef3338]">Comparison</span>
             </h1>
-            <p className="mt-3 text-[17px] text-[#667085]">Comparing {products.length} of 2 products • Find the perfect auto part</p>
+            <p className="mt-3 text-[17px] text-[#667085]">Comparing {products.length} of 3 products • Find the perfect auto part</p>
           </div>
           <div className="flex flex-wrap gap-4">
             <span className="inline-flex items-center gap-3 rounded-[8px] bg-white px-5 py-3 text-[13px] font-bold text-[#667085] shadow-[0_10px_24px_rgba(15,23,42,0.10)]">
@@ -228,7 +284,7 @@ export default function ComparePageClient() {
               <strong className="text-[#172033]">{comparedText}</strong>
               compared
             </span>
-            <button type="button" onClick={() => setProducts([])} className="inline-flex items-center gap-3 rounded-[8px] bg-white px-5 py-3 text-[13px] font-bold text-[#667085] shadow-[0_10px_24px_rgba(15,23,42,0.10)] transition hover:text-[#ef3338]">
+            <button type="button" onClick={clearProducts} className="inline-flex items-center gap-3 rounded-[8px] bg-white px-5 py-3 text-[13px] font-bold text-[#667085] shadow-[0_10px_24px_rgba(15,23,42,0.10)] transition hover:text-[#ef3338]">
               <Icon name="x" className="size-4" />
               Clear All
             </button>

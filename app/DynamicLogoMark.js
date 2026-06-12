@@ -26,7 +26,7 @@ export default function DynamicLogoMark({ logo }) {
   }, [logo]);
 
   return (
-    <Link href="/" className="header-logo-mark relative block h-[72px] w-[216px] shrink-0 overflow-hidden rounded-[8px] transition-transform duration-300 max-lg:h-16 max-lg:w-[188px] max-sm:h-[58px] max-sm:w-[168px]" aria-label="JPSPARE home">
+    <Link href="/" className="header-logo-mark relative block h-[78px] w-[238px] shrink-0 overflow-hidden rounded-[8px] transition-transform duration-300 max-lg:h-[68px] max-lg:w-[202px] max-sm:h-[60px] max-sm:w-[176px]" aria-label="JPSPARE home">
       <img src={logo || logoSrc} alt="JPSPARE" className="h-full w-full object-contain" />
     </Link>
   );

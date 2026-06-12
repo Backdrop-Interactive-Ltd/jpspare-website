@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { addProductToCart, addProductToWishlist } from "../../commerce-client";
+import { formatPriceDisplay } from "../../price-format";
 import { ProductCardInfo } from "../../ProductTabs";
 import ProductQuickActions from "../../ProductQuickActions";
 
@@ -658,7 +659,7 @@ export default function ProductDetailClient({ slug }) {
           <p className="mt-8 text-[15px] font-black max-sm:mt-6">⚡ 40 sold in last 24 hours</p>
           <div className="mt-6 max-sm:mt-4"><p className="text-[14px]"><span className="text-[#ff6961]">HURRY UP!</span> Only <span className="text-[22px] text-[#ff6961]">61</span> items left!</p><div className="mt-3 h-1.5 rounded bg-[#e5e7eb]"><div className="h-full w-[62%] rounded bg-[#ff6961]" /></div></div>
           <p className="mt-7 text-[14px] leading-6">🚚 Order in the next 21 hour(s) 48 minute(s) to get it between <b><u>Tuesday, 19th May</u></b> and <b><u>Thursday, 21st May</u></b></p>
-          <div className="mt-7 rounded-[15px] border border-[#e5e7eb] bg-white p-5 transition-all duration-300 hover:border-[#f7d95f] hover:bg-[#fff8f8] hover:shadow-[0_18px_40px_rgba(220,38,38,0.12)] focus-within:border-[#f7d95f] focus-within:bg-[#fff8f8] focus-within:shadow-[0_18px_40px_rgba(220,38,38,0.12)] max-sm:p-4">
+          <div className="mt-7 rounded-[15px] border border-[#e5e7eb] bg-white p-5 transition-all duration-300 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fff8f8] hover:shadow-[0_18px_40px_rgba(220,38,38,0.12)] focus-within:border-[#f7d95f] focus-within:bg-[#fff8f8] focus-within:shadow-[0_18px_40px_rgba(220,38,38,0.12)] max-sm:p-4">
             <div className="grid grid-cols-[0.75fr_1fr_1fr] gap-2 max-sm:grid-cols-1">
               <div className="flex h-12 items-center justify-between rounded-[10px] border border-[#dfe4ea] bg-white px-4 text-[18px] font-black">
                 <button className="text-[#f19397]" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
@@ -682,10 +683,10 @@ export default function ProductDetailClient({ slug }) {
                   image: "/product-gallery-reference.png",
                   slug: "hitachi-shock-absorver-b3337",
                 });
-              }} className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:bg-[#fff8e6]">
+              }} className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fff8e6]">
                 ♡ {wishlisted ? "Wishlisted" : "Wishlist"}
               </button>
-              <button className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:bg-[#fff8e6]">⌯ Share</button>
+              <button className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fff8e6]">⌯ Share</button>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-4 text-[13px] max-sm:gap-3">
               <div className="flex items-center gap-3">
@@ -724,30 +725,24 @@ export default function ProductDetailClient({ slug }) {
         </div>
 
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
-          <div className="related-product-track flex w-max gap-[30px]">
+          <div className="related-product-track flex w-max gap-5">
             {[...relatedProducts, ...relatedProducts].map((item, index) => (
-            <article key={`${item.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
-              <div className="relative overflow-hidden rounded-[6px]">
+            <article key={`${item.name}-${index}`} className="group/product w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 text-left transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
+              <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
                 <Link
                   href={`/products/${slugify(item.name)}`}
-                  className={`block h-[300px] rounded-[6px] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px]`}
+                  className={`block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055]`}
                   aria-label={item.name}
                 />
                 <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
-                <button
-                  type="button"
-                  onClick={() => handleRelatedAdd(item)}
-                  className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
-                  aria-label={`Add ${item.name} to cart`}
-                >
-                  {addedRelated.includes(item.name) ? "Added" : "Add To Cart"}
-                </button>
               </div>
               <ProductCardInfo
                 product={item}
                 productUrl={`/products/${slugify(item.name)}`}
                 onAdd={() => handleRelatedAdd(item)}
                 isAdded={addedRelated.includes(item.name)}
+                cardIndex={index}
+                compact
               />
             </article>
           ))}
@@ -770,30 +765,24 @@ export default function ProductDetailClient({ slug }) {
         </div>
 
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
-          <div className="related-product-track related-product-track-reverse flex w-max gap-[30px]">
+          <div className="related-product-track related-product-track-reverse flex w-max gap-5">
             {[...buyingNowProducts, ...buyingNowProducts].map((item, index) => (
-              <article key={`${item.name}-${index}`} className="group/product w-[370px] shrink-0 rounded-[10px] border border-transparent bg-white p-3 text-left transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)] max-sm:w-[285px]">
-                <div className="relative overflow-hidden rounded-[6px]">
+              <article key={`${item.name}-${index}`} className="group/product w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 text-left transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
+                <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
                   <Link
                     href={`/products/${slugify(item.name)}`}
-                    className={`block h-[300px] rounded-[6px] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition duration-200 group-hover/product:scale-[1.012] max-sm:h-[260px]`}
+                    className={`block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055]`}
                     aria-label={item.name}
                   />
                   <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
-                  <button
-                    type="button"
-                    onClick={() => handleBuyingNowAdd(item)}
-                    className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100 group-focus-within/product:translate-y-0 group-focus-within/product:opacity-100"
-                    aria-label={`Add ${item.name} to cart`}
-                  >
-                    {addedBuyingNow.includes(item.name) ? "Added" : "Add To Cart"}
-                  </button>
                 </div>
                 <ProductCardInfo
                   product={item}
                   productUrl={`/products/${slugify(item.name)}`}
                   onAdd={() => handleBuyingNowAdd(item)}
                   isAdded={addedBuyingNow.includes(item.name)}
+                  cardIndex={index}
+                  compact
                 />
               </article>
             ))}
@@ -809,7 +798,7 @@ export default function ProductDetailClient({ slug }) {
             <div className="size-14 shrink-0 bg-[url('/product-detail-reference.jpg')] bg-[length:1920px_5260px] bg-[-730px_-170px] max-sm:size-11" />
             <div className="min-w-0">
               <b className="block truncate text-[14px]">{product.title}</b>
-              <p className="text-[13px]">{product.price}</p>
+              <p className="product-price-display text-[15px] leading-none text-[#ef3338]">{formatPriceDisplay(product.price)}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 max-md:justify-between max-sm:gap-2">

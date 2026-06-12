@@ -12,7 +12,7 @@ const footerColumns = [
       ["Browse Products", "/#parts"],
       ["Deals & Offers", "/offers"],
       ["Sale Items", "/#featured-products"],
-      ["Search Parts", "/#parts-inquiry"],
+      ["Search Parts", "/parts-quote"],
     ],
   },
   {
@@ -20,7 +20,7 @@ const footerColumns = [
     links: [
       ["About JPSPARE", "/about"],
       ["Blog & News", "/blog"],
-      ["Video Gallery", "/#video-gallery"],
+      ["Video Gallery", "/video-gallery"],
       ["Contact Us", "/help"],
     ],
   },
@@ -29,6 +29,7 @@ const footerColumns = [
     links: [
       ["Track Your Order", "/track-order"],
       ["Vehicle Fitment", "/products/hitachi-shock-absorver-b3337#compatibility"],
+      ["Parts Quote", "/parts-quote"],
       ["Help Center", "/help"],
       ["Returns & Warranty", "/returns-warranty"],
       ["Privacy Policy", "/privacy-policy"],
@@ -195,16 +196,6 @@ export default function SiteFooter() {
               </ul>
             </div>
           ))}
-        </div>
-
-        <div className="border-y border-white/7">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-center gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 py-5 text-[15px] max-sm:flex-col max-sm:gap-2">
-            <span className="text-[#ff6267]">★★★★★★</span>
-            <span className="font-black">4.9/5</span>
-            <span className="text-[#d1d5db]">
-              <strong className="text-[#ff6267]">Trusted by Many</strong> Happy Customers
-            </span>
-          </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8 xl:px-10 py-5 text-[14px] text-[#aeb5c1] max-md:flex-col">

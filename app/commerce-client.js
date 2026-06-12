@@ -35,7 +35,7 @@ export async function addProductToWishlist(product) {
   const response = await fetch("/api/wishlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ product: normalizeProductForCart(product) }),
+    body: JSON.stringify(normalizeProductForCart(product)),
   });
 
   if (!response.ok) {
@@ -43,6 +43,7 @@ export async function addProductToWishlist(product) {
   }
 
   const data = await response.json();
-  window.dispatchEvent(new CustomEvent("jpspare-wishlist-change", { detail: data.item }));
-  return data.item;
+  const items = Array.isArray(data.items) ? data.items : [];
+  window.dispatchEvent(new CustomEvent("jpspare-wishlist-change", { detail: { count: items.length, items } }));
+  return data.item || items[0];
 }

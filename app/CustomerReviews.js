@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 const reviews = [
   {
     category: "Suspension",
@@ -52,6 +50,18 @@ const reviews = [
     date: "2024-01-12",
     views: 37,
   },
+  {
+    category: "Accessories",
+    categoryTone: "green",
+    text: "The accessory quality feels premium and the fitment guidance was accurate. Delivery was quick and the checkout process was simple.",
+    product: "Moxom Wide-Angle Car Holder",
+    vehicle: "2021 Toyota Axio",
+    partId: "JP-AX-AC-014",
+    name: "Mahmud Hasan",
+    role: "Sylhet, Bangladesh - Daily Driver",
+    date: "2024-01-15",
+    views: 52,
+  },
 ];
 
 function ReviewIcon({ name }) {
@@ -74,7 +84,15 @@ function ReviewIcon({ name }) {
   return null;
 }
 
-function ReviewCard({ review, active }) {
+const reviewCardFrameClasses = [
+  "basis-[17%] scale-[0.94] opacity-90 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
+  "basis-[19%] scale-[0.98] opacity-95 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
+  "z-10 basis-[22%] scale-[1.03] opacity-100 max-xl:basis-auto max-xl:scale-100",
+  "basis-[19%] scale-[0.98] opacity-95 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
+  "basis-[17%] scale-[0.94] opacity-90 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
+];
+
+function ReviewCard({ review, active, position = 0 }) {
   const categoryClass =
     review.categoryTone === "green"
       ? "border-[#91e6c7] bg-[#e9fff7] text-[#047857]"
@@ -85,59 +103,60 @@ function ReviewCard({ review, active }) {
   return (
     <article
       className={[
-        "min-h-[514px] rounded-[12px] border bg-white p-8 text-left transition duration-300 max-sm:min-h-0 max-sm:p-6",
+        "min-h-[395px] rounded-[10px] border bg-white p-4 text-left transition duration-300 max-sm:min-h-0 max-sm:p-5",
+        reviewCardFrameClasses[position] || reviewCardFrameClasses[0],
         active
-          ? "border-[#f7d95f] shadow-[0_18px_42px_rgba(220,38,38,0.12)]"
+          ? "min-h-[430px] border-[#f7d95f] shadow-[0_22px_52px_rgba(220,38,38,0.16)] max-xl:min-h-[395px]"
           : "border-[#dfe4ea] shadow-[0_1px_3px_rgba(15,23,42,0.05)] hover:border-[#f7d95f] hover:shadow-[0_16px_34px_rgba(220,38,38,0.10)]",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-4">
-        <span className="grid size-12 place-items-center rounded-[10px] bg-[#fff0f0] text-[34px] font-black leading-none text-[#ef3c40]">
+        <span className="grid size-9 place-items-center rounded-[8px] bg-[#fff0f0] text-[26px] font-black leading-none text-[#ef3c40]">
           ”
         </span>
-        <span className={`rounded-full border px-4 py-1.5 text-[12px] font-black uppercase tracking-[0.08em] ${categoryClass}`}>
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] ${categoryClass}`}>
           {review.category}
         </span>
       </div>
 
-      <div className="mt-6 flex items-center gap-2">
-        <span className="text-[22px] leading-none text-[#ef3c40]">★★★★★</span>
-        <span className="rounded-full bg-[#fff0f0] px-2 py-1 text-[13px] font-black text-[#ef3c40]">5.0</span>
+      <div className="mt-4 flex items-center gap-2">
+        <span className="text-[16px] leading-none text-[#ef3c40]">★★★★★</span>
+        <span className="rounded-full bg-[#fff0f0] px-1.5 py-0.5 text-[11px] font-black text-[#ef3c40]">5.0</span>
       </div>
 
-      <p className="mt-6 text-[17px] leading-[1.55] text-[#374151]">&quot;{review.text}&quot;</p>
+      <p className="mt-4 line-clamp-4 text-[13px] font-semibold leading-[1.55] text-[#374151]">&quot;{review.text}&quot;</p>
 
       <div
         className={[
-          "mt-7 rounded-[8px] border bg-[#f8fafc] p-5",
+          "mt-5 rounded-[8px] border bg-[#f8fafc] p-3",
           active ? "border-[#f7d95f] bg-[#fff9f0]" : "border-[#edf0f3]",
         ].join(" ")}
       >
-        <p className="flex items-center gap-2 text-[14px] font-black text-[#111827]">
+        <p className="line-clamp-2 text-[12px] font-black leading-[1.35] text-[#111827]">
           <span className="text-[#10b981]">✓</span>
           {review.product}
         </p>
-        <p className="mt-3 text-[14px] text-[#4b5563]">Vehicle: {review.vehicle}</p>
-        <p className="mt-2 text-[14px] text-[#4b5563]">
+        <p className="mt-2 truncate text-[11px] font-semibold text-[#4b5563]">Vehicle: {review.vehicle}</p>
+        <p className="mt-1 truncate text-[11px] font-semibold text-[#4b5563]">
           Part ID#: <span className="font-black text-[#d3191d]">{review.partId}</span>
         </p>
       </div>
 
-      <div className="mt-7 border-t border-[#e5e7eb] pt-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#ef3338] text-[14px] font-black text-white">
+      <div className="mt-5 border-t border-[#e5e7eb] pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#ef3338] text-[12px] font-black text-white">
               {review.name.charAt(0)}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-black text-[#111827]">
+              <p className="truncate text-[12px] font-black text-[#111827]">
                 {review.name} <span className="text-[#10b981]">✺</span>
               </p>
-              <p className="text-[12px] leading-tight text-[#5b6472]">{review.role}</p>
-              <p className="mt-1 text-[12px] text-[#6b7280]">{review.date}</p>
+              <p className="line-clamp-1 text-[10px] leading-tight text-[#5b6472]">{review.role}</p>
+              <p className="mt-1 text-[10px] text-[#6b7280]">{review.date}</p>
             </div>
           </div>
-          <span className="shrink-0 rounded-full bg-[#f3f5f8] px-3 py-1.5 text-[12px] font-semibold text-[#4b5563]">
+          <span className="shrink-0 rounded-full bg-[#f3f5f8] px-2 py-1 text-[10px] font-semibold text-[#4b5563]">
             ♙ {review.views}
           </span>
         </div>
@@ -147,50 +166,39 @@ function ReviewCard({ review, active }) {
 }
 
 export default function CustomerReviews() {
-  const [start, setStart] = useState(0);
-  const visibleReviews = [0, 1, 2].map((offset) => reviews[(start + offset) % reviews.length]);
-
-  const next = () => setStart((current) => (current + 1) % reviews.length);
-  const prev = () => setStart((current) => (current - 1 + reviews.length) % reviews.length);
+  const visibleReviews = reviews.slice(0, 5);
 
   return (
-    <section id="customer-reviews" className="bg-white py-24 max-sm:py-16">
-      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 text-center">
-        <div className="inline-flex h-[48px] items-center gap-3 rounded-full border border-[#f7d95f] bg-[#fff8f8] px-7 text-[14px] font-black uppercase tracking-[0.08em] text-[#d3191d]">
-          <ReviewIcon name="shield" />
-          Customer Reviews
+    <section id="customer-reviews" className="bg-transparent py-6 max-sm:py-4">
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
+        <div className="mb-8 flex items-center justify-between gap-4 text-left max-sm:items-center">
+          <div className="inline-flex h-[30px] items-center gap-2 rounded-[4px] bg-[#f05a24] px-4 text-[11px] font-black uppercase leading-none text-white shadow-[0_10px_20px_rgba(239,51,56,0.12)]">
+            <ReviewIcon name="shield" />
+            Customer Reviews
+          </div>
         </div>
 
-        <h2 className="mt-10 text-[48px] font-black leading-tight tracking-[-0.04em] text-[#111827] max-md:text-[40px] max-sm:text-[32px]">
-          Trusted by Car Enthusiasts Worldwide
-        </h2>
-        <span className="mx-auto mt-8 block h-1 w-24 rounded-full bg-[#ef3338]" />
-
-        <div className="mt-16 grid grid-cols-3 gap-8 max-lg:grid-cols-1">
-          {visibleReviews.map((review, index) => (
-            <ReviewCard key={`${review.partId}-${start}`} review={review} active={index === 2} />
-          ))}
+        <div className="review-carousel-viewport">
+          <div
+            className="flex items-center justify-center gap-4 max-xl:grid max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1"
+          >
+            {visibleReviews.map((review, index) => (
+              <ReviewCard
+                key={`${review.partId}-${index}`}
+                review={review}
+                active={index === 2}
+                position={index}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="mt-12 flex justify-center gap-4">
-          <button
-            type="button"
-            onClick={prev}
-            className="grid size-12 place-items-center rounded-full border-2 border-[#ef3338] text-[#ef3338] transition hover:bg-[#ef3338] hover:text-white"
-            aria-label="Previous review"
-          >
-            <ReviewIcon name="arrow" />
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            className="grid size-12 place-items-center rounded-full border-2 border-[#ef3338] text-[#ef3338] transition hover:bg-[#ef3338] hover:text-white"
-            aria-label="Next review"
-          >
-            <span className="rotate-180">
-              <ReviewIcon name="arrow" />
-            </span>
-          </button>
+        <div className="mt-6 flex items-center justify-center gap-6 border-t border-[#eef1f5] pt-5 text-[14px] max-sm:flex-col max-sm:gap-2">
+          <span className="tracking-[0.08em] text-[#ef3338]">★★★★★★</span>
+          <span className="font-black text-[#111827]">4.9/5</span>
+          <span className="text-[#4b5563]">
+            <strong className="text-[#ef3338]">Trusted by Many</strong> Happy Customers
+          </span>
         </div>
       </div>
     </section>

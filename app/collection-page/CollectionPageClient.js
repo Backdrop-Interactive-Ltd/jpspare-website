@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import CartDrawer from "../CartDrawer";
-import { addProductToCart } from "../commerce-client";
+import { addProductToCart, addProductToWishlist } from "../commerce-client";
 import DynamicFilters, { deriveBrand, makeFacetOptions, priceRangeText } from "../DynamicFilters";
 import ProductPagination from "../ProductPagination";
 import { ProductCardInfo } from "../ProductTabs";
@@ -86,30 +86,23 @@ function expandProducts(products, total = PAGE_SIZE * TOTAL_PAGES) {
   return Array.from({ length: total }, (_, index) => products[index % products.length]);
 }
 
-function ProductCard({ product, isAdded, onAdd }) {
+function ProductCard({ product, isAdded, onAdd, onWishlist, cardIndex }) {
   const productUrl = `/products/${slugify(product.name)}`;
 
   return (
-    <article className="group/product rounded-[10px] border border-transparent bg-white p-3 transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:bg-[#fffafa] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]">
-      <div className="relative overflow-hidden rounded-[6px]">
+    <article className="group/product rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
+      <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
         <a
           href={productUrl}
-          className={`block aspect-square rounded-[6px] bg-white bg-no-repeat transition duration-200 group-hover/product:scale-[1.012] ${
-            product.image ? "bg-cover bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
+          className={`block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white bg-no-repeat transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055] ${
+            product.image ? "bg-contain bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
           }`}
           style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
           aria-label={product.name}
         />
         <ProductQuickActions productUrl={productUrl} productName={product.name} />
-        <button
-          type="button"
-          onClick={() => onAdd(product.name)}
-          className="absolute bottom-9 left-1/2 z-10 flex h-[39px] min-w-[126px] -translate-x-1/2 translate-y-3 items-center justify-center rounded-full bg-black px-6 text-[13px] font-black text-white opacity-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition duration-200 hover:bg-[#d3191d] group-hover/product:translate-y-0 group-hover/product:opacity-100"
-        >
-          {isAdded ? "Added" : "Add To Cart"}
-        </button>
       </div>
-      <ProductCardInfo product={product} productUrl={productUrl} onAdd={() => onAdd(product)} isAdded={isAdded} />
+      <ProductCardInfo product={product} productUrl={productUrl} onAdd={() => onAdd(product)} onWishlist={() => onWishlist(product)} isAdded={isAdded} compact cardIndex={cardIndex} />
     </article>
   );
 }
@@ -149,6 +142,10 @@ export default function CollectionPageClient({ pageKey }) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
     setCartProduct(product);
     await addProductToCart(product);
+  }
+
+  async function handleAddToWishlist(product) {
+    await addProductToWishlist(product);
   }
 
   function toggleSelected(setter, value) {
@@ -222,9 +219,9 @@ export default function CollectionPageClient({ pageKey }) {
               onToggleProductType={(value) => toggleSelected(setSelectedProductTypes, value)}
             />
 
-            <div className="grid grid-cols-4 gap-x-[24px] gap-y-[44px] max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1">
+            <div className="grid grid-cols-6 gap-x-5 gap-y-9 max-2xl:grid-cols-5 max-xl:grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-y-6">
               {paginatedProducts.map((product, index) => (
-                <ProductCard key={`${product.name}-${index}`} product={product} isAdded={addedItems.includes(product.name)} onAdd={() => handleAddToCart(product)} />
+                <ProductCard key={`${product.name}-${index}`} product={product} isAdded={addedItems.includes(product.name)} onAdd={() => handleAddToCart(product)} onWishlist={() => handleAddToWishlist(product)} cardIndex={index} />
               ))}
             </div>
           </div>

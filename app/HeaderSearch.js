@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { searchCatalog } from "../lib/searchCatalog";
+import { formatPriceDisplay } from "./price-format";
 
 const vehicleMakes = [
   "Alfa Romeo",
@@ -612,7 +613,7 @@ function SearchSuggestions({ query, recentSearches, popularSearches, products, o
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-semibold text-[#111827]">{product.name}</span>
-                  <span className="mt-1 block text-[15px] font-black text-[#ef3338]">{product.price}</span>
+                  <span className="product-price-display mt-1 block text-[16px] leading-none text-[#ef3338]">{formatPriceDisplay(product.price)}</span>
                 </span>
                 <span className="text-[18px] text-[#aab2bf]">→</span>
               </button>
