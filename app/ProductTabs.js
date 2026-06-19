@@ -5,6 +5,7 @@ import CartDrawer from "./CartDrawer";
 import { addProductToCart, addProductToWishlist } from "./commerce-client";
 import { formatPriceDisplay, parsePriceValue } from "./price-format";
 import ProductQuickActions from "./ProductQuickActions";
+import SlideManualControls from "./SlideManualControls";
 
 const productImages = {
   washer: "bg-[-268px_-22px]",
@@ -291,8 +292,21 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
   const wishlistButtonClassName = `${compact ? "product-wishlist-button grid size-9 shrink-0 place-items-center rounded-[7px] border border-[#e5e7eb] bg-white text-[#111827] transition hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fffafa] hover:text-[#e12526] hover:shadow-[0_8px_16px_rgba(220,38,38,0.10)]" : "product-wishlist-button grid size-[44px] shrink-0 place-items-center rounded-[9px] border border-[#e5e7eb] bg-white text-[#111827] transition hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fffafa] hover:text-[#e12526] hover:shadow-[0_10px_20px_rgba(220,38,38,0.12)]"} ${wishlistSelected ? "!border-[#ef3338] !bg-[#ef3338] !text-white shadow-[0_8px_18px_rgba(239,51,56,0.20)]" : ""}`;
 
   useEffect(() => {
-    setWishlistSelected(readProductSelection(PRODUCT_WISHLIST_SELECTION_KEY).includes(productSelectionKey));
-    setCompareSelected(readProductSelection(PRODUCT_COMPARE_SELECTION_KEY).includes(productSelectionKey));
+    function syncProductSelection() {
+      setWishlistSelected(readProductSelection(PRODUCT_WISHLIST_SELECTION_KEY).includes(productSelectionKey));
+      setCompareSelected(readProductSelection(PRODUCT_COMPARE_SELECTION_KEY).includes(productSelectionKey));
+    }
+
+    syncProductSelection();
+    window.addEventListener("jpspare-wishlist-change", syncProductSelection);
+    window.addEventListener("jpspare-compare-change", syncProductSelection);
+    window.addEventListener("storage", syncProductSelection);
+
+    return () => {
+      window.removeEventListener("jpspare-wishlist-change", syncProductSelection);
+      window.removeEventListener("jpspare-compare-change", syncProductSelection);
+      window.removeEventListener("storage", syncProductSelection);
+    };
   }, [productSelectionKey]);
 
   const handleCompareSelect = (event) => {
@@ -313,10 +327,10 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
   return (
     <div className={compact ? "relative pt-3" : "relative pt-[18px]"}>
       <p className={compact ? "text-[10px] font-black uppercase leading-none tracking-[0.13em] text-[#ef3338]" : "text-[11px] font-bold uppercase leading-none tracking-[0.22em] text-[#ef3338]"}>{product.category}</p>
-      <h3 className={compact ? "mt-2 min-h-[44px] text-[15px] font-black leading-[1.34] text-[#111827] transition group-hover/product:text-[#e12526]" : "mt-[10px] min-h-[44px] text-[17px] font-black leading-[1.32] text-[#111827] transition group-hover/product:text-[#e12526]"}>
+      <h3 className={compact ? "product-card-title mt-2 text-[16px] leading-[1.28]" : "product-card-title mt-[10px] text-[18px] leading-[1.26]"}>
         <a href={productUrl} className="line-clamp-2">{product.name}</a>
       </h3>
-      <div className={compact ? "relative mt-2 min-h-[22px]" : "relative mt-3 min-h-[26px]"}>
+      <div className={compact ? "relative mt-3 min-h-[22px]" : "relative mt-3 min-h-[26px]"}>
         <div className={compact ? "flex flex-wrap items-start gap-1.5 pr-10" : "flex flex-wrap items-start gap-2 pr-12"}>
           <span className={compact ? "rounded-[5px] bg-[#f25a1d] px-2.5 py-1 text-[10.5px] font-black uppercase leading-none tracking-[0.01em] text-white shadow-[0_4px_10px_rgba(242,90,29,0.16)]" : "rounded-[5px] bg-[#f25a1d] px-3 py-1.5 text-[11.5px] font-black uppercase leading-none tracking-[0.01em] text-white shadow-[0_5px_12px_rgba(242,90,29,0.16)]"}>
             {productBrand}
@@ -353,7 +367,7 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
         <button
           type="button"
           onClick={onAdd}
-          className={compact ? "product-add-cart-button inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-[7px] bg-[#ef3338] px-3 text-[13px] font-black !text-white shadow-[0_8px_16px_rgba(220,38,38,0.20)] transition hover:bg-[#d91f25]" : "product-add-cart-button inline-flex h-[44px] flex-1 items-center justify-center gap-3 rounded-[9px] bg-[#ef3338] px-5 text-[15px] font-black !text-white shadow-[0_10px_20px_rgba(220,38,38,0.24)] transition hover:bg-[#d91f25]"}
+          className={compact ? "product-add-cart-button inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-[7px] bg-[#ef3338] px-3 text-[13px] font-black !text-white shadow-[0_8px_16px_rgba(220,38,38,0.20)] transition hover:bg-[#111827]" : "product-add-cart-button inline-flex h-[44px] flex-1 items-center justify-center gap-3 rounded-[9px] bg-[#ef3338] px-5 text-[15px] font-black !text-white shadow-[0_10px_20px_rgba(220,38,38,0.24)] transition hover:bg-[#111827]"}
           aria-label={`Add ${product.name} to cart`}
         >
           <CardCartIcon className={compact ? "product-add-cart-icon size-4" : "product-add-cart-icon size-5"} />
@@ -536,26 +550,25 @@ export default function ProductTabs({ cmsProducts = [] }) {
 
   return (
     <section id="featured-products" className="bg-transparent pt-4 pb-8 max-sm:pt-4">
-      <div className="mx-auto mt-4 w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-3 flex items-center gap-4 text-left max-sm:mb-2">
-          <div className="text-[18px] font-black uppercase leading-none tracking-[-0.02em] text-[#111827] max-sm:text-[16px]">
-            HANDPICKED SELECTION
-          </div>
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          HANDPICKED SELECTION
         </div>
-
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
         <div className="grid grid-cols-6 gap-x-5 gap-y-3 max-2xl:grid-cols-5 max-xl:grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-y-3">
           {visibleProducts.map((product, index) => (
             <article key={`${product.name}-${index}`} className="product-card-shell group/product relative z-0 rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:z-30 hover:rounded-b-none hover:bg-[#fffafa] hover:shadow-[0_18px_38px_rgba(220,38,38,0.18)]">
               <span className="product-card-sweep" aria-hidden="true" />
               <div className="block">
-                <div className="relative overflow-hidden rounded-[7px]">
+                <div className="product-card-media relative overflow-hidden rounded-[7px]">
                   {(() => {
                     const productUrl = `/products/${product.slug || slugify(product.name)}`;
                     return (
                       <>
                   <a
                     href={productUrl}
-                    className={`block aspect-[10/11] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055] ${
+                    className={`product-card-image block aspect-[10/10.5] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat ${
                       product.image ? "bg-contain bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                     }`}
                     style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
@@ -566,7 +579,9 @@ export default function ProductTabs({ cmsProducts = [] }) {
                     );
                   })()}
                 </div>
-                <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} onWishlist={() => handleAddToWishlist(product)} isAdded={addedItems.includes(product.name)} compact cardIndex={index} />
+                <div className="product-card-content-surface">
+                  <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} onWishlist={() => handleAddToWishlist(product)} isAdded={addedItems.includes(product.name)} compact cardIndex={index} />
+                </div>
               </div>
             </article>
           ))}
@@ -606,32 +621,33 @@ export function BestSellingAutoParts() {
 
   return (
     <section id="best-selling-parts" className="bg-transparent py-6 max-sm:py-4">
-      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-3 flex items-center justify-between gap-4 text-left max-sm:mb-2 max-sm:items-center">
-          <div className="text-[18px] font-black uppercase leading-none tracking-[-0.02em] text-[#111827] max-sm:text-[16px]">
-            BEST SELLING
-          </div>
-          <a
-            href="/products"
-            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
-          >
-            View all
-          </a>
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          BEST SELLING
         </div>
-
-        <div className="related-product-marquee related-product-marquee-float text-left">
-          <div className="related-product-track flex w-max gap-5">
+        <a
+          href="/products"
+          className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+        >
+          View all
+        </a>
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
+        <div className="manual-slide-shell new-arrivals-showcase text-left">
+          <SlideManualControls step={4} />
+          <div className="new-arrivals-viewport">
+          <div className="new-arrivals-track flex w-max gap-5">
           {[...bestSellingProducts, ...bestSellingProducts].map((product, index) => (
             <article key={`${product.name}-${index}`} className="product-card-shell group/product relative z-0 w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:z-30 hover:rounded-b-none hover:bg-[#fffafa] hover:shadow-[0_18px_38px_rgba(220,38,38,0.18)]">
               <span className="product-card-sweep" aria-hidden="true" />
-              <div className="relative overflow-hidden rounded-[7px]">
+              <div className="product-card-media relative overflow-hidden rounded-[7px]">
                 {(() => {
                   const productUrl = `/products/${product.slug || slugify(product.name)}`;
                   return (
                     <>
                       <a
                         href={productUrl}
-                        className={`block aspect-[10/11] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055] ${
+                        className={`product-card-image block aspect-[10/10.5] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat ${
                           product.image ? "bg-contain bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                         }`}
                         style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
@@ -642,17 +658,20 @@ export function BestSellingAutoParts() {
                   );
                 })()}
               </div>
-              <ProductCardInfo
-                product={product}
-                productUrl={`/products/${product.slug || slugify(product.name)}`}
-                onAdd={() => handleAddToCart(product)}
-                onWishlist={() => handleAddToWishlist(product)}
-                isAdded={addedItems.includes(product.name)}
-                compact
-                cardIndex={index}
-              />
+              <div className="product-card-content-surface">
+                <ProductCardInfo
+                  product={product}
+                  productUrl={`/products/${product.slug || slugify(product.name)}`}
+                  onAdd={() => handleAddToCart(product)}
+                  onWishlist={() => handleAddToWishlist(product)}
+                  isAdded={addedItems.includes(product.name)}
+                  compact
+                  cardIndex={index}
+                />
+              </div>
             </article>
           ))}
+          </div>
           </div>
         </div>
       </div>
@@ -677,31 +696,33 @@ export function LatestJapaneseAutoParts() {
 
   return (
     <section id="latest-japanese-parts" className="bg-transparent pt-4 pb-4 max-sm:py-3">
-      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-3 flex items-center justify-between gap-4 text-left max-sm:mb-2 max-sm:items-center">
-          <div className="text-[18px] font-black uppercase leading-none tracking-[-0.02em] text-[#111827] max-sm:text-[16px]">
-            NEW ARRIVALS
-          </div>
-          <a
-            href="/offers"
-            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
-          >
-            View all
-          </a>
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          NEW ARRIVALS
         </div>
-        <div className="related-product-marquee related-product-marquee-float text-left">
-          <div className="related-product-track related-product-track-reverse flex w-max gap-5">
+        <a
+          href="/offers"
+          className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+        >
+          View all
+        </a>
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
+        <div className="manual-slide-shell new-arrivals-showcase text-left" data-loop-copies="2">
+          <SlideManualControls step={4} />
+          <div className="new-arrivals-viewport">
+          <div className="new-arrivals-track flex w-max gap-5">
           {[...latestJapaneseProducts, ...latestJapaneseProducts].map((product, index) => (
             <article key={`${product.name}-${index}`} className="product-card-shell group/product relative z-0 w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:z-30 hover:rounded-b-none hover:bg-[#fffafa] hover:shadow-[0_18px_38px_rgba(220,38,38,0.18)]">
               <span className="product-card-sweep" aria-hidden="true" />
-              <div className="relative overflow-hidden rounded-[7px]">
+              <div className="product-card-media relative overflow-hidden rounded-[7px]">
                 {(() => {
                   const productUrl = `/products/${product.slug || slugify(product.name)}`;
                   return (
                     <>
                 <a
                   href={productUrl}
-                  className={`block aspect-[10/11] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055] ${
+                  className={`product-card-image block aspect-[10/10.5] rounded-[7px] border border-[#eef0f3] bg-white bg-no-repeat ${
                     product.image ? "bg-contain bg-center" : `bg-[url('/products-reference.png')] bg-[length:1920px_900px] ${product.crop}`
                   }`}
                   style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
@@ -712,9 +733,12 @@ export function LatestJapaneseAutoParts() {
                   );
                 })()}
               </div>
-              <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} onWishlist={() => handleAddToWishlist(product)} isAdded={addedItems.includes(product.name)} compact cardIndex={index} />
+              <div className="product-card-content-surface">
+                <ProductCardInfo product={product} productUrl={`/products/${product.slug || slugify(product.name)}`} onAdd={() => handleAddToCart(product)} onWishlist={() => handleAddToWishlist(product)} isAdded={addedItems.includes(product.name)} compact cardIndex={index} />
+              </div>
             </article>
           ))}
+          </div>
           </div>
         </div>
       </div>

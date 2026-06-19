@@ -44,7 +44,9 @@ export default function HeaderWishlistButton() {
   return (
     <Link href="/wishlisht" aria-label="Wishlist" className="header-action-icon relative">
       <HeartIcon />
-      <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#ef3338] text-[11px] font-black leading-none text-white shadow-[0_6px_14px_rgba(239,51,56,0.35)]">{count}</span>
+      {count > 0 ? (
+        <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-[#ef3338] text-[11px] font-black leading-none text-white shadow-[0_6px_14px_rgba(239,51,56,0.35)]">{count}</span>
+      ) : null}
     </Link>
   );
 }

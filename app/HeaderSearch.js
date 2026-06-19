@@ -271,6 +271,12 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     }, 90);
   }
 
+  function handleSearchInputMouseEnter(event) {
+    if (document.activeElement === event.currentTarget) {
+      openSearchSuggestions();
+    }
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -323,7 +329,7 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
 
   return (
     <>
-      <div data-vehicle-finder-root className="header-search-zoom relative order-3 min-w-0 basis-full lg:order-none lg:max-w-[760px] lg:flex-1">
+      <div data-vehicle-finder-root className="header-search-zoom relative order-3 min-w-0 basis-full lg:order-none lg:max-w-[840px] lg:flex-1">
         <form
           action="#parts"
           onSubmit={handleSubmit}
@@ -332,8 +338,6 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
         >
           <div
             className="group flex min-w-0 flex-1 items-center border-r border-[#edf0f5] transition hover:bg-[#fff3f3] max-sm:min-w-[220px]"
-            onMouseEnter={openSearchSuggestions}
-            onMouseLeave={closeSearchSuggestionsSoon}
           >
             <label className="group/camera relative grid h-full w-[58px] shrink-0 place-items-center border-r border-[#d9dee7] bg-[#111827] text-white max-sm:w-[48px]">
               <span className={`grid size-10 cursor-pointer place-items-center transition group-hover/camera:text-[#f7d95f] max-sm:size-9 ${imageName ? "text-[#f7d95f]" : ""}`} title="Upload or capture product photo">
@@ -357,7 +361,11 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
+                openSearchSuggestions();
               }}
+              onFocus={openSearchSuggestions}
+              onClick={openSearchSuggestions}
+              onMouseEnter={handleSearchInputMouseEnter}
               className="min-w-0 flex-1 origin-left bg-transparent px-5 text-[16px] tracking-[0.01em] outline-none transition duration-300 placeholder:text-[#9ca3af] group-hover:scale-[1.015] group-hover:animate-pulse max-sm:px-3 max-sm:text-[14px]"
               placeholder={imageName ? imageName : animatedPlaceholder}
               autoComplete="off"

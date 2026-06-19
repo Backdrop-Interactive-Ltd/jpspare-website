@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+
 const reviews = [
   {
     category: "Suspension",
@@ -84,15 +86,7 @@ function ReviewIcon({ name }) {
   return null;
 }
 
-const reviewCardFrameClasses = [
-  "basis-[17%] scale-[0.94] opacity-90 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
-  "basis-[19%] scale-[0.98] opacity-95 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
-  "z-10 basis-[22%] scale-[1.03] opacity-100 max-xl:basis-auto max-xl:scale-100",
-  "basis-[19%] scale-[0.98] opacity-95 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
-  "basis-[17%] scale-[0.94] opacity-90 max-xl:basis-auto max-xl:scale-100 max-xl:opacity-100",
-];
-
-function ReviewCard({ review, active, position = 0 }) {
+function ReviewCard({ review, active }) {
   const categoryClass =
     review.categoryTone === "green"
       ? "border-[#91e6c7] bg-[#e9fff7] text-[#047857]"
@@ -104,7 +98,6 @@ function ReviewCard({ review, active, position = 0 }) {
     <article
       className={[
         "min-h-[395px] rounded-[10px] border bg-white p-4 text-left transition duration-300 max-sm:min-h-0 max-sm:p-5",
-        reviewCardFrameClasses[position] || reviewCardFrameClasses[0],
         active
           ? "min-h-[430px] border-[#f7d95f] shadow-[0_22px_52px_rgba(220,38,38,0.16)] max-xl:min-h-[395px]"
           : "border-[#dfe4ea] shadow-[0_1px_3px_rgba(15,23,42,0.05)] hover:border-[#f7d95f] hover:shadow-[0_16px_34px_rgba(220,38,38,0.10)]",
@@ -167,34 +160,64 @@ function ReviewCard({ review, active, position = 0 }) {
 
 export default function CustomerReviews() {
   const visibleReviews = reviews.slice(0, 5);
+  const [activeIndex, setActiveIndex] = useState(2);
+  const [paused, setPaused] = useState(false);
+
+  const goToPrevious = useCallback(() => {
+    setActiveIndex((current) => (current - 1 + visibleReviews.length) % visibleReviews.length);
+  }, [visibleReviews.length]);
+
+  const goToNext = useCallback(() => {
+    setActiveIndex((current) => (current + 1) % visibleReviews.length);
+  }, [visibleReviews.length]);
+
+  useEffect(() => {
+    if (paused) return undefined;
+    const timer = window.setInterval(goToNext, 4200);
+    return () => window.clearInterval(timer);
+  }, [goToNext, paused]);
+
+  function getCardPosition(index) {
+    const total = visibleReviews.length;
+    const raw = (index - activeIndex + total) % total;
+    return raw > Math.floor(total / 2) ? raw - total : raw;
+  }
 
   return (
     <section id="customer-reviews" className="bg-transparent py-6 max-sm:py-4">
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          CUSTOMER REVIEWS
+        </div>
+      </div>
       <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-8 flex items-center justify-between gap-4 text-left max-sm:items-center">
-          <div className="inline-flex h-[30px] items-center gap-2 rounded-[4px] bg-[#f05a24] px-4 text-[11px] font-black uppercase leading-none text-white shadow-[0_10px_20px_rgba(239,51,56,0.12)]">
-            <ReviewIcon name="shield" />
-            Customer Reviews
+        <div className="review-coverflow" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+          <button type="button" onClick={goToPrevious} className="review-coverflow-control left-3" aria-label="Previous review">
+            <ReviewIcon name="arrow" />
+          </button>
+          <button type="button" onClick={goToNext} className="review-coverflow-control review-coverflow-control-next right-3" aria-label="Next review">
+            <span className="review-coverflow-control-icon-next">
+              <ReviewIcon name="arrow" />
+            </span>
+          </button>
+          <div className="review-coverflow-stage">
+            {visibleReviews.map((review, index) => {
+              const position = getCardPosition(index);
+              return (
+                <div
+                  key={review.partId}
+                  className={`review-coverflow-card review-coverflow-card-${position} ${position === 0 ? "review-coverflow-card-active" : ""}`}
+                  aria-hidden={Math.abs(position) > 2}
+                >
+                  <ReviewCard review={review} active={position === 0} />
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="review-carousel-viewport">
-          <div
-            className="flex items-center justify-center gap-4 max-xl:grid max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1"
-          >
-            {visibleReviews.map((review, index) => (
-              <ReviewCard
-                key={`${review.partId}-${index}`}
-                review={review}
-                active={index === 2}
-                position={index}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-center gap-6 border-t border-[#eef1f5] pt-5 text-[14px] max-sm:flex-col max-sm:gap-2">
-          <span className="tracking-[0.08em] text-[#ef3338]">★★★★★★</span>
+        <div className="mt-0 flex items-center justify-center gap-6 border-t border-[#eef1f5] pt-5 text-[14px] max-sm:flex-col max-sm:gap-2">
+          <span className="tracking-[0.08em] text-[#ef3338]">★★★★★</span>
           <span className="font-black text-[#111827]">4.9/5</span>
           <span className="text-[#4b5563]">
             <strong className="text-[#ef3338]">Trusted by Many</strong> Happy Customers

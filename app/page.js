@@ -8,13 +8,13 @@ import HeaderCompareButton from "./HeaderCompareButton";
 import HeaderCartButton from "./HeaderCartButton";
 import HeaderWishlistButton from "./HeaderWishlistButton";
 import HeaderAccountButton from "./HeaderAccountButton";
-import HeroBannerSlider from "./HeroBannerSlider";
+import HeaderCategoryTreeClient from "./HeaderCategoryTreeClient";
 import DynamicLogoMark from "./DynamicLogoMark";
-import CouponCodeBanner from "./CouponCodeBanner";
 import CategoryBrandRecommendations from "./CategoryBrandRecommendations";
 import AccessoryRecommendationScroller from "./AccessoryRecommendationScroller";
 import PartsQuoteModalLink from "./PartsQuoteModalLink";
 import PartsInquirySection from "./PartsInquirySection";
+import SlideManualControls from "./SlideManualControls";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -24,6 +24,7 @@ const navItems = [
   { label: "LUBRICANT", href: "/collections/lubricant", hasMenu: true },
   { label: "BRANDS", href: "/brands" },
   { label: "MODIFICATION", href: "/modification" },
+  { label: "COMBO PACKAGE", href: "/combo-package" },
   { label: "PARTS QUOTE", href: "/parts-quote" },
 ];
 
@@ -99,12 +100,6 @@ const recommendedLubricants = [
 ];
 
 const vehicleBrands = ["Toyota", "Honda", "Nissan", "Mitsubishi", "Suzuki"];
-
-const heroSlides = [
-  { src: "/jpspare-hero-slide-1.gif", alt: "Pirelli podium cap special edition banner" },
-  { src: "/jpspare-hero-slide-2.png", alt: "Mobil online shopping delivery banner" },
-  { src: "/jpspare-hero-slide-3.jpg", alt: "Mobil 1 synthetic motor oil brand banner" },
-];
 
 const carPartCategories = [
   {
@@ -201,6 +196,47 @@ const lubricantCategories = [
 
 const lubricantBrands = ["ELF", "Shell", "Mobil 1", "Liqui Moly", "Ravenol", "Totachi", "Idemitsu", "OTHER BRANDS"];
 
+const menuCategorySlugs = ["car-accessories", "car-parts", "tyres", "lubricant"];
+const fallbackMenuCategories = [
+  { name: "Car Accessories", slug: "car-accessories", children: carAccessorySubcategories },
+  { name: "Car Parts", slug: "car-parts", children: carPartCategories },
+  { name: "Tyres", slug: "tyres", children: [] },
+  { name: "Lubricant", slug: "lubricant", children: lubricantCategories },
+];
+const categoryIconCycle = ["disc", "bolt", "car", "filter", "drop", "package", "battery", "gear"];
+const categoryToneCycle = ["red", "orange", "blue", "green", "teal", "purple", "amber", "indigo"];
+
+function collectionHref(slug) {
+  return `/collections/${encodeURIComponent(slug)}`;
+}
+
+function categoryTopLabel(category, fallback) {
+  const children = category?.children?.length ? category.children : fallback?.children || [];
+  return children.slice(0, 4).map((item) => item.name || item.title).filter(Boolean).join(" • ");
+}
+
+function normalizeMenuCategory(category, fallback) {
+  if (!category?.children?.length) return fallback;
+
+  return {
+    ...category,
+    children: category.children.map((child, index) => ({
+      title: child.name,
+      href: collectionHref(child.slug),
+      icon: categoryIconCycle[index % categoryIconCycle.length],
+      tone: categoryToneCycle[index % categoryToneCycle.length],
+      links: (child.children || []).map((subCategory) => ({
+        label: subCategory.name,
+        href: collectionHref(subCategory.slug),
+      })),
+    })),
+  };
+}
+
+function getMenuCategory(menuCategories, slug) {
+  return menuCategories?.[slug] || fallbackMenuCategories.find((category) => category.slug === slug);
+}
+
 const premiumBrands = [
   { name: "DENSO", short: "DENSO", color: "bg-[#ed1f24] text-white" },
   { name: "Shell", short: "SH", color: "bg-white text-[#d71920] border border-[#f7d95f]" },
@@ -214,7 +250,12 @@ const premiumBrands = [
 
 const categoryShowcase = [
   {
-    title: "Genuine Auto Parts",
+    title: "GENUINE AUTO PARTS",
+    theme: {
+      card: "border-[#ffd2d3] bg-[linear-gradient(180deg,#ffffff_0%,#fff3f3_100%)] before:bg-[#ef3338] hover:border-[#ffb6b9] hover:bg-[linear-gradient(180deg,#fffafa_0%,#ffeded_100%)] hover:shadow-[0_18px_36px_rgba(239,51,56,0.13)]",
+      title: "text-[#ef3338] group-hover/showcase:text-[#d71920]",
+      itemStroke: "group-hover/category:ring-2 group-hover/category:ring-[#ef3338]/45",
+    },
     items: [
       { label: "Brake Pads", crop: "bg-[-1082px_-494px]" },
       { label: "Shock Absorber", crop: "bg-[-1192px_-248px]" },
@@ -223,25 +264,12 @@ const categoryShowcase = [
     ],
   },
   {
-    title: "Premium Tyres",
-    items: [
-      { label: "Car Tyre", crop: "bg-[-1452px_-548px]" },
-      { label: "SUV Tyre", crop: "bg-[-1512px_-580px]" },
-      { label: "Performance Tyre", crop: "bg-[-1390px_-530px]" },
-      { label: "Rim Size", crop: "bg-[-1458px_-500px]" },
-    ],
-  },
-  {
-    title: "Quality Lubricants",
-    items: [
-      { label: "Engine Oil", crop: "bg-[-1335px_-334px]" },
-      { label: "Transmission Fluid", crop: "bg-[-1200px_-432px]" },
-      { label: "Coolant", crop: "bg-[-1274px_-390px]" },
-      { label: "By Brand", crop: "bg-[-1368px_-283px]" },
-    ],
-  },
-  {
-    title: "Car Accessories",
+    title: "CAR ACCESSORIES",
+    theme: {
+      card: "border-[#ffe2c4] bg-[linear-gradient(180deg,#ffffff_0%,#fff8ef_100%)] before:bg-[#ff7a1a] hover:border-[#ffc98c] hover:bg-[linear-gradient(180deg,#fffaf4_0%,#fff4e8_100%)] hover:shadow-[0_18px_36px_rgba(255,122,26,0.12)]",
+      title: "text-[#e85f00] group-hover/showcase:text-[#d94f00]",
+      itemStroke: "group-hover/category:ring-2 group-hover/category:ring-[#ff7a1a]/45",
+    },
     items: [
       { label: "Car Care", crop: "bg-[-1204px_-537px]" },
       { label: "Body Parts", crop: "bg-[-1554px_-325px]" },
@@ -250,12 +278,31 @@ const categoryShowcase = [
     ],
   },
   {
-    title: "Service Essentials",
+    title: "PREMIUM TYRES",
+    theme: {
+      card: "border-[#dbe8ff] bg-[linear-gradient(180deg,#ffffff_0%,#f2f7ff_100%)] before:bg-[#1453a6] hover:border-[#b9d3ff] hover:bg-[linear-gradient(180deg,#fafdff_0%,#edf5ff_100%)] hover:shadow-[0_18px_36px_rgba(20,83,166,0.12)]",
+      title: "text-[#1453a6] group-hover/showcase:text-[#1f315f]",
+      itemStroke: "group-hover/category:ring-2 group-hover/category:ring-[#1453a6]/45",
+    },
     items: [
-      { label: "Air Filter", crop: "bg-[-1038px_-440px]" },
-      { label: "Oil Filter", crop: "bg-[-936px_-502px]" },
-      { label: "Fuel Pump", crop: "bg-[-1510px_-360px]" },
-      { label: "Horn", crop: "bg-[-1248px_-246px]" },
+      { label: "Car Tyre", crop: "bg-[-1452px_-548px]" },
+      { label: "SUV Tyre", crop: "bg-[-1512px_-580px]" },
+      { label: "Performance Tyre", crop: "bg-[-1390px_-530px]" },
+      { label: "Rim Size", crop: "bg-[-1458px_-500px]" },
+    ],
+  },
+  {
+    title: "QUALITY LUBRICANTS",
+    theme: {
+      card: "border-[#d5f2e5] bg-[linear-gradient(180deg,#ffffff_0%,#f1fff8_100%)] before:bg-[#16a34a] hover:border-[#a9e8ca] hover:bg-[linear-gradient(180deg,#fbfffd_0%,#e8fff3_100%)] hover:shadow-[0_18px_36px_rgba(22,163,74,0.12)]",
+      title: "text-[#128a41] group-hover/showcase:text-[#0f7a38]",
+      itemStroke: "group-hover/category:ring-2 group-hover/category:ring-[#16a34a]/45",
+    },
+    items: [
+      { label: "Engine Oil", crop: "bg-[-1335px_-334px]" },
+      { label: "Transmission Fluid", crop: "bg-[-1200px_-432px]" },
+      { label: "Coolant", crop: "bg-[-1274px_-390px]" },
+      { label: "By Brand", crop: "bg-[-1368px_-283px]" },
     ],
   },
 ];
@@ -286,6 +333,21 @@ function Icon({ name, className = "size-5" }) {
         <path d="M6 6h15l-2 8H8L6 3H3" />
         <circle cx="9" cy="20" r="1.5" />
         <circle cx="18" cy="20" r="1.5" />
+      </>
+    ),
+    card: (
+      <>
+        <rect x="3" y="6" width="18" height="12" rx="2" />
+        <path d="M3 10h18" />
+        <path d="M7 15h4" />
+      </>
+    ),
+    truck: (
+      <>
+        <path d="M3 6h11v10H3z" />
+        <path d="M14 10h4l3 3v3h-7z" />
+        <circle cx="7" cy="18" r="2" />
+        <circle cx="18" cy="18" r="2" />
       </>
     ),
     car: (
@@ -585,15 +647,16 @@ function PromoRail({ product, offer }) {
   );
 }
 
-function MegaMenuShell({ topLabel, href, children }) {
+function MegaMenuShell({ topLabel, href, rootSlug, children }) {
   return (
     <div className="invisible absolute left-1/2 top-full z-[120] w-[calc(100%-80px)] max-w-[1640px] -translate-x-1/2 overflow-hidden rounded-b-[14px] border border-[#f0d5d8] bg-[#fbfcfd] text-[#111827] opacity-0 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-lg:hidden">
       <div className="flex min-h-[58px] items-center justify-between gap-4 border-b border-[#f0d5d8] bg-[linear-gradient(90deg,#ffffff_0%,#fff7f7_62%,#fff0f0_100%)] px-7">
-        <span className="shrink-0 rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00]">
+        <span data-menu-top-label={rootSlug} className="shrink-0 rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00]">
           {topLabel}
         </span>
         <a
           href={href}
+          data-menu-view-more={rootSlug}
           className="inline-flex h-8 shrink-0 items-center gap-2 rounded-[7px] bg-[#ef3338] px-4 text-[10px] font-black uppercase tracking-[0.04em] text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d]"
         >
           View More
@@ -605,7 +668,7 @@ function MegaMenuShell({ topLabel, href, children }) {
   );
 }
 
-function MegaFeaturePanel({ icon, eyebrow, title, countLabel, children }) {
+function MegaFeaturePanel({ icon, eyebrow, title, countLabel, eyebrowPosition = "top", children }) {
   return (
     <section className="rounded-[10px] border border-[#f0cfd2] bg-[linear-gradient(135deg,#fff8f8_0%,#ffffff_52%,#fff9f2_100%)] p-4 shadow-[0_14px_34px_rgba(220,38,38,0.08)]">
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -614,8 +677,9 @@ function MegaFeaturePanel({ icon, eyebrow, title, countLabel, children }) {
             <Icon name={icon} className="size-4" />
           </span>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">{eyebrow}</p>
-            <h4 className="mt-0.5 text-[17px] font-black leading-none text-[#111827]">{title}</h4>
+            {eyebrowPosition === "top" ? <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">{eyebrow}</p> : null}
+            <h4 className={eyebrowPosition === "top" ? "mt-0.5 text-[17px] font-black leading-none text-[#111827]" : "text-[17px] font-black leading-none text-[#111827]"}>{title}</h4>
+            {eyebrowPosition === "bottom" ? <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">{eyebrow}</p> : null}
           </div>
         </div>
         <span className="rounded-full border border-[#f0cfd2] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#ef3338]">
@@ -627,11 +691,11 @@ function MegaFeaturePanel({ icon, eyebrow, title, countLabel, children }) {
   );
 }
 
-function MegaDropdownCard({ title, icon, tone = "red", links = [], href, children }) {
+function MegaDropdownCard({ title, icon, tone = "red", links = [], href, cardIndex, children }) {
   const targetHref = href || `/products?category=${encodeURIComponent(slugify(title))}`;
 
   return (
-    <section className={`group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-1 hover:border-[#ef3338]/50 hover:shadow-[0_16px_30px_rgba(220,38,38,0.14)] hover:before:opacity-70 ${categoryTone(tone)}`}>
+    <section data-menu-card-index={cardIndex} className={`group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-1 hover:border-[#ef3338]/50 hover:shadow-[0_16px_30px_rgba(220,38,38,0.14)] hover:before:opacity-70 ${categoryTone(tone)}`}>
       <div className="flex items-start gap-2.5">
         <span className={`grid size-9 shrink-0 place-items-center rounded-[8px] ring-1 ring-black/[0.04] transition duration-200 group-hover/category:scale-105 ${iconTone(tone)}`}>
           <Icon name={icon} className="size-4" />
@@ -639,6 +703,7 @@ function MegaDropdownCard({ title, icon, tone = "red", links = [], href, childre
         <div className="min-w-0 pt-0.5">
           <a
             href={targetHref}
+            data-menu-card-link
             className="block truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]"
             title={title}
           >
@@ -649,17 +714,18 @@ function MegaDropdownCard({ title, icon, tone = "red", links = [], href, childre
       </div>
       {links.length > 0 && (
         <ul className="mt-4 space-y-2.5">
-          {links.map((link) => (
-            <li key={link}>
+          {links.map((link, index) => (
+            <li key={typeof link === "string" ? link : link.label}>
               <a
-                href={`/products?q=${encodeURIComponent(link)}`}
+                href={typeof link === "string" ? collectionHref(slugify(link)) : link.href}
+                data-menu-sub-link-index={index}
                 className="flex items-center gap-2 truncate text-[12px] font-bold leading-4 text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]"
-                title={link}
+                title={typeof link === "string" ? link : link.label}
               >
                 <span className="grid size-3 shrink-0 place-items-center rounded-full border border-[#ef3338]/40 bg-[#fff5f5]">
                   <span className="size-1 rounded-full bg-[#ef3338]" />
                 </span>
-                <span className="truncate">{link}</span>
+                <span data-menu-sub-link-label className="truncate">{typeof link === "string" ? link : link.label}</span>
               </a>
             </li>
           ))}
@@ -670,7 +736,7 @@ function MegaDropdownCard({ title, icon, tone = "red", links = [], href, childre
   );
 }
 
-function MegaRecommendationBrandSplit({ recommendedItems, brandCategory }) {
+function MegaRecommendationBrandSplit({ recommendedItems, brandCategory, brandTitle = "Shop By Brand" }) {
   return (
     <section className="grid grid-cols-2 gap-4">
       <div className="group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-0.5 hover:border-[#ef3338]/50 hover:bg-[#fffdfd] hover:shadow-[0_16px_30px_rgba(220,38,38,0.12)] hover:before:opacity-70">
@@ -692,7 +758,7 @@ function MegaRecommendationBrandSplit({ recommendedItems, brandCategory }) {
             <Icon name="tag" className="size-3.5" />
           </span>
           <div className="min-w-0">
-            <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">Shop By Brand</h4>
+            <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">{brandTitle}</h4>
             <span className="mt-1.5 block h-0.5 w-7 rounded-full bg-[#ef3338]/80 transition-all duration-200 group-hover/category:w-11 group-hover/category:bg-[#ef3338]" />
           </div>
         </div>
@@ -702,16 +768,19 @@ function MegaRecommendationBrandSplit({ recommendedItems, brandCategory }) {
   );
 }
 
-function CarPartsMegaMenu() {
+function CarPartsMegaMenu({ category }) {
+  const menuCategory = category || getMenuCategory(null, "car-parts");
+  const menuItems = menuCategory.children || carPartCategories;
+
   return (
-    <MegaMenuShell topLabel="Brakes • Filters • Electrical • Engine" href="/collections/car-parts">
+    <MegaMenuShell rootSlug="car-parts" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "car-parts")) || "Brakes • Filters • Electrical • Engine"} href={collectionHref(menuCategory.slug)}>
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedCarParts} brandCategory="car-parts" />
-          <MegaFeaturePanel icon="package" eyebrow="Browse Collection" title="Shop Car Parts By Category" countLabel={`${carPartCategories.length} Categories`}>
-            <div className="grid grid-cols-6 gap-3">
-              {carPartCategories.map((category) => (
-                <MegaDropdownCard key={category.title} {...category} />
+          <MegaRecommendationBrandSplit recommendedItems={recommendedCarParts} brandCategory="car-parts" brandTitle="POPULAR BRAND" />
+          <MegaFeaturePanel icon="package" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel={`${menuItems.length} Categories`} eyebrowPosition="bottom">
+            <div data-menu-grid="car-parts" className="grid grid-cols-6 gap-3">
+              {menuItems.map((category, index) => (
+                <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
               ))}
             </div>
           </MegaFeaturePanel>
@@ -722,13 +791,23 @@ function CarPartsMegaMenu() {
   );
 }
 
-function TyresMegaMenu() {
+function TyresMegaMenu({ category }) {
+  const menuCategory = category || getMenuCategory(null, "tyres");
+  const menuItems = menuCategory.children || [];
+
   return (
-    <MegaMenuShell topLabel="Brand • Rim Size • Tyre Care • Accessories" href="/collections/tyres">
+    <MegaMenuShell rootSlug="tyres" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "tyres")) || "TYRES.RIM SIZE"} href={collectionHref(menuCategory.slug)}>
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedTyres} brandCategory="tyres" />
-          <MegaFeaturePanel icon="car" eyebrow="Browse Collection" title="Shop Tyres By Brand & Size" countLabel="Tyre Finder">
+          <MegaRecommendationBrandSplit recommendedItems={recommendedTyres} brandCategory="tyres" brandTitle="POPULAR BRAND" />
+          <MegaFeaturePanel icon="car" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel="Tyre Finder" eyebrowPosition="bottom">
+            {menuItems.length ? (
+              <div data-menu-grid="tyres" className="grid grid-cols-6 gap-3">
+                {menuItems.map((category, index) => (
+                  <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
+                ))}
+              </div>
+            ) : (
             <div className="grid grid-cols-[1.65fr_1fr] gap-3">
               <MegaDropdownCard title="By Brand" icon="star" tone="purple" href="/products?category=tyres">
                 <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3">
@@ -758,6 +837,7 @@ function TyresMegaMenu() {
                 </ul>
               </MegaDropdownCard>
             </div>
+            )}
           </MegaFeaturePanel>
         </div>
         <PromoRail product="Premium Tyres" offer="15% Off Tyres" />
@@ -766,16 +846,19 @@ function TyresMegaMenu() {
   );
 }
 
-function LubricantMegaMenu() {
+function LubricantMegaMenu({ category }) {
+  const menuCategory = category || getMenuCategory(null, "lubricant");
+  const menuItems = menuCategory.children || lubricantCategories;
+
   return (
-    <MegaMenuShell topLabel="Engine Oil • Transmission • Coolant • Brands" href="/collections/lubricant">
+    <MegaMenuShell rootSlug="lubricant" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "lubricant")) || "Engine Oil • Transmission • Coolant"} href={collectionHref(menuCategory.slug)}>
       <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
         <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedLubricants} brandCategory="lubricant" />
-          <MegaFeaturePanel icon="drop" eyebrow="Browse Collection" title="Shop Lubricants By Type" countLabel="Quality Fluids">
-            <div className="grid grid-cols-4 gap-3">
-              {lubricantCategories.map((category) => (
-                <MegaDropdownCard key={category.title} {...category} />
+          <MegaRecommendationBrandSplit recommendedItems={recommendedLubricants} brandCategory="lubricant" brandTitle="POPULAR BRAND" />
+          <MegaFeaturePanel icon="drop" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel="Quality Fluids" eyebrowPosition="bottom">
+            <div data-menu-grid="lubricant" className="grid grid-cols-4 gap-3">
+              {menuItems.map((category, index) => (
+                <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
               ))}
               <MegaDropdownCard title="By Brand" icon="tag" tone="purple" href="/products?category=lubricant">
                 <div className="mt-4 space-y-2.5">
@@ -813,15 +896,19 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
   );
 }
 
-function CarAccessoriesMegaMenu() {
+function CarAccessoriesMegaMenu({ category }) {
+  const menuCategory = category || getMenuCategory(null, "car-accessories");
+  const menuItems = menuCategory.children || carAccessorySubcategories;
+
   return (
     <div className="invisible absolute left-1/2 top-full z-[120] w-[calc(100%-80px)] max-w-[1640px] -translate-x-1/2 overflow-hidden rounded-b-[14px] border border-[#f0d5d8] bg-[#fbfcfd] text-[#111827] opacity-0 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-lg:hidden">
       <div className="flex min-h-[58px] items-center justify-between gap-4 border-b border-[#f0d5d8] bg-[linear-gradient(90deg,#ffffff_0%,#fff7f7_62%,#fff0f0_100%)] px-7">
-        <span className="shrink-0 rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00]">
-          Interior • Exterior • Care • Lifestyle
+        <span data-menu-top-label="car-accessories" className="shrink-0 rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00]">
+          {categoryTopLabel(menuCategory, getMenuCategory(null, "car-accessories")) || "Interior • Exterior • Care • Lifestyle"}
         </span>
         <a
-          href="/collections/car-accessories"
+          href={collectionHref(menuCategory.slug)}
+          data-menu-view-more="car-accessories"
           className="inline-flex h-8 shrink-0 items-center gap-2 rounded-[7px] bg-[#ef3338] px-4 text-[10px] font-black uppercase tracking-[0.04em] text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d]"
         >
           View More
@@ -871,14 +958,15 @@ function CarAccessoriesMegaMenu() {
                   </div>
                 </div>
                 <span className="rounded-full border border-[#f0cfd2] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#ef3338]">
-                  {carAccessorySubcategories.length} Categories
+                  {menuItems.length} Categories
                 </span>
               </div>
 
-              <div className="grid grid-cols-6 gap-3">
-                {carAccessorySubcategories.map((category) => (
+              <div data-menu-grid="car-accessories" className="grid grid-cols-6 gap-3">
+                {menuItems.map((category, index) => (
                   <section
                     key={category.title}
+                    data-menu-card-index={index}
                     className={`group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-1 hover:border-[#ef3338]/50 hover:shadow-[0_16px_30px_rgba(220,38,38,0.14)] hover:before:opacity-70 ${categoryTone(category.tone)}`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -887,7 +975,8 @@ function CarAccessoriesMegaMenu() {
                       </span>
                       <div className="min-w-0 pt-0.5">
                         <a
-                          href={`/products?category=${encodeURIComponent(slugify(category.title))}`}
+                          href={category.href || collectionHref(slugify(category.title))}
+                          data-menu-card-link
                           className="block truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]"
                           title={category.title}
                         >
@@ -897,17 +986,18 @@ function CarAccessoriesMegaMenu() {
                       </div>
                     </div>
                     <ul className="mt-4 space-y-2.5">
-                      {category.links.map((link) => (
-                        <li key={link}>
+                      {category.links.map((link, index) => (
+                        <li key={typeof link === "string" ? link : link.label}>
                           <a
-                            href={`/products?q=${encodeURIComponent(link)}`}
+                            href={typeof link === "string" ? collectionHref(slugify(link)) : link.href}
+                            data-menu-sub-link-index={index}
                             className="flex items-center gap-2 truncate text-[12px] font-bold leading-4 text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]"
-                            title={link}
+                            title={typeof link === "string" ? link : link.label}
                           >
                             <span className="grid size-3 shrink-0 place-items-center rounded-full border border-[#ef3338]/40 bg-[#fff5f5]">
                               <span className="size-1 rounded-full bg-[#ef3338]" />
                             </span>
-                            <span className="truncate">{link}</span>
+                            <span data-menu-sub-link-label className="truncate">{typeof link === "string" ? link : link.label}</span>
                           </a>
                         </li>
                       ))}
@@ -932,43 +1022,48 @@ function TopSearch({ placeholderTexts }) {
   return <HeaderSearch vehicleBrands={vehicleBrands} placeholderTexts={placeholderTexts} />;
 }
 
-export function MainNavBar({ showTrackOrder = true }) {
+export function MainNavBar({ showTrackOrder = true, menuCategories }) {
+  const categoryNavItems = navItems.map((item) => {
+    const category = menuCategorySlugs.includes(slugify(item.label)) ? getMenuCategory(menuCategories, slugify(item.label)) : null;
+    return category ? { ...item, label: category.name.toUpperCase(), href: collectionHref(category.slug) } : item;
+  });
+
   return (
     <div className="relative z-[90] border-t border-[#111827]/40 bg-[#d3191d] text-white">
       <div className="mx-auto flex h-[48px] w-full max-w-[1720px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:py-2">
         <nav className="flex min-w-0 flex-1 items-center gap-[18px] overflow-visible text-[14px] font-bold leading-none max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:flex-none max-lg:gap-4 max-lg:overflow-x-auto max-lg:pb-2 max-sm:text-[13px]">
-          {navItems.map((item) => (
-            item.label === "CAR ACCESSORIES" ? (
+          {categoryNavItems.map((item) => (
+            item.href === "/collections/car-accessories" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span className="leading-none">{item.label}</span>
+                <a href={item.href} data-menu-root="car-accessories" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <CarAccessoriesMegaMenu />
+                <CarAccessoriesMegaMenu category={getMenuCategory(menuCategories, "car-accessories")} />
               </div>
-            ) : item.label === "CAR PARTS" ? (
+            ) : item.href === "/collections/car-parts" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span className="leading-none">{item.label}</span>
+                <a href={item.href} data-menu-root="car-parts" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <CarPartsMegaMenu />
+                <CarPartsMegaMenu category={getMenuCategory(menuCategories, "car-parts")} />
               </div>
-            ) : item.label === "TYRES" ? (
+            ) : item.href === "/collections/tyres" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span className="leading-none">{item.label}</span>
+                <a href={item.href} data-menu-root="tyres" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <TyresMegaMenu />
+                <TyresMegaMenu category={getMenuCategory(menuCategories, "tyres")} />
               </div>
-            ) : item.label === "LUBRICANT" ? (
+            ) : item.href === "/collections/lubricant" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span className="leading-none">{item.label}</span>
+                <a href={item.href} data-menu-root="lubricant" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <LubricantMegaMenu />
+                <LubricantMegaMenu category={getMenuCategory(menuCategories, "lubricant")} />
               </div>
             ) : item.label === "PARTS QUOTE" ? (
               <PartsQuoteModalLink
@@ -986,7 +1081,7 @@ export function MainNavBar({ showTrackOrder = true }) {
           ))}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-4 text-[14px] font-bold text-white max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:justify-end max-lg:gap-5 max-sm:text-[13px]">
-          <Link href="/help" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition hover:bg-[#dd3b3f] hover:text-[#f7d95f]">
+          <Link href="/help" className="inline-flex h-[34px] items-center gap-2 rounded-[7px] px-2 leading-none transition hover:bg-[#dd3b3f] hover:!text-[#f7d95f]">
             <Icon name="headphones" className="size-5" />
             <span className="leading-none">HELP</span>
           </Link>
@@ -1025,7 +1120,7 @@ export function MainNavBar({ showTrackOrder = true }) {
             </div>
           </div>
           {showTrackOrder && (
-            <Link href="/track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] transition hover:bg-[#fff2f2] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
+            <Link href="/track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] border border-[#f5b9bc] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.08)] transition-all duration-200 hover:scale-[1.04] hover:bg-[#fff2f2] hover:shadow-[0_16px_30px_rgba(220,38,38,0.28)] active:scale-[1.01] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
               <Icon name="package" className="size-4 !text-[#111827]" />
               <span className="leading-none !text-[#111827]">Track Order</span>
             </Link>
@@ -1043,6 +1138,7 @@ export function Header({ settings }) {
         <SearchHeaderBar settings={settings} />
       </div>
       <MainNavBar />
+      <HeaderCategoryTreeClient />
     </>
   );
 }
@@ -1052,21 +1148,19 @@ function SearchHeaderBar({ settings }) {
     <div className="mx-auto flex h-[82px] w-full max-w-[1720px] items-center gap-10 px-5 sm:px-8 lg:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:gap-4 max-lg:py-3">
       <LogoMark logo={settings?.logo} />
       <TopSearch placeholderTexts={settings?.searchPlaceholders} />
-      <div className="hidden shrink-0 items-center gap-5 text-white lg:ml-auto lg:flex">
-        <a href="/offers" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
-          <Icon name="gift" className="size-7 text-white" />
-          <span className="leading-none">
-            <span className="block text-[16px] font-black">Offers</span>
-            <span className="mt-1 block text-[12px] font-medium text-white">Latest Offers</span>
+      <div className="hidden shrink-0 items-center text-white lg:ml-auto lg:flex">
+        <a href="tel:09617226688" className="block translate-x-4 rounded-[8px] px-1.5 py-1 leading-none text-white">
+          <span className="flex items-center gap-1.5 text-[13px] font-medium tracking-[0.085em] text-white/82">
+            <Icon name="clock" className="size-3.5 text-white/72" />
+            <span>Call Us (10.00am-8.00pm)</span>
+          </span>
+          <span className="mt-1.5 flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" className="header-phone-ring size-4 text-[#ef3338]" fill="currentColor" aria-hidden="true">
+              <path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2a1.4 1.4 0 0 1 1.42-.34c1.56.52 3.18.78 4.83.78.74 0 1.34.6 1.34 1.34v3.48c0 .74-.6 1.34-1.34 1.34C10.8 21.78 2.22 13.2 2.22 2.34 2.22 1.6 2.82 1 3.56 1h3.5c.74 0 1.34.6 1.34 1.34 0 1.65.26 3.27.78 4.83.16.49.04 1.03-.34 1.42l-2.22 2.2Z" />
+            </svg>
+            <span className="text-[24px] font-black leading-none tracking-[0.02em] text-white">09617 22 66 88</span>
           </span>
         </a>
-        <Link href="/mega-deal" className="header-action-icon rounded-[8px] px-1.5 py-1 flex items-center gap-2.5">
-          <Icon name="flashSolid" className="eid-deal-flash size-6 text-white" />
-          <span className="leading-none">
-            <span className="block text-[16px] font-black">Mega Deal</span>
-            <span className="mt-1 block text-[12px] font-medium text-white">Special Deals</span>
-          </span>
-        </Link>
       </div>
       <span className="hidden h-8 w-px shrink-0 bg-[#111827] lg:block" />
       <div className="hidden items-center gap-6 text-white lg:flex">
@@ -1083,36 +1177,108 @@ function SearchHeaderBar({ settings }) {
 }
 
 function Hero() {
+  const image3Slides = [
+    {
+      src: "/hero-image-3-slide-1.png",
+      alt: "Mobil 1 engine oil genuine product banner",
+    },
+    {
+      src: "/hero-image-3-slide-2.png",
+      alt: "Yesido VC13 car jump starter banner",
+    },
+    {
+      src: "/hero-image-3-slide-3.png",
+      alt: "Car cover protection service banner",
+    },
+  ];
+
   return (
-    <section className="relative overflow-hidden border-b-[4px] border-[#ef3338] bg-transparent py-0">
-      <div className="grid w-full max-w-none grid-cols-[minmax(0,1fr)_300px] gap-[4px] bg-[#ef3338] px-0 max-lg:grid-cols-1">
-        <div className="overflow-hidden rounded-none bg-[#040404]">
-          <HeroBannerSlider fallbackSlides={heroSlides} className="h-[440px] max-lg:h-[390px] max-sm:h-[245px]" />
-        </div>
-        <Link
-          href="/collections/car-accessories"
-          className="group relative min-h-[440px] overflow-hidden rounded-none bg-[#111827] text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)] max-lg:min-h-[220px] max-sm:min-h-[180px]"
-          aria-label="Shop emergency car accessories"
-        >
+    <section className="bg-[#f2f3f5] pt-0 pb-4">
+      <div className="grid w-full max-w-none gap-3 bg-[#f2f3f5] md:grid-cols-[minmax(0,4fr)_minmax(220px,1fr)]">
+        <section className="relative h-[220px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-[665px]" aria-label="Mobil online shopping banner">
           <img
-            src="/accessory-wide-angle-holder.jpeg"
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+            src="/hero-image-1-mobil-banner.png"
+            alt="Buy Mobil online with home delivery"
+            className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.18)_48%,rgba(0,0,0,0.72)_100%)]" />
-          <div className="relative z-10 flex h-full min-h-[440px] flex-col justify-end p-5 max-lg:min-h-[220px] max-sm:min-h-[180px] max-sm:p-4">
-            <span className="w-fit rounded-full bg-[#ef3338] px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-white">
-              Accessories
+        </section>
+        <div className="grid h-[292px] gap-3 md:h-[665px] md:grid-rows-[1fr_2fr]">
+          <section className="hero-zoom-panel relative h-[110px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label="Download app offer banner">
+            <img
+              src="/hero-image-2-app-banner.png"
+              alt="Download the app and get 250 off on your first order"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </section>
+          <section className="manual-slide-shell hero-zoom-panel relative h-[170px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label="Promotional banner slider">
+            <div className="hero-image-3-track absolute inset-0">
+              {[...image3Slides, image3Slides[0]].map((slide, index) => (
+                <img
+                  key={`${slide.src}-${index}`}
+                  src={slide.src}
+                  alt={index === image3Slides.length ? "" : slide.alt}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroFeatureStrip() {
+  const features = [
+    {
+      icon: "tag",
+      title: "Competitive Price",
+      text: "Get The Best Prices Everyday",
+    },
+    {
+      icon: "award",
+      title: "Authentic Products",
+      text: "Secured with Brand Warranty",
+    },
+    {
+      icon: "card",
+      title: "Easy & Secured Payment",
+      text: "Pre-payment, Cash on Delivery",
+    },
+    {
+      icon: "truck",
+      title: "Fast Delivery",
+      text: "Rapid delivery At Your Doorstep",
+    },
+    {
+      icon: "rotate",
+      title: "7-Day Easy Returns",
+      text: "Hassle-free returns and replacements with full warranty",
+    },
+    {
+      icon: "headphones",
+      title: "Expert Support Team",
+      text: "Professional automotive specialists available 7 days a week",
+    },
+  ];
+
+  return (
+    <section className="bg-[#f2f3f5] py-3">
+      <div className="mx-auto grid w-[calc(100%-40px)] max-w-none grid-cols-6 gap-3 sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)] max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        {features.map((feature, index) => (
+          <div
+            key={feature.title}
+            className="group/feature relative flex min-h-[66px] items-center gap-3 overflow-hidden rounded-[10px] border border-white/85 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfd_100%)] px-4 py-2.5 text-left shadow-[0_10px_24px_rgba(15,23,42,0.055)] transition duration-200 hover:-translate-y-0.5 hover:border-[#ffd2d3] hover:shadow-[0_16px_30px_rgba(239,51,56,0.10)]"
+          >
+            <span className="absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,transparent,#ff3b40,transparent)] opacity-0 transition group-hover/feature:opacity-100" />
+            <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[#f7f7fa] text-[#ef3338] shadow-[inset_0_0_0_1px_#eceef3] transition group-hover/feature:bg-white group-hover/feature:shadow-[inset_0_0_0_1px_#ffd2d3,0_8px_18px_rgba(239,51,56,0.10)]">
+              <Icon name={feature.icon} className="size-5" />
             </span>
-            <h2 className="mt-3 text-[25px] font-black leading-[1.05] tracking-[-0.03em] max-sm:text-[20px]">
-              Emergency Car Essentials
-            </h2>
-            <span className="mt-4 inline-flex h-10 w-fit items-center gap-2 rounded-[8px] bg-white px-4 text-[13px] font-black text-[#111827] transition group-hover:bg-[#f7d95f]">
-              Shop Now
-              <Icon name="arrow" className="size-4" />
+            <span className="min-w-0">
+              <span className="block text-[16px] font-semibold leading-tight text-[#111827]">{feature.title}</span>
+              <span className="mt-1 block text-[13px] font-medium leading-snug text-[#8a93a3]">{feature.text}</span>
             </span>
           </div>
-        </Link>
+        ))}
       </div>
     </section>
   );
@@ -1122,7 +1288,7 @@ function HeroCategorySlider() {
   return (
     <section className="bg-transparent pt-2 pb-3">
       <div className="mx-auto w-[calc(100%-40px)] max-w-none sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
-        <div className="category-marquee relative overflow-hidden rounded-[10px] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="manual-slide-shell category-marquee relative overflow-hidden rounded-[10px] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="category-marquee-track flex w-max items-center">
             {[0, 1, 2, 3].map((group) => (
               <div key={group} className="flex shrink-0 items-center gap-2 pr-2">
@@ -1148,28 +1314,29 @@ function HeroCategorySlider() {
 function CategoryShowcase() {
   return (
     <section id="categories" className="bg-transparent pt-3 pb-4 max-sm:py-3">
-      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-3 flex items-center justify-between gap-4 text-left max-sm:mb-2 max-sm:items-center">
-          <div className="text-[18px] font-black uppercase leading-none tracking-[-0.02em] text-[#111827] max-sm:text-[16px]">
-            HANDPICKED CATAGORIES
-          </div>
-          <a
-            href="/category"
-            className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
-          >
-            View all
-          </a>
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          HANDPICKED CATAGORIES
         </div>
-
-        <div className="grid grid-cols-5 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        <a
+          href="/category"
+          className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+        >
+          View all
+        </a>
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-7 lg:w-[calc(100%-80px)] lg:p-10">
+        <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
           {categoryShowcase.map((group) => (
-            <article key={group.title} className="rounded-[6px] border border-[#dfe4ea] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#f7b1c9] hover:shadow-[0_14px_28px_rgba(236,0,116,0.09)]">
-              <h2 className="mb-[14px] text-[16px] font-black leading-5 text-[#ec0074]">{group.title}</h2>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-[15px]">
+            <article key={group.title} className={`group/showcase relative overflow-hidden rounded-[8px] border p-6 shadow-[0_10px_24px_rgba(15,23,42,0.045)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:opacity-0 before:transition-opacity hover:-translate-y-0.5 hover:before:opacity-100 ${group.theme.card}`}>
+              <div className="mb-[14px] flex items-center justify-between gap-3">
+                <h2 className={`min-w-0 truncate text-[15px] font-black leading-5 transition ${group.theme.title}`}>{group.title}</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                 {group.items.map((item) => (
                   <a key={item.label} href={`#${slugify(item.label)}`} className="group/category block">
-                    <div className={`h-[105px] rounded-[7px] bg-[#f2f2f2] bg-[url('/japanparts-reference.png')] bg-[length:1920px_957px] bg-no-repeat ${item.crop} transition duration-200 group-hover/category:scale-[1.015] group-hover/category:shadow-[0_8px_18px_rgba(15,23,42,0.12)] max-sm:h-[135px]`} />
-                    <p className="mt-[7px] text-[15px] font-medium leading-5 text-[#4b5563] transition group-hover/category:text-[#ec0074]">{item.label}</p>
+                    <div className={`relative h-[150px] overflow-hidden rounded-[7px] bg-[#f5f6f8] bg-[url('/japanparts-reference.png')] bg-[length:1920px_957px] bg-no-repeat shadow-[inset_0_0_0_1px_rgba(226,232,240,0.9)] ${item.crop} ${group.theme.itemStroke} transition duration-200 after:absolute after:inset-0 after:bg-[linear-gradient(180deg,transparent_45%,rgba(17,24,39,0.18)_100%)] after:opacity-0 after:transition group-hover/category:scale-[1.015] group-hover/category:shadow-[0_10px_22px_rgba(15,23,42,0.14)] group-hover/category:after:opacity-100 max-sm:h-[170px]`} />
+                    <p className="mt-[7px] truncate text-[14px] font-semibold leading-5 text-[#4b5563] transition group-hover/category:text-[#ef3338]">{item.label}</p>
                   </a>
                 ))}
               </div>
@@ -1181,19 +1348,52 @@ function CategoryShowcase() {
   );
 }
 
+function PremiumAuthenticVideoSection() {
+  return (
+    <section className="bg-transparent py-5 max-sm:py-4">
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="relative min-h-[430px] w-full overflow-hidden rounded-[12px] bg-[#050505] sm:min-h-[500px] lg:min-h-[560px]">
+          <img
+            src="/jpspare-hero-slide-1.gif"
+            alt=""
+            className="absolute inset-0 h-full w-full scale-105 object-cover opacity-60"
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.18),rgba(0,0,0,0.74))]" />
+          <div className="absolute inset-0 bg-black/30" />
+            <div className="relative z-10 mx-auto flex min-h-[430px] w-full max-w-none flex-col items-center justify-center px-4 py-16 text-center text-white sm:min-h-[500px] lg:min-h-[560px]">
+            <h2 className="text-[34px] font-black uppercase leading-[1.05] tracking-[0.02em] text-white sm:text-[46px] lg:text-[64px]">
+              100% Premium & Authentic
+            </h2>
+            <p className="mt-6 max-w-[650px] text-[15px] font-bold leading-7 text-white sm:text-[17px]">
+              All our products are premium branded and 100% authentic. Whatever you buy it will work.
+            </p>
+            <Link
+              href="/products"
+              className="mt-10 inline-flex h-[52px] items-center justify-center gap-3 rounded-full bg-white px-8 text-[15px] font-bold leading-none !text-[#111827] shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition duration-200 hover:scale-[1.03] hover:bg-[#fff2f2] hover:shadow-[0_18px_38px_rgba(239,51,56,0.2)]"
+            >
+              Explore More
+              <Icon name="arrow" className="size-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PremiumBrandsSection() {
   return (
     <section id="brands" className="bg-transparent py-6 max-sm:py-4">
-      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
-        <div className="mb-8 flex items-center justify-between gap-4 text-left max-sm:items-center">
-          <div className="text-[18px] font-black uppercase leading-none tracking-[-0.02em] text-[#111827] max-sm:text-[16px]">
-            Premium Partners
-          </div>
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          PREMIUM PARTNERS
         </div>
-
-        <div className="brand-marquee overflow-hidden pb-2 text-left">
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
+        <div className="manual-slide-shell brand-marquee pb-5 pt-3 text-left" data-loop-copies="4">
+          <SlideManualControls step={4} />
           <div className="brand-marquee-track flex w-max gap-8 max-sm:gap-4">
-          {[...premiumBrands, ...premiumBrands].map((brand, index) => (
+          {[...premiumBrands, ...premiumBrands, ...premiumBrands, ...premiumBrands].map((brand, index) => (
             <a
               key={`${brand.name}-${index}`}
               href={`#${slugify(brand.name)}`}
@@ -1219,7 +1419,7 @@ export default function Home() {
       <TopDealBar />
       <Header />
       <Hero />
-      <CouponCodeBanner />
+      <HeroFeatureStrip />
       <CategoryShowcase />
       <LatestJapaneseAutoParts />
       <HeroCategorySlider />
@@ -1229,9 +1429,10 @@ export default function Home() {
         </div>
       </section>
       <ProductTabs />
-      <CustomerReviews />
+      <PremiumAuthenticVideoSection />
       <BestSellingAutoParts />
       <PremiumBrandsSection />
+      <CustomerReviews />
       <PartsInquirySection />
       <section id="parts" className="sr-only">
         <h2>Demo parts results</h2>

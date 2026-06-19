@@ -27,6 +27,17 @@ function createPagination(page, limit, total) {
   };
 }
 
+function collectCategoryIds(categories, parentId) {
+  const ids = [parentId];
+  const children = categories.filter((category) => category.parentId === parentId);
+
+  for (const child of children) {
+    ids.push(...collectCategoryIds(categories, child.id));
+  }
+
+  return ids;
+}
+
 export async function GET(request) {
   let hasProductFilters = false;
   let page = 1;
@@ -43,15 +54,32 @@ export async function GET(request) {
     page = parsePositiveInteger(searchParams.get("page"), 1);
     limit = Math.min(parsePositiveInteger(searchParams.get("limit"), DEFAULT_LIMIT), MAX_LIMIT);
     hasProductFilters = ["category", "q", "search", "status", "brand"].some((key) => searchParams.has(key));
+    let categoryIds = null;
+
+    if (category) {
+      const matchedCategory = await prisma.category.findFirst({
+        where: {
+          isActive: true,
+          OR: [{ slug: category }, { name: { equals: category, mode: "insensitive" } }],
+        },
+        select: { id: true },
+      });
+
+      if (!matchedCategory) {
+        const pagination = createPagination(page, limit, 0);
+        return Response.json({ items: [], data: [], pagination, meta: pagination, fallback: false });
+      }
+
+      const categories = await prisma.category.findMany({
+        where: { isActive: true },
+        select: { id: true, parentId: true },
+      });
+      categoryIds = collectCategoryIds(categories, matchedCategory.id);
+    }
+
     const where = {
       status,
-      ...(category
-        ? {
-            category: {
-              OR: [{ slug: category }, { name: { equals: category, mode: "insensitive" } }],
-            },
-          }
-        : {}),
+      ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
       ...(brand
         ? {
             brand: {

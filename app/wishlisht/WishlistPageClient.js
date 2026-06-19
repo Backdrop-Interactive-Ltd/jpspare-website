@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { addProductToCart } from "../commerce-client";
 
+const PRODUCT_WISHLIST_SELECTION_KEY = "jpspare-product-wishlist-selection";
+
 function formatPrice(value = 0) {
   return `৳${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -11,6 +13,28 @@ function formatPrice(value = 0) {
 function formatDate(value) {
   if (!value) return "today";
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+}
+
+function removeWishlistSelection(product) {
+  try {
+    const storedSelection = window.localStorage.getItem(PRODUCT_WISHLIST_SELECTION_KEY);
+    const parsedSelection = storedSelection ? JSON.parse(storedSelection) : [];
+    if (!Array.isArray(parsedSelection)) return;
+
+    const title = product?.title || product?.name || "";
+    const nextSelection = parsedSelection.filter((key) => !String(key).includes(title));
+    window.localStorage.setItem(PRODUCT_WISHLIST_SELECTION_KEY, JSON.stringify(nextSelection));
+  } catch {
+    // localStorage sync is best-effort only.
+  }
+}
+
+function clearWishlistSelection() {
+  try {
+    window.localStorage.setItem(PRODUCT_WISHLIST_SELECTION_KEY, JSON.stringify([]));
+  } catch {
+    // localStorage sync is best-effort only.
+  }
 }
 
 function Icon({ name, className = "size-4" }) {
@@ -92,15 +116,22 @@ export default function WishlistPageClient() {
   async function removeItem(id) {
     const response = await fetch(`/api/wishlist/${id}`, { method: "DELETE" });
     if (response.ok) {
-      setItems((current) => current.filter((item) => item.id !== id));
-      window.dispatchEvent(new CustomEvent("jpspare-wishlist-change"));
+      let nextItems = [];
+      setItems((current) => {
+        const removedProduct = current.find((item) => item.id === id);
+        removeWishlistSelection(removedProduct);
+        nextItems = current.filter((item) => item.id !== id);
+        return nextItems;
+      });
+      window.dispatchEvent(new CustomEvent("jpspare-wishlist-change", { detail: { count: nextItems.length } }));
     }
   }
 
   async function clearAll() {
     await Promise.all(items.map((item) => fetch(`/api/wishlist/${item.id}`, { method: "DELETE" })));
     setItems([]);
-    window.dispatchEvent(new CustomEvent("jpspare-wishlist-change"));
+    clearWishlistSelection();
+    window.dispatchEvent(new CustomEvent("jpspare-wishlist-change", { detail: { count: 0 } }));
   }
 
   useEffect(() => {
