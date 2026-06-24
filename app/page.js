@@ -1120,9 +1120,12 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
             </div>
           </div>
           {showTrackOrder && (
-            <Link href="/track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] border border-[#f5b9bc] bg-white px-[16px] text-[14px] font-black leading-none !text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.08)] transition-all duration-200 hover:scale-[1.04] hover:bg-[#fff2f2] hover:shadow-[0_16px_30px_rgba(220,38,38,0.28)] active:scale-[1.01] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
-              <Icon name="package" className="size-4 !text-[#111827]" />
-              <span className="leading-none !text-[#111827]">Track Order</span>
+            <Link href="/track-order" className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[11px] border border-[#f5b9bc] bg-white px-[16px] text-[14px] font-black leading-none !text-[#ef3338] shadow-[0_8px_18px_rgba(15,23,42,0.08)] transition-all duration-200 hover:scale-[1.04] hover:bg-[#fff2f2] hover:shadow-[0_16px_30px_rgba(220,38,38,0.28)] active:scale-[1.01] max-xl:px-3 max-sm:h-9 max-sm:px-4 max-sm:text-[12px]">
+              <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#ef3338]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                <path d="M14 2v6h6M8 13h8M8 17h6" />
+              </svg>
+              <span className="leading-none !text-[#ef3338]">Track Order</span>
             </Link>
           )}
         </div>
@@ -1287,7 +1290,7 @@ function HeroFeatureStrip() {
 function HeroCategorySlider() {
   return (
     <section className="bg-transparent pt-2 pb-3">
-      <div className="mx-auto w-[calc(100%-40px)] max-w-none sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+      <div className="w-full max-w-none">
         <div className="manual-slide-shell category-marquee relative overflow-hidden rounded-[10px] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="category-marquee-track flex w-max items-center">
             {[0, 1, 2, 3].map((group) => (

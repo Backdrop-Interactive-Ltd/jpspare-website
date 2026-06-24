@@ -1,5 +1,34 @@
 @import "tailwindcss";
 
+@keyframes cartSuccessToast {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) translateX(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+}
+
+@keyframes cartProgressWave {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(260%);
+    opacity: 0;
+  }
+}
+
+.cart-progress-wave {
+  animation: cartProgressWave 1.45s ease-in-out infinite;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #111827;
@@ -1120,6 +1149,41 @@ select {
   .dropdown-carousel-item {
     animation: none;
   }
+}
+
+.footer-commerce-texture::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.11;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='980' height='360' viewBox='0 0 980 360' fill='none'%3E%3Cg stroke='%23111827' stroke-opacity='.32' stroke-width='1.2'%3E%3Cpath d='M18 300h944M64 300V196h72v104M86 196v-42h28v42M156 300V132h96v168M176 162h18M176 198h18M176 234h18M218 162h18M218 198h18M218 234h18M282 300V172h82v128M304 202h36M304 238h36M394 300V112h112v188M418 146h24M418 184h24M418 222h24M462 146h24M462 184h24M462 222h24M538 300V154h68v146M558 186h28M558 222h28M636 300V206h84v94M658 234h40M744 300V176h72v124M764 206h32M764 242h32M842 300V132h96v168M862 162h18M862 198h18M862 234h18M904 162h18M904 198h18M904 234h18'/%3E%3Cpath d='M92 316c40 20 112 20 152 0M436 318c52 22 128 22 180 0M746 318c50 20 120 20 170 0'/%3E%3C/g%3E%3Cg stroke='%23ff6267' stroke-opacity='.26' stroke-width='1.4'%3E%3Cpath d='M108 74h64l12 68H96L108 74ZM124 74c0-22 32-22 32 0M108 142h76M120 162h48'/%3E%3Cpath d='M642 88h96l-12 58h-70l-14-58ZM654 110h78M662 130h58M672 166a8 8 0 1 0 0 .1M714 166a8 8 0 1 0 0 .1'/%3E%3Cpath d='M806 78h78v78h-78zM818 90h12v12h-12zM846 90h12v12h-12zM818 118h12v12h-12zM862 118h10v10h-10zM836 138h12v12h-12zM864 142h12v12h-12z'/%3E%3Cpath d='M260 78v82M272 78v82M292 78v82M318 78v82M330 78v82M350 78v82M366 78v82'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(90deg, rgba(17, 24, 39, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 24, 39, 0.035) 1px, transparent 1px);
+  background-position:
+    center bottom,
+    0 0,
+    0 0;
+  background-size:
+    980px 360px,
+    80px 80px,
+    80px 80px;
+  mask-image:
+    radial-gradient(circle at 52% 48%, #000 0 34%, rgba(0, 0, 0, 0.86) 50%, transparent 86%),
+    linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.42) 16%, #000 34%, #000 66%, rgba(0, 0, 0, 0.42) 84%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.footer-credit-link {
+  color: rgba(5, 11, 22, 0.5) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em;
+  transition: color 180ms ease;
+}
+
+.footer-credit-link:hover {
+  color: #ef3338 !important;
 }
 
 @keyframes eid-flash-blink {

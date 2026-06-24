@@ -48,6 +48,9 @@ const footerColumns = [
 ];
 
 const paymentLabels = ["Pay", "VISA", "MC", "AMEX", "bKash", "Nagad", "Rocket", "DBBL", "AB", "City", "MTB", "UPay", "SSL"];
+const footerAboutText = "Building Bangladesh's most trusted online marketplace for genuine car parts, premium automotive accessories, and automotive lifestyle products—delivering authenticity, competitive prices, and a seamless shopping experience.";
+const footerAddress = "167/3/c/3, Mollapara, Taltola, Sher-E-Bangla Nagor, Dhaka-1207";
+const footerPhoneNumbers = ["09617226688", "01718914582"];
 
 function FooterIcon({ name }) {
   const common = "size-4";
@@ -109,122 +112,196 @@ export default function SiteFooter() {
     };
   }, []);
 
-  const footerLogo = footerCms?.footerLogo || "/jpspare-logo.png";
-  const aboutText = footerCms?.aboutText || "Authentic Japanese automotive parts with guaranteed quality and nationwide shipping.";
+  const footerLogo = "/jpspare-logo-wide-clean.png";
+  const aboutText = footerAboutText;
   const contact = {
     phone: footerCms?.contact?.phone || "01718914582",
     email: footerCms?.contact?.email || "info@jpspare.com.bd",
-    address: footerCms?.contact?.address || "277 Tejgaon I/A, Dhaka -1208",
+    address: footerAddress,
   };
+  const phoneNumbers = Array.from(new Set([...footerPhoneNumbers, contact.phone, footerCms?.contact?.secondaryPhone].filter(Boolean)));
+  const mapQuery = encodeURIComponent(contact.address);
   const socialLinks = {
     facebook: footerCms?.socialLinks?.facebook || "#social",
     instagram: footerCms?.socialLinks?.instagram || "#social",
     youtube: footerCms?.socialLinks?.youtube || "#social",
+    tiktok: footerCms?.socialLinks?.tiktok || "#social",
   };
-  const copyrightText = footerCms?.copyrightText || "© 2024 JPSPARE. All rights reserved.";
+  const footerBottomImage = footerCms?.bottomImage || "/footer-ssl-payment.jpg";
 
   return (
-    <footer className="mt-auto bg-[#111827] text-white">
-      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_85%_12%,rgba(70,31,47,0.52),transparent_34%),linear-gradient(90deg,#101827,#121523)]">
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 lg:px-8 xl:px-10">
-          <div className="grid grid-cols-[minmax(300px,0.9fr)_minmax(0,1.8fr)] gap-10 max-lg:grid-cols-1">
-            <div className="rounded-[14px] border border-white/8 bg-white/[0.035] p-6 shadow-[0_18px_46px_rgba(0,0,0,0.16)]">
-              <Link href="/" className="block h-[54px] w-[132px] overflow-hidden rounded-[8px]" aria-label="JPSPARE home">
-                <span className="block size-full scale-[1.7] bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url(${footerLogo})` }} />
+    <footer className="mt-auto border-t-[6px] border-[#ef3338] bg-[#f4f6f9] text-[#111827]">
+      <div className="footer-commerce-texture relative overflow-hidden bg-[#f4f6f9]">
+        <div className="mx-auto w-[calc(100%-40px)] max-w-none pb-4 pt-8 sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+          <div className="grid grid-cols-[minmax(300px,0.9fr)_minmax(0,1.8fr)] gap-6 max-lg:grid-cols-1">
+            <div className="flex h-full flex-col p-6">
+              <Link href="/" className="inline-flex h-[96px] w-[340px] max-w-full items-center rounded-[8px]" aria-label="JPSPARE home">
+                <img
+                  src={footerLogo}
+                  alt="JPSPARE"
+                  className="h-auto w-full object-contain object-left"
+                  style={{ filter: "brightness(0) saturate(100%) invert(8%) sepia(20%) saturate(1055%) hue-rotate(180deg) brightness(95%) contrast(95%)" }}
+                />
               </Link>
-              <p className="mt-5 max-w-[420px] text-[15px] leading-[1.7] text-[#d1d5db]">
+              <p className="mt-5 max-w-[640px] text-[15px] leading-[1.65] text-[#6f7785]">
                 {aboutText}
               </p>
 
-              <div className="mt-6 grid gap-2.5 text-[14px] text-[#cfd5df]">
-                <a href={`tel:${contact.phone}`} className="flex items-center gap-3 rounded-[8px] bg-[#182232] px-3 py-2 transition hover:bg-[#202b3c] hover:text-[#ff6267]">
+              <div className="mt-6 grid gap-2.5 text-[14px] text-[#6f7785]">
+                <div className="flex select-text items-center gap-3 rounded-[8px] bg-white/60 px-3 py-2">
                   <span className="text-[#ff6267]"><FooterIcon name="phone" /></span>
-                  {contact.phone}
-                </a>
-                <a href={`mailto:${contact.email}`} className="flex items-center gap-3 rounded-[8px] bg-[#182232] px-3 py-2 transition hover:bg-[#202b3c] hover:text-[#ff6267]">
+                  <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    {phoneNumbers.map((phone, index) => (
+                      <span key={phone} className="inline-flex items-center">
+                        <a href={`tel:${phone.replace(/\s+/g, "")}`} className="transition hover:text-[#ff6267]">
+                          {phone}
+                        </a>
+                        {index < phoneNumbers.length - 1 ? <span>,</span> : null}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+                <a href={`mailto:${contact.email}`} className="flex items-center gap-3 rounded-[8px] bg-white/60 px-3 py-2 transition hover:bg-white hover:text-[#ff6267]">
                   <span className="text-[#ff6267]"><FooterIcon name="mail" /></span>
                   {contact.email}
                 </a>
-                <p className="flex items-center gap-3 rounded-[8px] bg-[#182232] px-3 py-2">
+                <p className="flex items-center gap-3 rounded-[8px] bg-white/60 px-3 py-2">
                   <span className="text-[#ff6267]"><FooterIcon name="pin" /></span>
                   {contact.address}
                 </p>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/8 pt-5">
-                <h3 className="text-[15px] font-black">Follow Us</h3>
-                <div className="flex gap-2">
-                  {[
-                    ["f", socialLinks.facebook],
-                    ["◎", socialLinks.instagram],
-                    ["▶", socialLinks.youtube],
-                  ].map(([item, href]) => (
-                    <a
-                      key={item}
-                      href={href}
-                      className="grid size-9 place-items-center rounded-[8px] bg-[#1d2735] text-[14px] font-black text-[#c7ced8] transition hover:bg-[#ef3338] hover:text-white"
-                    >
-                      {item}
-                    </a>
-                  ))}
+                <div className="relative overflow-hidden rounded-[10px] border border-[#111827]/10 bg-white shadow-[0_12px_28px_rgba(17,24,39,0.06)]">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="absolute left-3 top-3 z-10 rounded-[4px] bg-white px-3 py-1.5 text-[12px] font-bold text-[#1a73e8] shadow-[0_4px_12px_rgba(17,24,39,0.12)] transition hover:text-[#ef3338]"
+                  >
+                    Open in Maps
+                  </a>
+                  <iframe
+                    title="JPSPARE location map"
+                    src={`https://maps.google.com/maps?q=${mapQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                    className="h-[180px] w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
-              {footerColumns.map((column) => (
-                <div key={column.title} className="rounded-[12px] border border-white/7 bg-white/[0.025] p-5">
-                  <h3 className="text-[16px] font-black">{column.title}</h3>
-                  <ul className="mt-4 space-y-2.5">
-                    {column.links.map(([label, href], index) => (
-                      <li key={label}>
-                        {label === "Vehicle Fitment" ? (
-                          <FooterVehicleFitmentLink className="text-[14px] text-[#c9ced8] transition hover:text-[#ff6267]">
-                            {label}
-                          </FooterVehicleFitmentLink>
-                        ) : (
-                          <Link
-                            href={href}
-                            className={[
-                              "inline-flex items-center text-[14px] text-[#c9ced8] transition hover:translate-x-0.5 hover:text-[#ff6267]",
-                              column.title === "Shop Parts" && index === 1 ? "font-semibold text-[#ff6267]" : "",
-                            ].join(" ")}
-                          >
-                            {label}
-                            {column.title === "Shop Parts" && index === 1 ? <span className="ml-2">›</span> : null}
-                          </Link>
-                        )}
-                      </li>
+            <div className="flex h-full flex-col self-stretch">
+              <div className="grid grid-cols-4 gap-4 px-6 pb-6 pt-[112px] max-xl:grid-cols-2 max-sm:grid-cols-1">
+                {footerColumns.map((column) => (
+                  <div key={column.title}>
+                    <h3 className="text-[16px] font-black">{column.title}</h3>
+                    <ul className="mt-4 space-y-2.5">
+                      {column.links.map(([label, href], index) => (
+                        <li key={label}>
+                          {label === "Vehicle Fitment" ? (
+                            <FooterVehicleFitmentLink className="group inline-flex items-center text-[14px] text-[#6f7785] opacity-50 transition hover:translate-x-0.5 hover:!text-[#ef3338] hover:opacity-100">
+                              <span>{label}</span>
+                              <span className="ml-2 opacity-0 transition group-hover:!text-[#ef3338] group-hover:opacity-100">›</span>
+                            </FooterVehicleFitmentLink>
+                          ) : (
+                            <Link
+                              href={href}
+                              className="group inline-flex items-center text-[14px] text-[#6f7785] opacity-50 transition hover:translate-x-0.5 hover:!text-[#ef3338] hover:opacity-100"
+                            >
+                              <span>{label}</span>
+                              <span className="ml-2 opacity-0 transition group-hover:!text-[#ef3338] group-hover:opacity-100">›</span>
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-1 items-center pb-3">
+                <div className="mx-5 flex min-h-[56px] flex-1 flex-wrap items-center justify-center gap-x-10 gap-y-2 border-y border-[#111827]/10 text-[15px] font-medium text-[#364152]">
+                  <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
+                    {["3000+ Accessories", "98% Satisfaction", "24/7 Support"].map((item) => (
+                      <div key={item} className="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" className="size-4 text-[#00c48c]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                          <path d="M20 6 9 17l-5-5" />
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        <span>{item}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              <div className="flex -translate-y-6 items-end justify-center gap-5 pt-0">
+                <div className="w-[280px] shrink-0">
+                  <div className="flex items-center gap-2">
+                    <a href="#app" aria-label="Download on the App Store" className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
+                      <img src="/footer-app-store-badge.png" alt="Download on the App Store" className="h-auto w-full object-contain" />
+                    </a>
+                    <a href="#app" aria-label="Get it on Google Play" className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
+                      <img src="/footer-google-play-badge.png" alt="Get it on Google Play" className="h-auto w-full object-contain" />
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-end justify-center gap-4">
+                  <div className="max-w-[230px] shrink-0 pb-1 text-left text-[#6f7785]">
+                    <div className="flex items-center gap-2">
+                      <svg viewBox="0 0 24 24" className="size-5 shrink-0 text-[#00c48c]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                        <path d="M20 6 9 17l-5-5" />
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                      <span className="text-[16px] font-bold leading-tight">Secure payments</span>
+                    </div>
+                    <p className="mt-1 text-[12px] leading-snug text-[#8b93a1]">
+                      Safe, encrypted, and trusted payment solutions for every purchase.
+                    </p>
+                  </div>
+                  <div className="flex aspect-[1280/143] w-full max-w-[680px] items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-white/12 bg-white text-[12px] font-semibold uppercase tracking-[0.12em] text-white/35">
+                    {footerBottomImage ? (
+                      <img
+                        src={footerBottomImage}
+                        alt="Footer promotional banner"
+                        className="size-full object-contain"
+                        style={{ filter: "contrast(1.08) saturate(1.08) brightness(1.02)" }}
+                      />
+                    ) : (
+                      <span>Footer image area 1280 x 143</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-white/7 px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-6 max-lg:flex-col">
-            <p className="text-[14px] text-[#aeb5c1]">{copyrightText}</p>
-            <span className="inline-flex items-center gap-2 text-[15px] text-[#cfd5df]">
-              <span className="text-[#16c784]"><FooterIcon name="check" /></span>
-              Secure payments:
-            </span>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {paymentLabels.map((label) => (
-                <span key={label} className="grid h-[22px] min-w-[32px] place-items-center rounded-[2px] bg-white px-1 text-[7px] font-black text-[#1f2937]">
-                  {label}
-                </span>
+        <div className="border-t border-[#111827]/10 py-3">
+          <div className="mx-auto grid w-[calc(100%-40px)] max-w-none grid-cols-3 items-center gap-6 sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+            <div className="flex items-center gap-1 pl-6">
+              {[
+                ["Facebook", socialLinks.facebook, "/footer-social-facebook.png"],
+                ["Instagram", socialLinks.instagram, "/footer-social-instagram.png"],
+                ["YouTube", socialLinks.youtube, "/footer-social-youtube.png"],
+                ["TikTok", socialLinks.tiktok, "/footer-social-tiktok.png"],
+              ].map(([label, href, icon]) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="grid size-8 place-items-center rounded-[8px] opacity-40 transition hover:scale-110 hover:opacity-100"
+                >
+                  <img src={icon} alt="" className="size-7 object-contain" />
+                </a>
               ))}
-              <span className="grid h-[22px] min-w-[86px] place-items-center rounded-[2px] bg-[#235aa0] px-2 text-[8px] font-black text-white">
-                SSL-COMMERZ
-              </span>
             </div>
-            <div className="flex gap-6 text-[14px] text-[#aeb5c1]">
-              <Link href="/privacy-policy" className="transition hover:text-[#ff6267]">Privacy</Link>
-              <Link href="/#terms" className="transition hover:text-[#ff6267]">Terms</Link>
-              <Link href="/#cookies" className="transition hover:text-[#ff6267]">Cookies</Link>
-            </div>
+            <p className="text-center text-[14px] text-[#8b93a1]">
+              © 2026 JPSPARE. All rights reserved. | Developed by{" "}
+              <a href="https://backdropinteractive.com/" target="_blank" rel="noreferrer" className="footer-credit-link">
+                Backdrop Interactive
+              </a>
+            </p>
+            <div aria-hidden="true" />
           </div>
         </div>
       </div>

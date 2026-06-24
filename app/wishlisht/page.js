@@ -1,4 +1,5 @@
 import WishlistPageClient from "./WishlistPageClient";
+import { Header } from "../page";
 
 export const metadata = {
   title: "My Wishlist | JPSPARE",
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function WishlistPage() {
-  return <WishlistPageClient />;
+  return (
+    <>
+      <Header />
+      <WishlistPageClient />
+    </>
+  );
 }

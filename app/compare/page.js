@@ -1,4 +1,5 @@
 import ComparePageClient from "./ComparePageClient";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Product Comparison | JPSPARE",
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function ComparePage() {
-  return <ComparePageClient />;
+  return (
+    <>
+      <Header />
+      <ComparePageClient />
+    </>
+  );
 }

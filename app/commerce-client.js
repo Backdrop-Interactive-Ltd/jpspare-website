@@ -12,6 +12,8 @@ export function normalizeProductForCart(product = {}) {
     sku: product.sku,
     brand: product.brand?.name || product.brand,
     category: product.category?.name || product.category,
+    freeDelivery: Boolean(product.freeDelivery || product.freeDeliveryEligible),
+    freeDeliveryEligible: Boolean(product.freeDelivery || product.freeDeliveryEligible),
   };
 }
 
@@ -28,6 +30,7 @@ export async function addProductToCart(product, quantity = 1) {
 
   const data = await response.json();
   window.dispatchEvent(new CustomEvent("jpspare-cart-change", { detail: data.cart }));
+  window.dispatchEvent(new CustomEvent("jpspare-cart-toast", { detail: { message: "Product added to cart" } }));
   return data.cart;
 }
 

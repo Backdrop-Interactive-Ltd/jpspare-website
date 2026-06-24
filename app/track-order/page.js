@@ -1,4 +1,5 @@
 import TrackOrderPageClient from "./TrackOrderPageClient";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Track Order | JPSPARE",
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function TrackOrderPage() {
-  return <TrackOrderPageClient />;
+  return (
+    <>
+      <Header />
+      <TrackOrderPageClient />
+    </>
+  );
 }

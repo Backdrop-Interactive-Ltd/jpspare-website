@@ -8,7 +8,10 @@ const PRODUCT_COMPARE_SELECTION_KEY = "jpspare-product-compare-selection";
 function CompareIcon({ className = "size-7" }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m4 17 6-6 4 4 6-8M15 7h5v5" />
+      <circle cx="18" cy="18" r="3" />
+      <circle cx="6" cy="6" r="3" />
+      <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+      <path d="M11 18H8a2 2 0 0 1-2-2V9" />
     </svg>
   );
 }

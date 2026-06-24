@@ -23,8 +23,12 @@ function Icon({ name, className = "size-5" }) {
     box: "m21 16-9 5-9-5V8l9-5 9 5v8ZM3.5 8.5 12 13l8.5-4.5M12 22v-9",
     card: "M3 6h18v12H3zM3 10h18",
     check: "M20 6 9 17l-5-5",
+    clipboard: "M9 4h6M9 4a2 2 0 0 0-2 2v1h10V6a2 2 0 0 0-2-2M7 7H5v14h14V7h-2M8 12h8M8 16h5",
     lock: "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z",
+    tag: "M20 13 13 20 4 11V4h7l9 9ZM7.5 7.5h.01",
     truck: "M3 6h11v10H3zM14 10h4l3 3v3h-7zM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+    badge: "M12 3 19 6v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3Z",
+    award: "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm-3 0-1 6 4-2 4 2-1-6",
   };
 
   return (
@@ -228,6 +232,19 @@ export default function CheckoutPageClient() {
               </div>
             </section>
 
+            <section className="grid grid-cols-3 rounded-[14px] border border-[#ffe0e0] bg-[#fff4f4] px-4 py-5 text-center text-[#7c2d12] shadow-sm max-sm:grid-cols-1 max-sm:gap-4">
+              {[
+                ["award", "Authenticity", "Guaranteed"],
+                ["badge", "Secure Payment", ""],
+                ["truck", "Fast Ship", ""],
+              ].map(([icon, title, line]) => (
+                <div key={title} className="flex flex-col items-center gap-2">
+                  <Icon name={icon} className="size-6 text-[#ef3338]" />
+                  <p className="text-[12px] leading-4">{title}{line && <span className="block">{line}</span>}</p>
+                </div>
+              ))}
+            </section>
+
             <section className="rounded-[14px] border border-[#dfe5ec] bg-white p-6 shadow-sm">
               <h2 className="text-[22px] font-black">Order Notes & Coupon</h2>
               <div className="mt-6 grid gap-5">
@@ -302,6 +319,23 @@ export default function CheckoutPageClient() {
               <button type="submit" disabled={submitting || !cart.items?.length} className="mt-7 flex h-[58px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[18px] font-black text-white shadow-[0_14px_28px_rgba(239,51,56,0.22)] transition hover:bg-[#111827] disabled:cursor-not-allowed disabled:opacity-50">
                 <Icon name="card" /> {submitting ? "Placing Order..." : "Place Order"} <Icon name="arrowRight" />
               </button>
+              <div className="mt-5 grid grid-cols-3 gap-3 rounded-[16px] bg-[#f7f9fc] px-4 py-4">
+                {[
+                  ["clipboard", "Order Notes"],
+                  ["truck", "Delivery Info"],
+                  ["tag", "Apply Offer"],
+                ].map(([icon, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="group flex flex-col items-center gap-2 rounded-[14px] bg-white px-3 py-4 text-[#111827] shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:bg-[#ef3338] hover:text-white hover:shadow-[0_18px_34px_rgba(239,51,56,0.18)]"
+                    aria-label={label}
+                  >
+                    <Icon name={icon} className="size-6" />
+                    <span className="text-center text-[11px] font-black leading-tight opacity-70 group-hover:opacity-100">{label}</span>
+                  </button>
+                ))}
+              </div>
               <div className="mt-5 flex h-[48px] items-center justify-center gap-3 rounded-[8px] bg-[#f8fafc] text-[14px] font-semibold text-[#4b5563]">
                 <Icon name="lock" className="size-4 text-emerald-500" /> SSL encrypted checkout
               </div>
