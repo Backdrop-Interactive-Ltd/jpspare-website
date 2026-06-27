@@ -15,27 +15,33 @@ export default function HeaderAccountButton() {
   const [href, setHref] = useState("/signin");
 
   useEffect(() => {
+    let isMounted = true;
+
     const syncAuthRoute = async () => {
       try {
         const response = await fetch("/api/auth/me", {
           cache: "no-store",
           credentials: "include",
         });
-        if (response.ok) {
+        if (response.ok && isMounted) {
           setHref("/account");
           return;
         }
       } catch {}
-      localStorage.removeItem("jpspare-auth");
-      setHref("/signin");
+      if (isMounted) {
+        setHref("/signin");
+      }
     };
 
     syncAuthRoute();
-    window.addEventListener("storage", syncAuthRoute);
+    window.addEventListener("focus", syncAuthRoute);
+    window.addEventListener("pageshow", syncAuthRoute);
     window.addEventListener("jpspare-auth-change", syncAuthRoute);
 
     return () => {
-      window.removeEventListener("storage", syncAuthRoute);
+      isMounted = false;
+      window.removeEventListener("focus", syncAuthRoute);
+      window.removeEventListener("pageshow", syncAuthRoute);
       window.removeEventListener("jpspare-auth-change", syncAuthRoute);
     };
   }, []);
