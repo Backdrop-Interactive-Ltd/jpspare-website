@@ -46,6 +46,11 @@ enum CustomerStatus {
   BLOCKED
 }
 
+enum OtpChannel {
+  PHONE
+  EMAIL
+}
+
 enum AddressType {
   BILLING
   SHIPPING
@@ -494,11 +499,11 @@ model HomeSection {
 
 model Customer {
   id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String
+  email        String?           @unique
+  passwordHash String?
   firstName    String?
   lastName     String?
-  phone        String?
+  phone        String?           @unique
   status       CustomerStatus    @default(ACTIVE)
   lastLoginAt  DateTime?
   addresses    CustomerAddress[]
@@ -513,10 +518,29 @@ model Customer {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
-  @@index([phone])
   @@index([status])
   @@index([externalId])
   @@index([source, syncStatus])
+}
+
+model CustomerOtp {
+  id          String     @id @default(cuid())
+  identifier  String
+  channel     OtpChannel
+  otpHash     String
+  expiresAt   DateTime
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(5)
+  usedAt      DateTime?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([identifier, channel])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@index([createdAt])
 }
 
 model CustomerAddress {
