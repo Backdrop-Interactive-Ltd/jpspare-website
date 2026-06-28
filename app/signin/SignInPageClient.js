@@ -42,6 +42,7 @@ export default function SignInPageClient() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [loading, setLoading] = useState(false);
+  const [otpRequestPending, setOtpRequestPending] = useState(false);
 
   const safeRedirectTarget = () => {
     const redirect = new URLSearchParams(window.location.search).get("redirect");
@@ -68,30 +69,51 @@ export default function SignInPageClient() {
   };
 
   const requestOtp = async () => {
-    setLoading(true);
-    setMessage("");
-    setDevOtp("");
-
-    const response = await fetch("/api/auth/request-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ identifier }),
-    });
-    const data = await response.json().catch(() => ({}));
-
-    if (response.ok && data.ok) {
-      setStep("otp");
-      setMaskedIdentifier(data.identifierMasked || "your contact");
-      setDevOtp(data.devOtp && (data.deliverySkipped || data.deliveryErrorCode) ? data.devOtp : "");
-      setMessage("OTP sent. Please check your phone or email.");
-      setMessageType("success");
-    } else {
-      const cooldownText = data.retryAfterSeconds ? ` Try again in ${data.retryAfterSeconds}s.` : "";
-      setErrorFromCode(data.code, `Unable to send OTP.${cooldownText}`);
+    if (!identifier.trim()) {
+      setErrorFromCode("IDENTIFIER_REQUIRED");
+      return;
     }
 
-    setLoading(false);
+    setStep("otp");
+    setMaskedIdentifier("your contact");
+    setOtp("");
+    setLoading(true);
+    setOtpRequestPending(true);
+    setMessage("Sending OTP...");
+    setMessageType("success");
+    setDevOtp("");
+
+    try {
+      const response = await fetch("/api/auth/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ identifier }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.ok) {
+        setMaskedIdentifier(data.identifierMasked || "your contact");
+        setDevOtp(data.devOtp && (data.deliverySkipped || data.deliveryErrorCode) ? data.devOtp : "");
+        setMessage("OTP sent. Please check your phone or email.");
+        setMessageType("success");
+      } else {
+        setStep("identifier");
+        setOtp("");
+        setMaskedIdentifier("");
+        const cooldownText = data.retryAfterSeconds ? ` Try again in ${data.retryAfterSeconds}s.` : "";
+        setErrorFromCode(data.code, `Unable to send OTP.${cooldownText}`);
+      }
+    } catch (caughtError) {
+      setStep("identifier");
+      setOtp("");
+      setMaskedIdentifier("");
+      setMessage(caughtError.message || "Unable to send OTP. Please try again.");
+      setMessageType("error");
+    } finally {
+      setLoading(false);
+      setOtpRequestPending(false);
+    }
   };
 
   const verifyOtp = async () => {
@@ -134,6 +156,7 @@ export default function SignInPageClient() {
     setMaskedIdentifier("");
     setDevOtp("");
     setMessage("");
+    setOtpRequestPending(false);
   };
 
   return (
@@ -170,12 +193,14 @@ export default function SignInPageClient() {
             ) : (
               <>
                 <div className="rounded-[10px] border border-[#ffd7d8] bg-[#fff7f7] px-4 py-3 text-[13px] font-semibold text-[#4b5563]">
-                  OTP sent to <span className="text-[#111827]">{maskedIdentifier}</span>
-                  <button type="button" onClick={handleChangeIdentifier} className="ml-2 font-black text-[#ef3338] hover:text-[#111827]">
+                  {otpRequestPending ? "We're sending your OTP to " : "OTP sent to "}
+                  <span className="text-[#111827]">{maskedIdentifier}</span>
+                  <button type="button" onClick={handleChangeIdentifier} disabled={otpRequestPending} className="ml-2 font-black text-[#ef3338] hover:text-[#111827] disabled:cursor-not-allowed disabled:opacity-60">
                     Change
                   </button>
                 </div>
-                <AuthInput id="otp" label="Enter OTP" type="text" placeholder="6-digit OTP" icon="key" value={otp} onChange={(value) => setOtp(value.replace(/\D/g, "").slice(0, 6))} />
+                <AuthInput id="otp" label="Enter verification code" type="text" placeholder="6-digit OTP" icon="key" value={otp} onChange={(value) => setOtp(value.replace(/\D/g, "").slice(0, 6))} />
+                {otpRequestPending ? <p className="text-center text-[12px] font-semibold text-[#667085]">We're sending your OTP. You can enter it here once it arrives.</p> : null}
                 {devOtp ? <p className="rounded-[8px] bg-[#f8fafc] px-3 py-2 text-center text-[12px] font-bold text-[#667085]">Dev OTP: {devOtp}</p> : null}
               </>
             )}
@@ -183,8 +208,8 @@ export default function SignInPageClient() {
 
           {message && <p className={`mt-4 rounded-[8px] px-3 py-2 text-[13px] font-semibold ${messageType === "error" ? "bg-[#fff1f1] text-[#c8191f]" : "bg-[#ecfdf3] text-[#027a48]"}`}>{message}</p>}
 
-          <button disabled={loading} type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827] disabled:cursor-not-allowed disabled:opacity-70">
-            {loading ? "Please wait..." : step === "otp" ? "Verify & Continue" : "Send OTP"}
+          <button disabled={loading || (step === "otp" && otpRequestPending)} type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-3 rounded-[10px] bg-gradient-to-r from-[#ef4444] to-[#df171d] text-[15px] font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.16)] transition hover:from-[#111827] hover:to-[#111827] disabled:cursor-not-allowed disabled:opacity-70">
+            {otpRequestPending ? "Sending..." : loading ? "Please wait..." : step === "otp" ? "Verify & Continue" : "Send OTP"}
             <Icon name="arrowRight" className="size-5" />
           </button>
 
