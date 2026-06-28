@@ -51,6 +51,16 @@ enum OtpChannel {
   EMAIL
 }
 
+enum OtpProviderType {
+  GENERIC_HTTP
+  SMTP
+  CUSTOM_API
+}
+
+enum OtpTemplatePurpose {
+  OTP_LOGIN
+}
+
 enum AddressType {
   BILLING
   SHIPPING
@@ -541,6 +551,45 @@ model CustomerOtp {
   @@index([expiresAt])
   @@index([usedAt])
   @@index([createdAt])
+}
+
+model OtpProvider {
+  id                  String          @id @default(cuid())
+  name                String
+  channel             OtpChannel
+  providerType        OtpProviderType
+  isActive            Boolean         @default(true)
+  isDefault           Boolean         @default(false)
+  baseUrl             String?
+  method              String?
+  fromEmail           String?
+  fromName            String?
+  senderId            String?
+  configJson          Json?
+  secretJsonEncrypted String?
+  timeoutMs           Int             @default(10000)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([channel])
+  @@index([channel, isActive])
+  @@index([channel, isDefault])
+  @@index([providerType])
+}
+
+model OtpTemplate {
+  id        String             @id @default(cuid())
+  channel   OtpChannel
+  purpose   OtpTemplatePurpose @default(OTP_LOGIN)
+  subject   String?
+  message   String
+  isActive  Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([channel])
+  @@index([channel, purpose])
+  @@index([isActive])
 }
 
 model CustomerAddress {
