@@ -60,6 +60,11 @@ function getApiError(data, fallback) {
   return data?.message || data?.error || fallback;
 }
 
+function getApiErrorWithCode(data, fallback) {
+  const message = getApiError(data, fallback);
+  return data?.code ? `${data.code}: ${message}` : message;
+}
+
 function statusTone(provider) {
   if (!provider.isActive) return "bg-gray-100 text-gray-700 ring-gray-200";
   if (provider.isDefault) return "bg-emerald-50 text-emerald-700 ring-emerald-200";
@@ -137,6 +142,11 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [testIdentifier, setTestIdentifier] = useState("");
+  const [testOtp, setTestOtp] = useState("");
+  const [testNotice, setTestNotice] = useState("");
+  const [testError, setTestError] = useState("");
+  const [testBusy, setTestBusy] = useState(false);
 
   const channelProviders = useMemo(() => providers.filter((provider) => provider.channel === activeTab), [providers, activeTab]);
   const selectedProvider = useMemo(() => providers.find((provider) => provider.id === selectedId) || null, [providers, selectedId]);
@@ -157,6 +167,10 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
     setSelectedId("");
     setNotice("");
     setError("");
+    setTestNotice("");
+    setTestError("");
+    setTestIdentifier("");
+    setTestOtp("");
     setSmsForm(createSmsForm());
     setEmailForm(createEmailForm());
   }
@@ -166,6 +180,8 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
     setSelectedId(provider.id);
     setNotice("");
     setError("");
+    setTestNotice("");
+    setTestError("");
     if (provider.channel === "PHONE") setSmsForm(createSmsForm(provider));
     else setEmailForm(createEmailForm(provider));
   }
@@ -174,6 +190,10 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
     setSelectedId("");
     setNotice("");
     setError("");
+    setTestNotice("");
+    setTestError("");
+    setTestIdentifier("");
+    setTestOtp("");
     if (activeTab === "PHONE") setSmsForm(createSmsForm());
     else setEmailForm(createEmailForm());
   }
@@ -269,6 +289,53 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
       setError(caughtError.message || "Could not save OTP provider.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function testProviderDelivery(event) {
+    event.preventDefault();
+    if (!canManage || !selectedProvider || testBusy) return;
+
+    const identifier = testIdentifier.trim();
+    const otp = testOtp.trim();
+
+    setTestNotice("");
+    setTestError("");
+
+    if (!identifier) {
+      setTestError("Please enter a test identifier.");
+      return;
+    }
+
+    if (otp && !/^\d{4,8}$/.test(otp)) {
+      setTestError("Optional Test OTP must be 4 to 8 digits.");
+      return;
+    }
+
+    setTestBusy(true);
+
+    try {
+      const response = await fetch(`/api/admin/otp-providers/${selectedProvider.id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          identifier,
+          ...(otp ? { otp } : {}),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setTestError(getApiErrorWithCode(data, "Could not send test OTP."));
+        return;
+      }
+
+      setTestNotice(`Test OTP delivery sent successfully.${data.identifierMasked ? ` Sent to: ${data.identifierMasked}` : ""}`);
+    } catch (caughtError) {
+      setTestError(caughtError.message || "Could not send test OTP.");
+    } finally {
+      setTestBusy(false);
     }
   }
 
@@ -370,14 +437,52 @@ export default function OtpSettingsPageClient({ initialProviders, canManage }) {
           </section>
 
           <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Coming Soon</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Delivery Test</p>
             <h2 className="mt-2 text-xl font-black text-[#111827]">Test Delivery</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">
-              Test SMS/Email delivery will be enabled in the next step after delivery service is added.
+              {selectedProvider
+                ? `Send a safe test login OTP through ${selectedProvider.name}.`
+                : "Select a provider first to test delivery."}
             </p>
-            <button type="button" disabled className="mt-4 h-11 rounded-xl bg-[#d0d5dd] px-5 text-sm font-black text-white">
-              Send Test OTP
-            </button>
+            <form onSubmit={testProviderDelivery} className="mt-4 space-y-4">
+              <Label label="Test Identifier" hint={activeTab === "PHONE" ? "Example: 01700000000" : "Example: customer@example.com"}>
+                <input
+                  value={testIdentifier}
+                  onChange={(event) => {
+                    setTestIdentifier(event.target.value);
+                    setTestNotice("");
+                    setTestError("");
+                  }}
+                  disabled={!canManage || !selectedProvider || testBusy}
+                  className={fieldClass()}
+                  placeholder={activeTab === "PHONE" ? "Enter test phone number" : "Enter test email address"}
+                />
+              </Label>
+              <Label label="Optional Test OTP" hint="Leave blank to let the backend generate a test OTP.">
+                <input
+                  value={testOtp}
+                  onChange={(event) => {
+                    setTestOtp(event.target.value);
+                    setTestNotice("");
+                    setTestError("");
+                  }}
+                  disabled={!canManage || !selectedProvider || testBusy}
+                  className={fieldClass()}
+                  inputMode="numeric"
+                  placeholder="4-8 digit OTP"
+                />
+              </Label>
+              {testError ? <div className="rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-700">{testError}</div> : null}
+              {testNotice ? <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-bold text-emerald-700">{testNotice}</div> : null}
+              <button
+                type="submit"
+                disabled={!canManage || !selectedProvider || testBusy || !testIdentifier.trim()}
+                className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_22px_rgba(239,51,56,0.2)] transition hover:bg-[#dc2626] disabled:cursor-not-allowed disabled:bg-[#d0d5dd] disabled:shadow-none"
+              >
+                {testBusy ? "Sending..." : "Send Test OTP"}
+              </button>
+              {!canManage ? <p className="text-xs font-bold text-[#667085]">Only SUPER_ADMIN can send provider test delivery.</p> : null}
+            </form>
           </section>
         </div>
 
