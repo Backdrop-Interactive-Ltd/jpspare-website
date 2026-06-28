@@ -7,7 +7,30 @@ import ProductQuickActions from "../ProductQuickActions";
 import { ProductCardInfo } from "../ProductTabs";
 import { addProductToCart, addProductToWishlist } from "../commerce-client";
 
-const PAGE_LIMIT = 24;
+const PAGE_LIMIT = 12;
+
+const filterGroups = [
+  {
+    title: "Brand",
+    field: "brand",
+    options: [
+      ["Japan Parts", "japan-parts", "1"],
+      ["Dreamz Drive International", "dreamz-drive-international", "7"],
+      ["MICHELIN", "michelin", "9"],
+      ["DENSO", "denso", "1"],
+    ],
+  },
+  {
+    title: "Category",
+    field: "category",
+    options: [
+      ["Car care Product", "car-care-product", "6"],
+      ["Brush", "brush", "2"],
+      ["Lubricant", "lubricant", "1"],
+      ["AirFilter", "airfilter", "1"],
+    ],
+  },
+];
 
 function getProductImage(product) {
   return (
@@ -57,7 +80,7 @@ function ProductCard({ product, cardIndex, onAdd, onWishlist }) {
 
 function ProductsLoading() {
   return (
-    <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6" aria-label="Loading products">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="Loading products">
       {Array.from({ length: 12 }, (_, index) => (
         <div key={index} className="animate-pulse">
           <div className="aspect-[10/11] rounded-[8px] bg-[#e9edf2]" />
@@ -72,26 +95,43 @@ function ProductsLoading() {
 
 function ProductsPagination({ currentPage, totalPages, onPageChange }) {
   return (
-    <nav className="mt-14 flex items-center justify-center gap-3" aria-label="Product pagination">
+    <nav className="mt-10 flex flex-col items-center justify-center gap-5" aria-label="Product pagination">
+      <p className="text-[14px] font-semibold text-[#4b5563]">
+        Page <strong className="text-[#111827]">{currentPage}</strong> of <strong className="text-[#111827]">{totalPages}</strong>
+      </p>
+      <div className="flex items-center justify-center gap-2 rounded-[14px] border border-[#edf0f3] bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
       <button
         type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="h-10 rounded-[7px] border border-[#dce2ea] bg-white px-5 text-[14px] font-black text-[#374151] transition hover:border-[#f7d95f] hover:text-[#ef3338] disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-11 rounded-[8px] border border-[#dce2ea] bg-[#f8fafc] px-5 text-[14px] font-black text-[#98a2b3] transition hover:border-[#ef3338] hover:text-[#ef3338] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
       </button>
-      <span className="min-w-[110px] text-center text-[14px] font-bold text-[#64748b]">
-        Page <strong className="text-[#111827]">{currentPage}</strong> of <strong className="text-[#111827]">{totalPages}</strong>
-      </span>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).slice(0, 5).map((page) => (
+        <button
+          key={page}
+          type="button"
+          onClick={() => onPageChange(page)}
+          className={[
+            "grid size-11 place-items-center rounded-[8px] border text-[14px] font-black transition",
+            page === currentPage
+              ? "border-[#ef3338] bg-[#ef3338] text-white shadow-[0_12px_24px_rgba(239,51,56,0.24)]"
+              : "border-[#dce2ea] bg-white text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]",
+          ].join(" ")}
+        >
+          {page}
+        </button>
+      ))}
       <button
         type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="h-10 rounded-[7px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d91f25] disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-11 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.20)] transition hover:bg-[#d91f25] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>
+      </div>
     </nav>
   );
 }
@@ -189,56 +229,106 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
   }
 
   return (
-    <main className="min-h-screen bg-[#f2f4f7] px-4 py-10 sm:px-6 lg:px-8">
-      <section className="mx-auto max-w-[1720px] rounded-[8px] bg-white px-5 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)] sm:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#ef3338]">JPSPARE Catalog</p>
-            <h1 className="mt-2 text-[30px] font-black text-[#111827] sm:text-[38px]">{title}</h1>
-            <p className="mt-2 text-[14px] text-[#64748b]">{pagination.total} products available</p>
-          </div>
-        </div>
+    <main className="min-h-screen bg-[#f4f6f8] px-4 pb-16 pt-0 sm:px-6 lg:px-10">
+      <section className="mx-auto w-full max-w-[1635px] border-t-[5px] border-[#ef3338] bg-white px-5 py-7 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:px-8">
+        <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#ef3338]">JPSPARE Catalog</p>
+        <h1 className="mt-2 text-[30px] font-black text-[#111827] sm:text-[38px]">{title}</h1>
+        <p className="mt-2 text-[14px] font-medium text-[#64748b]">{pagination.total} products found</p>
+      </section>
 
-        <form onSubmit={applyFilters} className={`mt-8 grid gap-3 rounded-[8px] border border-[#e5e7eb] bg-[#f8fafc] p-4 md:grid-cols-2 ${lockedCategory ? "xl:grid-cols-[2fr_1fr_1fr_auto_auto]" : "xl:grid-cols-[2fr_1fr_1fr_1fr_auto_auto]"}`}>
-          <input
-            type="search"
-            value={filters.q}
-            onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
-            placeholder="Search products"
-            className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
-          />
-          {!lockedCategory ? (
-            <input
-              value={filters.category}
-              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
-              placeholder="Category slug or name"
-              className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
-            />
-          ) : null}
-          <input
-            value={filters.brand}
-            onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}
-            placeholder="Brand slug or name"
-            className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
-          />
-          <select
-            value={filters.sort}
-            onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}
-            className="h-11 min-w-0 rounded-[7px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#f7d95f] focus:border-[#ef3338]"
-          >
-            <option value="newest">Newest</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
-          <button type="submit" className="h-11 rounded-[7px] bg-[#ef3338] px-6 text-[14px] font-black text-white transition hover:bg-[#d91f25]">
-            Apply
-          </button>
-          <button type="button" onClick={clearFilters} className="h-11 rounded-[7px] border border-[#dce2ea] bg-white px-5 text-[14px] font-black text-[#374151] transition hover:border-[#f7d95f] hover:text-[#ef3338]">
-            Clear
-          </button>
+      <section className="mx-auto mt-10 grid w-full max-w-[1635px] gap-8 lg:grid-cols-[320px_1fr]">
+        <form onSubmit={applyFilters} className="h-fit overflow-hidden rounded-[8px] border border-[#e1e7ef] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+          <div className="bg-[linear-gradient(135deg,#111827,#6b3208)] p-6 text-white">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-[22px] font-black">Smart Filters</h2>
+              <span className="rounded-full bg-white/14 px-3 py-1 text-[11px] font-black text-[#ffb5b8]">LIVE</span>
+            </div>
+            <p className="mt-8 text-[15px] font-medium leading-6 text-white/82">Find exactly what you need with focused product filters.</p>
+          </div>
+          <div className="space-y-4 p-5">
+            <div className="rounded-[8px] border border-[#ffe08a] bg-[#fff9ef] p-4">
+              <p className="flex items-center gap-2 text-[14px] font-black text-[#111827]"><span className="size-2 rounded-full bg-[#ef3338]" />Search</p>
+              <input
+                type="search"
+                value={filters.q}
+                onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
+                placeholder="Search products"
+                className="mt-4 h-11 w-full rounded-[8px] border border-[#dce2ea] bg-white px-4 text-[14px] outline-none transition hover:border-[#ef3338] focus:border-[#ef3338] focus:ring-4 focus:ring-[#ef3338]/10"
+              />
+            </div>
+
+            <div className="rounded-[8px] border border-[#ffe08a] bg-[#fff9ef] p-4">
+              <p className="flex items-center gap-2 text-[14px] font-black text-[#111827]"><span className="size-2 rounded-full bg-[#ef3338]" />Price Range</p>
+              <div className="mt-4 rounded-[8px] bg-[#f8fafc] p-3 text-center text-[12px] font-medium text-[#667085]">
+                Range: ৳350.00 - ৳371000.00
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <input placeholder="Min ৳350" className="h-10 min-w-0 rounded-[8px] border border-[#dce2ea] bg-white px-3 text-[13px] outline-none focus:border-[#ef3338]" />
+                  <input placeholder="Max ৳371000" className="h-10 min-w-0 rounded-[8px] border border-[#dce2ea] bg-white px-3 text-[13px] outline-none focus:border-[#ef3338]" />
+                </div>
+              </div>
+            </div>
+
+            {filterGroups.map((group) => (
+              <div key={group.title} className="rounded-[8px] border border-[#ffe08a] bg-[#fff9ef] p-4">
+                <p className="flex items-center gap-2 text-[14px] font-black text-[#111827]"><span className="size-2 rounded-full bg-[#ef3338]" />{group.title}</p>
+                <div className="mt-4 space-y-2">
+                  {group.options.map(([label, value, count]) => {
+                    const checked = filters[group.field] === value || filters[group.field] === label;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFilters((current) => ({ ...current, [group.field]: checked ? "" : value }))}
+                        className="flex w-full items-center justify-between gap-3 rounded-[8px] border border-[#dce2ea] bg-white px-3 py-2 text-left text-[13px] font-medium text-[#344054] transition hover:border-[#ef3338]"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={`grid size-4 place-items-center rounded border ${checked ? "border-[#ef3338] bg-[#ef3338]" : "border-[#cbd5e1]"}`}>
+                            {checked ? <span className="size-1.5 rounded-full bg-white" /> : null}
+                          </span>
+                          {label}
+                        </span>
+                        <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[12px] font-bold text-[#64748b]">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            <div className="grid grid-cols-2 gap-3">
+              <button type="submit" className="h-11 rounded-[8px] bg-[#ef3338] text-[14px] font-black text-white transition hover:bg-[#d91f25]">
+                Apply
+              </button>
+              <button type="button" onClick={clearFilters} className="h-11 rounded-[8px] border border-[#dce2ea] bg-white text-[14px] font-black text-[#374151] transition hover:border-[#ef3338] hover:text-[#ef3338]">
+                Clear
+              </button>
+            </div>
+          </div>
         </form>
 
-        <div className="mt-10">
+        <div>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[8px] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+            <p className="text-[20px] font-medium text-[#4b5563]">
+              <span className="text-[34px] font-black text-[#ef3338]">{products.length || pagination.total}</span> products found
+            </p>
+            <select
+              value={filters.sort}
+              onChange={(event) => {
+                const nextFilters = { ...filters, sort: event.target.value };
+                setFilters(nextFilters);
+                setAppliedFilters(nextFilters);
+                setCurrentPage(1);
+                updateUrl(nextFilters);
+              }}
+              className="h-11 min-w-[190px] rounded-[8px] border border-[#dce2ea] bg-white px-4 text-[14px] font-medium outline-none transition hover:border-[#ef3338] focus:border-[#ef3338]"
+            >
+              <option value="newest">Best Selling</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+
+          <div className="rounded-[8px] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
           {loading ? <ProductsLoading /> : null}
           {!loading && error ? (
             <div className="rounded-[8px] border border-[#fecaca] bg-[#fff1f2] px-5 py-12 text-center text-[15px] font-bold text-[#b91c1c]">{error}</div>
@@ -251,7 +341,7 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
           ) : null}
           {!loading && !error && products.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {products.map((product, index) => (
                   <ProductCard key={product.id || product.slug} product={product} cardIndex={index} onAdd={handleAdd} onWishlist={handleWishlist} />
                 ))}
@@ -259,6 +349,7 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
               {pagination.totalPages > 1 ? <ProductsPagination currentPage={currentPage} totalPages={pagination.totalPages} onPageChange={changePage} /> : null}
             </>
           ) : null}
+          </div>
         </div>
       </section>
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />

@@ -615,10 +615,10 @@ function PromoRail({ product, offer }) {
         </p>
         <h3 className="mt-2 text-[18px] font-black leading-5">{product}</h3>
         <p className="mt-1 text-[12px] text-[#ff7777]">Guaranteed Fitment</p>
-        <a href="#featured-products" className="mt-3 grid h-[66px] place-items-center rounded-[6px] border border-white/25 bg-[#e5e7eb] text-[13px] font-medium text-[#374151] shadow-[inset_0_0_0_7px_rgba(31,41,55,0.26)]">
+        <a href="/collection" className="mt-3 grid h-[66px] place-items-center rounded-[6px] border border-white/25 bg-[#e5e7eb] text-[13px] font-medium text-[#374151] shadow-[inset_0_0_0_7px_rgba(31,41,55,0.26)]">
           Featured Products
         </a>
-        <a href="#parts" className="mt-3 grid h-8 place-items-center rounded-[7px] bg-[#f73438] text-[12px] font-black text-[#090909] transition hover:bg-[#ff4a4d]">
+        <a href="/products" className="mt-3 grid h-8 place-items-center rounded-[7px] bg-[#f73438] text-[12px] font-black text-[#090909] transition hover:bg-[#ff4a4d]">
           Shop Now
         </a>
       </div>

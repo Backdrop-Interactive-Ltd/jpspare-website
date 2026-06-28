@@ -142,6 +142,13 @@ function saveCompareProductItem(product, productKey) {
   }
 }
 
+function syncCompareSelectionFromItems(items) {
+  if (typeof window === "undefined") return [];
+  const selection = items.map((item) => item.key || item.slug).filter(Boolean);
+  window.localStorage.setItem(PRODUCT_COMPARE_SELECTION_KEY, JSON.stringify(selection));
+  return selection;
+}
+
 function shuffleProducts(products) {
   if (!products?.length) return [];
   const shuffled = [...products];
@@ -311,8 +318,9 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
 
   const handleCompareSelect = (event) => {
     event.preventDefault();
-    const nextSelection = saveProductSelection(PRODUCT_COMPARE_SELECTION_KEY, productSelectionKey);
-    saveCompareProductItem(product, productSelectionKey);
+    saveProductSelection(PRODUCT_COMPARE_SELECTION_KEY, productSelectionKey);
+    const nextItems = saveCompareProductItem(product, productSelectionKey);
+    const nextSelection = syncCompareSelectionFromItems(nextItems);
     setCompareSelected(true);
     window.dispatchEvent(new CustomEvent("jpspare-compare-change", { detail: { count: nextSelection.length } }));
   };

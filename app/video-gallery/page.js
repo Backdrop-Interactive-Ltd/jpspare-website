@@ -1,4 +1,6 @@
 import VideoGallery from "../VideoGallery";
+import TopDealBar from "../TopDealBar";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Video Gallery | JPSPARE",
@@ -7,8 +9,12 @@ export const metadata = {
 
 export default function VideoGalleryPage() {
   return (
-    <main className="min-h-screen bg-[#070b12]">
-      <VideoGallery />
-    </main>
+    <>
+      <TopDealBar />
+      <Header />
+      <main className="min-h-screen bg-[#f4f6f8]">
+        <VideoGallery />
+      </main>
+    </>
   );
 }

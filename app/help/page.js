@@ -1,4 +1,6 @@
 import HelpPageClient from "./HelpPageClient";
+import TopDealBar from "../TopDealBar";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Help Center | JPSPARE",
@@ -6,5 +8,11 @@ export const metadata = {
 };
 
 export default function HelpPage() {
-  return <HelpPageClient />;
+  return (
+    <>
+      <TopDealBar />
+      <Header />
+      <HelpPageClient />
+    </>
+  );
 }

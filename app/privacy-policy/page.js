@@ -1,91 +1,58 @@
 import Link from "next/link";
+import TopDealBar from "../TopDealBar";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Privacy Policy | JPSPARE",
   description: "JPSPARE privacy policy covering data collection, security, cookies, and customer rights.",
 };
 
-const sections = [
+const policyCards = [
   {
-    title: "1. Information We Collect",
-    body: "We collect information you provide directly to us, such as when you create an account, make a purchase, submit an inquiry, or contact us for support.",
-    bullets: [
-      "Personal information including name, email, phone number, and address",
-      "Payment information processed securely through trusted payment providers",
-      "Order history, vehicle fitment details, and product preferences",
-      "Website usage data, search activity, and basic analytics",
-    ],
+    title: "Information We Collect",
+    body: "We collect information you provide directly when you create an account, make a purchase, submit an inquiry, or contact support.",
+    bullets: ["Name, email, phone, and address", "Order history and vehicle fitment details", "Search activity and basic analytics"],
   },
   {
-    title: "2. How We Use Your Information",
-    body: "We use the information we collect to provide, maintain, and improve our automotive parts shopping experience.",
-    bullets: [
-      "Process orders, payments, delivery, and returns",
-      "Provide customer support and fitment assistance",
-      "Send order confirmations, account updates, and shipment notices",
-      "Improve our website, product recommendations, and services",
-      "Send promotional emails only when permitted by you",
-    ],
+    title: "How We Use Information",
+    body: "We use collected data to provide, maintain, and improve the automotive parts shopping experience.",
+    bullets: ["Process orders and delivery", "Provide support and fitment assistance", "Send account and shipment notices"],
   },
   {
-    title: "3. Information Sharing",
-    body: "We do not sell, trade, or otherwise transfer your personal information to third parties except when needed to operate our services or comply with the law.",
-    bullets: [
-      "With service providers who assist in order processing and delivery",
-      "When required by law or to protect our legal rights",
-      "In connection with a business transfer, merger, or acquisition",
-    ],
+    title: "Information Sharing",
+    body: "We do not sell or trade your personal information. Sharing happens only when needed to operate services or comply with law.",
+    bullets: ["Trusted service providers", "Legal compliance", "Business transfer if applicable"],
   },
   {
-    title: "4. Data Security",
-    body: "We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.",
-    callout: {
-      tone: "green",
-      title: "SSL Encryption",
-      body: "All data transmission is encrypted using industry-standard SSL technology.",
-    },
+    title: "Data Security",
+    body: "We apply practical security measures to protect information from unauthorized access, alteration, disclosure, or destruction.",
+    bullets: ["SSL encrypted transmission", "Trusted payment providers", "Access control practices"],
   },
   {
-    title: "5. Cookies and Tracking",
-    body: "We use cookies and similar tracking technologies to enhance your browsing experience, remember preferences, analyze website traffic, and improve product discovery.",
+    title: "Cookies & Tracking",
+    body: "Cookies and similar tools help improve browsing, remember preferences, analyze website traffic, and improve product discovery.",
+    bullets: ["Preference remembering", "Traffic analytics", "Product discovery improvement"],
   },
   {
-    title: "6. Your Rights",
-    body: "You have the right to manage how your personal information is used by JPSPARE.",
-    bullets: [
-      "Access and update your personal information",
-      "Request deletion of eligible account or order data",
-      "Opt out of marketing communications",
-      "Request a copy of your stored data",
-    ],
-  },
-  {
-    title: "7. Contact Us",
-    body: "If you have any questions about this Privacy Policy, please contact us:",
-    contact: true,
+    title: "Your Rights",
+    body: "You can manage how your personal information is used by JPSPARE by contacting our support team.",
+    bullets: ["Update personal information", "Request eligible data deletion", "Opt out of marketing messages"],
   },
 ];
 
-function Icon({ name, className = "size-6" }) {
+function Icon({ name, className = "size-5" }) {
   const icons = {
     arrowLeft: "M19 12H5m7-7-7 7 7 7",
     lock: "M6 10V8a6 6 0 1 1 12 0v2M5 10h14v11H5V10Z",
     shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z",
-    eye: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
-    document: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 13h6M10 17h4",
+    eye: "M2 12s4-7 10-7 10 7-4 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+    mail: "M4 6h16v12H4zM4 8l8 5 8-5",
+    phone: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z",
+    check: "M20 6 9 17l-5-5",
   };
 
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={icons[name]} />
     </svg>
   );
@@ -93,88 +60,128 @@ function Icon({ name, className = "size-6" }) {
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-white text-[#111827]">
-      <section className="mx-auto w-full max-w-[820px] px-4 py-14 sm:px-6 lg:px-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-[16px] font-semibold text-[#df171d] transition hover:text-[#111827]">
-          <Icon name="arrowLeft" className="size-4" />
-          Back to Home
-        </Link>
-
-        <div className="mt-10 flex items-center gap-5">
-          <span className="grid size-11 place-items-center rounded-full bg-[#fff1f1] text-[#df171d]">
-            <Icon name="lock" className="size-8" />
-          </span>
-          <h1 className="text-[34px] font-black tracking-[-0.04em] text-[#111827]">Privacy Policy</h1>
-        </div>
-
-        <p className="mt-10 text-[17px] font-medium text-[#4b5563]">Last updated: 5/20/2026</p>
-
-        <div className="mt-12 rounded-[8px] border border-[#bfdbfe] bg-[#eff6ff] p-7">
-          <div className="flex items-start gap-4">
-            <span className="mt-1 text-[#2563eb]">
-              <Icon name="shield" className="size-6" />
-            </span>
-            <div>
-              <h2 className="text-[17px] font-black text-[#1d4ed8]">Your Privacy Matters</h2>
-              <p className="mt-3 text-[15px] font-medium leading-7 text-[#1d4ed8]">
-                JPSPARE is committed to protecting your privacy and personal information. This policy explains how we collect, use, and safeguard your data.
-              </p>
+    <>
+      <TopDealBar />
+      <Header />
+      <main className="min-h-screen bg-[#f4f6f8] text-[#111827]">
+        <section className="px-4 pt-0 sm:px-6 lg:px-10">
+          <div className="relative mx-auto flex min-h-[300px] w-full max-w-[1635px] items-center overflow-hidden border border-white/10 bg-[linear-gradient(112deg,#111827_0%,#111827_62%,#4b1d2b_100%)] px-6 py-12 text-white sm:px-9 lg:px-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(239,51,56,0.14),transparent_30%),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:auto,44px_44px,44px_44px]" />
+            <div className="relative flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-[820px]">
+                <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.12em] text-[#ffb5b8] transition hover:text-white">
+                  <Icon name="arrowLeft" className="size-4" />
+                  Back to Home
+                </Link>
+                <span className="mt-8 inline-flex items-center rounded-full border border-[#ff8c91]/30 bg-[#ef3338]/15 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#ffb5b8]">
+                  Privacy Center
+                </span>
+                <h1 className="mt-6 text-[42px] font-black leading-tight tracking-[-0.04em] sm:text-[56px]">
+                  Privacy <span className="text-[#ff4a50]">Policy</span>
+                </h1>
+                <p className="mt-4 max-w-[760px] text-[16px] font-medium leading-7 text-white/68">
+                  JPSPARE is committed to protecting your privacy and personal information. This policy explains how we collect, use, and safeguard your data.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-white/15 bg-white/8 p-3 backdrop-blur-sm sm:grid-cols-4 lg:ml-auto lg:min-w-[520px]">
+                {[
+                  ["SSL", "Encryption"],
+                  ["Safe", "Payments"],
+                  ["No", "Data Sales"],
+                  ["May 2026", "Updated"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-[6px] bg-black/15 px-3 py-3 text-center">
+                    <p className="text-[19px] font-black text-[#ff5b61]">{value}</p>
+                    <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-white/55">{label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-10 space-y-9">
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2 className="text-[23px] font-black tracking-[-0.03em] text-[#111827]">{section.title}</h2>
-              <p className="mt-4 text-[16px] font-medium leading-8 text-[#4b5563]">{section.body}</p>
-
-              {section.bullets ? (
-                <ul className="mt-4 space-y-3 pl-5 text-[16px] font-medium leading-7 text-[#4b5563]">
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet} className="list-disc">{bullet}</li>
-                  ))}
-                </ul>
-              ) : null}
-
-              {section.callout ? (
-                <div className="mt-5 rounded-[8px] border border-[#bbf7d0] bg-[#ecfdf3] p-5">
-                  <div className="flex items-start gap-3 text-[#16a34a]">
-                    <Icon name="lock" className="mt-0.5 size-5" />
-                    <div>
-                      <h3 className="text-[15px] font-black">{section.callout.title}</h3>
-                      <p className="mt-2 text-[14px] font-semibold leading-6">{section.callout.body}</p>
-                    </div>
+        <section className="px-4 py-10 sm:px-6 lg:px-10">
+          <div className="mx-auto grid w-full max-w-[1635px] gap-8 lg:grid-cols-[0.34fr_0.66fr]">
+            <aside className="space-y-6">
+              <div className="rounded-[8px] border border-[#d7e7ff] bg-[#eff6ff] p-7 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+                <div className="flex items-start gap-4">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-[8px] bg-[#2563eb] text-white">
+                    <Icon name="shield" />
+                  </span>
+                  <div>
+                    <h2 className="text-[20px] font-black text-[#1d4ed8]">Your Privacy Matters</h2>
+                    <p className="mt-3 text-[14px] font-semibold leading-7 text-[#1d4ed8]">
+                      We keep customer data handling clear, purposeful, and service-focused.
+                    </p>
                   </div>
                 </div>
-              ) : null}
+              </div>
 
-              {section.contact ? (
-                <div className="mt-5 rounded-[8px] bg-[#f8fafc] p-6 text-[15px] font-medium leading-7 text-[#4b5563]">
-                  <p className="font-black text-[#111827]">JPSPARE Corp.</p>
-                  <p>Privacy Officer</p>
-                  <p>Email: privacy@jpspare.com.bd</p>
-                  <p>Phone: 01718914582</p>
+              <div className="rounded-[8px] border border-[#e1e7ef] bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+                <h2 className="text-[20px] font-black">Data Principles</h2>
+                <div className="mt-5 space-y-3">
+                  {["Collect only useful service data", "Protect order and account details", "Use trusted payment providers", "Support privacy requests"].map((item) => (
+                    <div key={item} className="flex items-center gap-3 rounded-[8px] bg-[#f8fafc] px-4 py-3 text-[13px] font-bold text-[#344054]">
+                      <span className="grid size-6 place-items-center rounded-full bg-[#ef3338] text-white">
+                        <Icon name="check" className="size-3.5" />
+                      </span>
+                      {item}
+                    </div>
+                  ))}
                 </div>
-              ) : null}
-            </section>
-          ))}
-        </div>
+              </div>
 
-        <div className="mt-12 rounded-[8px] border border-[#f7d95f] bg-[#fff1f1] p-7">
-          <div className="flex items-start gap-4">
-            <span className="mt-1 text-[#df171d]">
-              <Icon name="eye" className="size-6" />
-            </span>
-            <div>
-              <h2 className="text-[17px] font-black text-[#9f1d20]">Transparency</h2>
-              <p className="mt-3 text-[15px] font-medium leading-7 text-[#9f1d20]">
-                We believe in transparency. If you have any questions about how we handle your data, reach out to our privacy team.
-              </p>
+              <div className="rounded-[8px] bg-[#111827] p-7 text-white shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+                <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ff8c91]">Privacy Contact</p>
+                <a href="mailto:privacy@jpspare.com.bd" className="mt-5 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
+                  <Icon name="mail" className="size-4 text-[#ff5b61]" />
+                  privacy@jpspare.com.bd
+                </a>
+                <a href="tel:01718914582" className="mt-3 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
+                  <Icon name="phone" className="size-4 text-[#ff5b61]" />
+                  01718914582
+                </a>
+              </div>
+            </aside>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              {policyCards.map((section, index) => (
+                <article key={section.title} className="rounded-[8px] border border-[#e1e7ef] bg-white p-7 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[#ef3338]/40">
+                  <div className="flex items-start gap-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-[8px] bg-[#fff1f2] text-[14px] font-black text-[#ef3338]">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#111827]">{section.title}</h2>
+                      <p className="mt-3 text-[14px] font-medium leading-7 text-[#526071]">{section.body}</p>
+                    </div>
+                  </div>
+                  <ul className="mt-5 space-y-2 border-t border-[#edf0f3] pt-5">
+                    {section.bullets.map((bullet) => (
+                      <li key={bullet} className="flex items-center gap-2 text-[13px] font-bold text-[#667085]">
+                        <Icon name="check" className="size-4 text-[#ef3338]" />
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+              <article className="rounded-[8px] border border-[#ffd0d2] bg-[#fff1ee] p-7 md:col-span-2">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ef3338]">Transparency</p>
+                    <h2 className="mt-2 text-[24px] font-black">Questions about your data?</h2>
+                    <p className="mt-2 text-[14px] font-medium text-[#667085]">Reach out to our privacy team for access, update, deletion, or marketing opt-out requests.</p>
+                  </div>
+                  <Link href="/help" className="inline-flex h-12 shrink-0 items-center justify-center rounded-[8px] bg-[#ef3338] px-7 text-[14px] font-black text-white shadow-[0_16px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d91f24]">
+                    Contact Support
+                  </Link>
+                </div>
+              </article>
             </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   );
 }

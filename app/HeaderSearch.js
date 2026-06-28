@@ -331,7 +331,7 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     <>
       <div data-vehicle-finder-root className="header-search-zoom relative order-3 min-w-0 basis-full lg:order-none lg:max-w-[840px] lg:flex-1">
         <form
-          action="#parts"
+          action="/products"
           onSubmit={handleSubmit}
           className={`flex h-12 min-w-0 overflow-hidden rounded-[16px] border bg-white text-[#4b5563] shadow-[0_12px_24px_rgba(0,0,0,0.2)] transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)] focus-within:border-[#f7d95f] focus-within:shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)] max-sm:h-11 max-sm:rounded-[12px] ${suggestionsOpen ? "border-[#f7d95f] ring-1 ring-[#f7d95f]/20 shadow-[0_0_0_2px_rgba(247,217,95,0.14),0_14px_30px_rgba(0,0,0,0.28)]" : "border-[#ef3338]"}`}
           aria-label="Search products by keyword, vehicle, or image"

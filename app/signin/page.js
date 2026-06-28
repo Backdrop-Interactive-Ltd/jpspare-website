@@ -1,4 +1,5 @@
 import SignInPageClient from "./SignInPageClient";
+import { Header } from "../page";
 
 export const metadata = {
   title: "Sign In | JPSPARE",
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function SignInPage() {
-  return <SignInPageClient />;
+  return (
+    <>
+      <Header />
+      <SignInPageClient />
+    </>
+  );
 }

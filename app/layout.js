@@ -1,5 +1,6 @@
 import "./globals.css";
 import PublicChrome from "./PublicChrome";
+import CompareFloatingPanel from "./CompareFloatingPanel";
 import { Inter } from "next/font/google";
 
 const topDealFont = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
         />
         {children}
         <PublicChrome />
+        <CompareFloatingPanel />
       </body>
     </html>
   );

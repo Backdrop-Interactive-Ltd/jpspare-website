@@ -1,5 +1,5 @@
 import TopDealBar from "../TopDealBar";
-import PartsInquirySection from "../PartsInquirySection";
+import PartQuoteRequestSection from "../PartQuoteRequestSection";
 import { Header } from "../page";
 
 export const metadata = {
@@ -12,8 +12,8 @@ export default function PartsQuotePage() {
     <>
       <TopDealBar />
       <Header />
-      <main className="bg-[#eef0f5]">
-        <PartsInquirySection mode="page" />
+      <main className="bg-[#f4f6f8]">
+        <PartQuoteRequestSection />
       </main>
     </>
   );

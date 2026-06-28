@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const videos = [
   {
@@ -66,10 +66,6 @@ const videos = [
   },
 ];
 
-function wrapIndex(index) {
-  return (index + videos.length) % videos.length;
-}
-
 function VideoIcon({ name }) {
   if (name === "shield") {
     return (
@@ -121,6 +117,15 @@ function VideoIcon({ name }) {
     );
   }
 
+  if (name === "search") {
+    return (
+      <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 21l-4.3-4.3" />
+        <circle cx="10.5" cy="10.5" r="7.5" />
+      </svg>
+    );
+  }
+
   return null;
 }
 
@@ -135,19 +140,19 @@ function VideoCard({ video, active, onPlay }) {
   return (
     <article
       className={[
-        "group relative shrink-0 overflow-hidden rounded-[14px] border bg-[#121827] text-left transition duration-500",
+        "group relative shrink-0 overflow-hidden rounded-[8px] border bg-[#121827] text-left transition duration-300",
         active
-          ? "w-[min(368px,86vw)] border-[#ff6267] shadow-[0_28px_72px_rgba(239,68,68,0.32)] md:scale-105"
-          : "w-[min(328px,82vw)] border-[#243044] opacity-75 shadow-[0_18px_45px_rgba(0,0,0,0.28)] hover:opacity-100",
+          ? "w-[min(392px,86vw)] border-[#ef3338] shadow-[0_18px_34px_rgba(15,23,42,0.22),0_10px_22px_rgba(239,51,56,0.10)] md:scale-[1.03]"
+          : "w-[min(344px,82vw)] border-[#243044] opacity-80 shadow-[0_18px_45px_rgba(0,0,0,0.24)] hover:opacity-100",
       ].join(" ")}
     >
       <div
-        className="relative h-[186px] bg-cover bg-center"
+        className="relative h-[206px] bg-cover bg-center"
         style={{ backgroundImage: `url(${video.image})`, backgroundPosition: video.position }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/20 to-black/65" />
         {video.isNew ? (
-          <span className="absolute left-5 top-5 rounded-full bg-[#ff555d] px-4 py-3 text-[12px] font-black uppercase tracking-wide text-black">
+          <span className="absolute left-5 top-5 rounded-[8px] bg-[#ef3338] px-4 py-2.5 text-[12px] font-black uppercase tracking-wide text-white">
             New
           </span>
         ) : null}
@@ -156,8 +161,8 @@ function VideoCard({ video, active, onPlay }) {
           type="button"
           onClick={() => onPlay(video)}
           className={[
-            "absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[#f15a5e]/90 text-[#101827] shadow-[0_14px_30px_rgba(239,68,68,0.36)] transition hover:bg-[#ff686c]",
-            active ? "size-[72px]" : "size-[58px]",
+            "absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[#ef3338]/92 text-white shadow-[0_14px_30px_rgba(239,51,56,0.34)] transition hover:scale-105 hover:bg-[#ff4a50]",
+            active ? "size-[70px]" : "size-[56px]",
           ].join(" ")}
           aria-label={`Play ${video.title}`}
         >
@@ -165,7 +170,7 @@ function VideoCard({ video, active, onPlay }) {
         </button>
 
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-          <span className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-black uppercase tracking-wide ${tagClass}`}>
+          <span className={`inline-flex items-center gap-2 rounded-[7px] px-3 py-2 text-[12px] font-black uppercase tracking-wide ${tagClass}`}>
             <VideoIcon name="play" />
             {video.tag}
           </span>
@@ -176,7 +181,7 @@ function VideoCard({ video, active, onPlay }) {
       </div>
 
       <div className="space-y-4 p-5">
-        <h3 className="min-h-[44px] text-[16px] font-black leading-snug text-white md:text-[17px]">{video.title}</h3>
+        <h3 className="min-h-[48px] text-[18px] font-black leading-snug text-white">{video.title}</h3>
         <div className="flex flex-wrap items-center gap-4 text-[13px] font-semibold text-[#7f8999]">
           <span className="inline-flex items-center gap-1.5">⊙ {video.views}</span>
           <span className="inline-flex items-center gap-1.5 text-[#ff6267]">⌘ {video.code}</span>
@@ -186,7 +191,7 @@ function VideoCard({ video, active, onPlay }) {
           <button
             type="button"
             onClick={() => onPlay(video)}
-            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#ff4d52] text-[14px] font-black text-[#111827] shadow-[0_14px_30px_rgba(239,68,68,0.22)] transition hover:bg-[#ff6569]"
+            className="inline-flex h-[44px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#ef3338] text-[14px] font-black text-white shadow-[0_14px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d3191d]"
           >
             <VideoIcon name="play" />
             Watch Video
@@ -198,95 +203,404 @@ function VideoCard({ video, active, onPlay }) {
   );
 }
 
+function GridVideoCard({ video, onPlay }) {
+  const tagClass =
+    video.tagTone === "purple"
+      ? "bg-[#8b3df3]"
+      : video.tagTone === "red"
+        ? "bg-[#ef4444]"
+        : "bg-[#2f72f6]";
+
+  return (
+    <article className="group grid overflow-hidden rounded-[8px] border border-[#e0e6ee] bg-white shadow-[0_16px_38px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:border-[#ef3338]/45 hover:shadow-[0_22px_48px_rgba(15,23,42,0.12)] md:grid-cols-[260px_1fr]">
+      <button
+        type="button"
+        onClick={() => onPlay(video)}
+        className="relative min-h-[210px] overflow-hidden bg-cover bg-center text-left md:min-h-full"
+        style={{ backgroundImage: `url(${video.image})`, backgroundPosition: video.position }}
+        aria-label={`Play ${video.title}`}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-black/25 to-black/70 transition duration-300 group-hover:bg-black/20" />
+        <span className={`absolute left-5 top-5 inline-flex items-center gap-2 rounded-[7px] px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white ${tagClass}`}>
+          <VideoIcon name="play" />
+          {video.tag}
+        </span>
+        <span className="absolute bottom-5 right-5 rounded-full border border-white/20 bg-black/55 px-3 py-1.5 text-[12px] font-bold text-white">
+          {video.duration}
+        </span>
+        <span className="absolute left-1/2 top-1/2 grid size-[58px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[#ef3338]/92 text-white shadow-[0_14px_28px_rgba(239,51,56,0.35)] transition duration-300 group-hover:scale-110 group-hover:bg-[#ff4a50]">
+          <VideoIcon name="play" />
+        </span>
+      </button>
+
+      <div className="flex min-h-[210px] flex-col p-6">
+        <div className="flex flex-wrap items-center gap-3 text-[12px] font-bold uppercase tracking-[0.04em] text-[#667085]">
+          <span className="inline-flex items-center gap-1.5">
+            <VideoIcon name="eye" />
+            {video.views} views
+          </span>
+          <span className="text-[#ef3338]">{video.code}</span>
+        </div>
+        <h3 className="mt-4 text-[22px] font-black leading-tight text-[#111827]">{video.title}</h3>
+        <p className="mt-3 line-clamp-2 text-[14px] font-medium leading-6 text-[#667085]">
+          Watch JPSPARE automotive videos, product insights, and expert guidance for better buying decisions.
+        </p>
+        <button
+          type="button"
+          onClick={() => onPlay(video)}
+          className="mt-auto inline-flex h-11 w-fit items-center gap-2 rounded-[8px] bg-[#111827] px-5 text-[13px] font-black text-white transition hover:-translate-y-0.5 hover:bg-[#ef3338]"
+        >
+          Watch Video
+          <VideoIcon name="arrow" />
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function VideoGallery() {
   const [activeIndex, setActiveIndex] = useState(1);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const visibleIndexes = [activeIndex - 1, activeIndex, activeIndex + 1].map(wrapIndex);
+  const [query, setQuery] = useState("");
+  const [isPaused, setIsPaused] = useState(false);
+  const [visibleGridCount, setVisibleGridCount] = useState(4);
+  const filteredVideos = useMemo(() => {
+    if (!query) return videos;
 
-  const goPrev = () => setActiveIndex((current) => wrapIndex(current - 1));
-  const goNext = () => setActiveIndex((current) => wrapIndex(current + 1));
+    const term = query.toLowerCase();
+    return videos.filter((video) => {
+      const categoryMatch =
+        term === "offers"
+          ? video.title.toLowerCase().includes("offer") || video.code.toLowerCase().includes("offer")
+          : video.tag.toLowerCase() === term;
+      const searchMatch = `${video.title} ${video.tag} ${video.code}`.toLowerCase().includes(term);
+
+      return categoryMatch || searchMatch;
+    });
+  }, [query]);
+  const safeActiveIndex = filteredVideos.length ? activeIndex % filteredVideos.length : 0;
+  const displayedGridVideos = filteredVideos.slice(0, visibleGridCount);
+
+  const selectQuery = (value) => {
+    setQuery(value);
+    setActiveIndex(0);
+    setVisibleGridCount(4);
+  };
+  const selectVideoIndex = (index) => {
+    setActiveIndex(index);
+  };
+
+  function getVideoPosition(index) {
+    const total = filteredVideos.length;
+    const raw = (index - safeActiveIndex + total) % total;
+    return raw > Math.floor(total / 2) ? raw - total : raw;
+  }
+
+  useEffect(() => {
+    if (isPaused || filteredVideos.length < 2) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % filteredVideos.length);
+    }, 2400);
+
+    return () => window.clearInterval(timer);
+  }, [filteredVideos.length, isPaused]);
 
   return (
-    <section id="video-gallery" className="relative overflow-hidden bg-[#070b12] py-20 text-white md:py-24">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] [background-size:80px_80px]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_25%,rgba(42,58,86,0.62),transparent_45%),linear-gradient(90deg,rgba(16,24,39,0.96),rgba(4,7,12,0.98))]" />
+    <section id="video-gallery" className="w-full px-4 pb-20 pt-0 text-[#111827] sm:px-6 lg:px-10">
+      <div className="relative mx-auto w-full max-w-[1635px] overflow-visible">
 
-      <div className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="mx-auto max-w-[760px] text-center">
-          <h2 className="text-[44px] font-black leading-tight tracking-[-0.02em] text-white md:text-[72px]">
-            JPSPARE Video Gallery
-          </h2>
-          <span className="mx-auto mt-9 block h-2 w-32 rounded-full bg-gradient-to-r from-[#ffd447] via-[#ff7667] to-[#ff4247]" />
-          <p className="mx-auto mt-10 max-w-[650px] text-[22px] leading-relaxed text-white/75 md:text-[28px]">
-            Product reviews, customer testimonials, and latest updates from JPSPARE
-          </p>
-
-          <div className="mt-12 flex flex-wrap justify-center gap-7 text-[15px] font-bold text-white/55">
-            {[
-              ["shield", "Professional Quality"],
-              ["eye", "Step-by-Step"],
-              ["star", "Expert Approved"],
-            ].map(([icon, label]) => (
-              <span key={label} className="inline-flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-full bg-[#ff5a61]/20 text-[#ff6267]">
-                  <VideoIcon name={icon} />
-                </span>
-                {label}
+      <div className="relative mx-auto w-full">
+        <div className="relative flex min-h-[300px] w-full items-center overflow-hidden border border-white/10 bg-[linear-gradient(112deg,#111827_0%,#111827_62%,#4b1d2b_100%)] px-6 py-12 text-white sm:px-9 lg:px-10">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(239,51,56,0.14),transparent_30%),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:auto,44px_44px,44px_44px]" />
+          <div className="relative flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-[760px]">
+              <span className="inline-flex items-center rounded-full border border-[#ff8c91]/30 bg-[#ef3338]/15 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#ffb5b8]">
+                Automotive Video Library
               </span>
-            ))}
+              <h2 className="mt-6 text-[42px] font-black leading-tight tracking-[-0.04em] sm:text-[52px]">
+                JPSPARE <span className="text-[#ff4a50]">Video</span> Gallery
+              </h2>
+              <p className="mt-4 max-w-[680px] text-[16px] font-medium leading-7 text-white/68">
+                Product reviews, customer testimonials, tutorials, and latest updates from JPSPARE specialists.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-white/15 bg-white/8 p-3 backdrop-blur-sm sm:grid-cols-4 lg:ml-auto lg:min-w-[520px]">
+              {[
+                ["6+", "Video Guides"],
+                ["1.3k+", "Total Views"],
+                ["3", "Content Types"],
+                ["24/7", "Support"],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-[6px] bg-black/15 px-3 py-3 text-center">
+                  <p className="text-[19px] font-black text-[#ff5b61]">{value}</p>
+                  <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-white/55">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="relative mt-20 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={goPrev}
-            className="absolute left-0 z-10 hidden size-14 place-items-center rounded-[16px] border border-white/10 bg-[#142033]/85 text-white/70 shadow-[0_14px_35px_rgba(0,0,0,0.28)] transition hover:border-[#ff6267]/55 hover:text-white lg:grid"
-            aria-label="Previous video"
-          >
-            <span className="rotate-180">
-              <VideoIcon name="arrow" />
-            </span>
-          </button>
+        <div
+          className="relative px-6 pt-14 sm:px-9 lg:px-10"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={() => setIsPaused(false)}
+        >
+          <div className="video-coverflow-stage">
+            {filteredVideos.map((video, index) => {
+              const position = getVideoPosition(index);
+              const visible = Math.abs(position) <= 1;
 
-          <div className="flex w-full items-center gap-8 overflow-x-auto px-2 pb-5 md:justify-center md:overflow-visible">
-            {visibleIndexes.map((videoIndex) => (
-              <VideoCard
-                key={`${videos[videoIndex].code}-${videoIndex}`}
-                video={videos[videoIndex]}
-                active={videoIndex === activeIndex}
-                onPlay={setSelectedVideo}
-              />
-            ))}
+              return (
+                <div
+                  key={video.code}
+                  className={`video-coverflow-card video-coverflow-card-${position} ${position === 0 ? "video-coverflow-card-active" : ""}`}
+                  aria-hidden={!visible}
+                >
+                  <VideoCard
+                    video={video}
+                    active={position === 0 || filteredVideos.length === 1}
+                    onPlay={setSelectedVideo}
+                  />
+                </div>
+              );
+            })}
+            {!filteredVideos.length ? (
+              <div className="rounded-[8px] border border-[#e5eaf1] bg-white px-8 py-10 text-center text-[14px] font-bold text-[#667085]">
+                No videos found.
+              </div>
+            ) : null}
           </div>
-
-          <button
-            type="button"
-            onClick={goNext}
-            className="absolute right-0 z-10 hidden size-14 place-items-center rounded-[16px] border border-white/10 bg-[#142033]/85 text-white/70 shadow-[0_14px_35px_rgba(0,0,0,0.28)] transition hover:border-[#ff6267]/55 hover:text-white lg:grid"
-            aria-label="Next video"
-          >
-            <VideoIcon name="arrow" />
-          </button>
         </div>
 
-        <div className="mt-8 flex justify-center gap-4">
-          {videos.map((video, index) => (
+        <div className="mt-2 flex justify-center gap-4">
+          {filteredVideos.map((video, index) => (
             <button
               key={video.code}
               type="button"
-              onClick={() => setActiveIndex(index)}
+              onClick={() => selectVideoIndex(index)}
               className={[
-                "h-3 rounded-full transition",
-                index === activeIndex
-                  ? "w-12 bg-[#ff5a61] shadow-[0_0_22px_rgba(255,90,97,0.75)]"
-                  : "w-3 bg-[#5b6675] hover:bg-[#ff8c8f]",
+                "video-gallery-dot",
+                index === safeActiveIndex
+                  ? "video-gallery-dot-active"
+                  : "video-gallery-dot-idle",
               ].join(" ")}
               aria-label={`Show video ${index + 1}`}
             />
           ))}
         </div>
+
+        <div className="relative pt-8">
+          <div className="mx-auto flex w-full items-center justify-between gap-6 rounded-[8px] border border-[#e5eaf1] bg-white px-5 py-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)] max-md:flex-col max-md:items-stretch">
+            <div className="flex flex-wrap items-center gap-7 text-[13px] font-black uppercase tracking-[0.02em] text-[#111827]">
+              {["ALL", "TUTORIAL", "REVIEW", "GUIDE"].map((topic) => {
+                const isActive = (!query && topic === "ALL") || query.toLowerCase() === topic.toLowerCase();
+                return (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => selectQuery(topic === "ALL" ? "" : topic)}
+                    className={`inline-flex h-9 items-center border-b-2 transition ${isActive ? "border-[#111827] text-[#111827]" : "border-transparent text-[#667085] hover:border-[#ef3338] hover:text-[#ef3338]"}`}
+                  >
+                    {topic}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="flex h-9 w-full max-w-[420px] items-center gap-2 rounded-full border border-[#d9dee8] bg-white px-4 text-[#667085] shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition duration-200 hover:border-[#ef3338] hover:ring-1 hover:ring-[#ef3338] focus-within:border-[#ef3338] focus-within:ring-1 focus-within:ring-[#ef3338] max-md:max-w-none">
+              <VideoIcon name="search" />
+              <input
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActiveIndex(0);
+                  setVisibleGridCount(4);
+                }}
+                placeholder="Search automotive videos..."
+                className="h-full w-full bg-transparent text-[12px] font-medium text-[#111827] outline-none placeholder:text-[#98a2b3]"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="grid gap-6 pt-8 lg:grid-cols-2">
+          {displayedGridVideos.map((video) => (
+            <GridVideoCard key={`grid-${video.code}`} video={video} onPlay={setSelectedVideo} />
+          ))}
+          {!filteredVideos.length ? (
+            <div className="rounded-[8px] border border-[#e5eaf1] bg-white px-8 py-10 text-center text-[14px] font-bold text-[#667085] lg:col-span-2">
+              No video cards available for this search.
+            </div>
+          ) : null}
+        </div>
+
+        {visibleGridCount < filteredVideos.length ? (
+          <div className="flex justify-center pt-8">
+            <button
+              type="button"
+              onClick={() => setVisibleGridCount((current) => Math.min(current + 2, filteredVideos.length))}
+              className="inline-flex h-14 min-w-[240px] items-center justify-center gap-3 rounded-[8px] bg-[#ef3338] px-8 text-[16px] font-semibold text-white shadow-[0_18px_35px_rgba(239,51,56,0.25)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#d91f24] hover:shadow-[0_22px_42px_rgba(239,51,56,0.32)]"
+            >
+              Load More Videos
+              <VideoIcon name="arrow" />
+            </button>
+          </div>
+        ) : null}
       </div>
+      </div>
+      <style>{`
+        .video-coverflow-stage {
+          position: relative;
+          min-height: 414px;
+          overflow: visible;
+        }
+
+        .video-coverflow-card {
+          --video-x: 0%;
+          --video-scale: 0.82;
+          --video-opacity: 0;
+          --video-z: 1;
+          position: absolute;
+          left: 50%;
+          top: 48%;
+          z-index: var(--video-z);
+          opacity: var(--video-opacity);
+          pointer-events: none;
+          transform: translate(-50%, -50%) translateX(var(--video-x)) scale(var(--video-scale));
+          transition:
+            transform 300ms cubic-bezier(0.2, 0.9, 0.24, 1),
+            opacity 240ms cubic-bezier(0.2, 0.9, 0.24, 1),
+            filter 240ms cubic-bezier(0.2, 0.9, 0.24, 1);
+          will-change: transform, opacity, filter;
+        }
+
+        .video-gallery-dot {
+          position: relative;
+          height: 12px;
+          width: 12px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #5b6675;
+          transition:
+            width 280ms cubic-bezier(0.2, 0.9, 0.24, 1),
+            background 220ms ease,
+            transform 220ms ease;
+        }
+
+        .video-gallery-dot::after {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: inherit;
+          background: radial-gradient(circle at 30% 45%, rgba(255,255,255,0.85), rgba(255,255,255,0) 28%),
+            linear-gradient(90deg, #ff3f45, #ff6c72);
+          opacity: 0;
+          transform: translateX(-60%) scaleX(0.45);
+        }
+
+        .video-gallery-dot-idle:hover {
+          background: #ff8c8f;
+          transform: scale(1.08);
+        }
+
+        .video-gallery-dot-active {
+          width: 48px;
+          background: #ff5a61;
+          box-shadow: 0 0 18px rgba(255,90,97,0.58);
+          animation: videoDotPulse 360ms cubic-bezier(0.2, 0.9, 0.24, 1);
+        }
+
+        .video-gallery-dot-active::after {
+          opacity: 1;
+          animation: videoDotLiquid 420ms cubic-bezier(0.2, 0.9, 0.24, 1) both;
+        }
+
+        @keyframes videoDotLiquid {
+          0% {
+            transform: translateX(-70%) scaleX(0.35);
+          }
+          58% {
+            transform: translateX(8%) scaleX(1.18);
+          }
+          100% {
+            transform: translateX(0) scaleX(1);
+          }
+        }
+
+        @keyframes videoDotPulse {
+          0% {
+            transform: scaleX(0.72);
+          }
+          65% {
+            transform: scaleX(1.08);
+          }
+          100% {
+            transform: scaleX(1);
+          }
+        }
+
+        .video-coverflow-card--1 {
+          --video-x: -92%;
+          --video-scale: 0.93;
+          --video-opacity: 0.82;
+          --video-z: 3;
+          pointer-events: auto;
+          filter: saturate(0.82);
+        }
+
+        .video-coverflow-card-0 {
+          --video-x: 0%;
+          --video-scale: 1;
+          --video-opacity: 1;
+          --video-z: 7;
+          pointer-events: auto;
+          filter: saturate(1);
+        }
+
+        .video-coverflow-card-1 {
+          --video-x: 92%;
+          --video-scale: 0.93;
+          --video-opacity: 0.82;
+          --video-z: 3;
+          pointer-events: auto;
+          filter: saturate(0.82);
+        }
+
+        .video-coverflow-card-active {
+          z-index: 9;
+        }
+
+        @media (max-width: 1023px) {
+          .video-coverflow-stage {
+            display: flex;
+            min-height: auto;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-snap-type: x mandatory;
+          }
+
+          .video-coverflow-card {
+            position: static;
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+            filter: none;
+            scroll-snap-align: center;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .video-coverflow-card,
+          .video-gallery-dot,
+          .video-gallery-dot::after {
+            transition: none;
+            animation: none;
+          }
+        }
+      `}</style>
 
       {selectedVideo ? (
         <div className="fixed inset-0 z-[140] grid place-items-center bg-black/85 px-5" role="dialog" aria-modal="true">

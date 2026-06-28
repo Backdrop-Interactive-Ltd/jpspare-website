@@ -21,6 +21,14 @@ function addSelection(key, productKey) {
   return selection;
 }
 
+function writeCompareItems(items) {
+  const nextItems = items.slice(-3);
+  const selection = nextItems.map((item) => item.key || item.slug).filter(Boolean);
+  window.localStorage.setItem(COMPARE_ITEMS_KEY, JSON.stringify(nextItems));
+  window.localStorage.setItem(COMPARE_KEY, JSON.stringify(selection));
+  return selection;
+}
+
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-[17px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -64,11 +72,11 @@ export default function ProductQuickActions({ productUrl = "/products", productN
   function handleCompare(event) {
     event.preventDefault();
     event.stopPropagation();
-    const selection = addSelection(COMPARE_KEY, productKey);
     const items = readSelection(COMPARE_ITEMS_KEY);
-    if (!items.some((item) => (item.key || item.slug) === productKey)) {
-      window.localStorage.setItem(COMPARE_ITEMS_KEY, JSON.stringify([...items, { key: productKey, slug: productKey, name: productName, title: productName }].slice(-3)));
-    }
+    const nextItems = items.some((item) => (item.key || item.slug) === productKey)
+      ? items
+      : [...items, { key: productKey, slug: productKey, name: productName, title: productName }];
+    const selection = writeCompareItems(nextItems);
     window.dispatchEvent(new CustomEvent("jpspare-compare-change", { detail: { count: selection.length } }));
   }
 
