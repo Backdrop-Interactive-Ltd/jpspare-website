@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCustomerSession } from "../../../../lib/auth/customer-session";
+import { getCustomerProfileCompletion } from "../../../../lib/auth/profile-completion";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ export async function GET() {
   }
 
   const { customer } = session;
+  const profileCompletion = getCustomerProfileCompletion(customer);
 
   return NextResponse.json({
     customer: {
@@ -23,6 +25,7 @@ export async function GET() {
       addresses: customer.addresses,
       vehicles: customer.vehicles,
     },
+    profileComplete: profileCompletion.isComplete,
+    profileCompletion,
   });
 }
-

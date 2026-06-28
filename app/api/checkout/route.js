@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { getCustomerSession } from "../../../lib/auth/customer-session";
+import { getCustomerProfileCompletion } from "../../../lib/auth/profile-completion";
 import { getOrCreateActiveCart } from "../../../lib/commerce/cart";
 import { reserveOrderStock, validateAvailableStock } from "../../../lib/commerce/inventory";
 import { createOrderNumber, normalizePaymentMethod, orderTotalFromCart, serializeOrder } from "../../../lib/commerce/orders";
@@ -61,6 +62,33 @@ export async function POST(request) {
     const body = await request.json();
     const session = await getCustomerSession();
     const customer = session?.customer || null;
+
+    if (!customer) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "LOGIN_REQUIRED",
+          message: "Please login with OTP before placing your order.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const profileCompletion = getCustomerProfileCompletion(customer);
+
+    if (!profileCompletion.isComplete) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "PROFILE_INCOMPLETE",
+          message: "Please complete your profile and delivery information before placing your order.",
+          profileComplete: false,
+          profileCompletion,
+        },
+        { status: 422 },
+      );
+    }
+
     const cart = await getOrCreateActiveCart();
     const items = normalizeCartItems(cart);
 

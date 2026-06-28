@@ -60,6 +60,27 @@ const actions = [
   },
 ];
 
+const profileFieldLabels = {
+  name: "Full name",
+  phone: "Phone number",
+  addressLine1: "Delivery address",
+  city: "City",
+  zone: "Zone/Area",
+};
+
+const emptyCompletionForm = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "Dhaka",
+  zone: "",
+  postalCode: "",
+  country: "Bangladesh",
+};
+
 function toneClasses(tone) {
   const tones = {
     blue: "bg-[#eff4ff] text-[#2563eb]",
@@ -84,6 +105,42 @@ function StatCard({ item }) {
   );
 }
 
+function buildCompletionForm(customer) {
+  const address = customer?.addresses?.find((item) => item.isDefault) || customer?.addresses?.[0];
+
+  return {
+    firstName: customer?.firstName || "",
+    lastName: customer?.lastName || "",
+    phone: customer?.phone || address?.phone || "",
+    email: customer?.email || "",
+    addressLine1: address?.addressLine1 || "",
+    addressLine2: address?.addressLine2 || "",
+    city: address?.city || "Dhaka",
+    zone: address?.zone || "",
+    postalCode: address?.postalCode || "",
+    country: address?.country || "Bangladesh",
+  };
+}
+
+function CompletionField({ label, name, value, onChange, required = false, placeholder = "", type = "text", error = "", className = "" }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="text-[12px] font-black uppercase tracking-[0.11em] text-[#374151]">
+        {label} {required ? <span className="text-[#ef3338]">*</span> : null}
+      </span>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`mt-2 h-12 w-full rounded-[9px] border bg-white px-4 text-[15px] font-medium text-[#111827] outline-none transition focus:border-[#ef3338] focus:ring-4 focus:ring-[#ef3338]/10 ${error ? "border-[#ef3338]" : "border-[#d7dde6]"}`}
+      />
+      {error ? <span className="mt-2 block text-[12px] font-bold text-[#c8191f]">{error}</span> : null}
+    </label>
+  );
+}
+
 function ActionCard({ item }) {
   return (
     <Link href={item.href} className={`block rounded-[10px] border bg-white p-8 shadow-[0_12px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(239,51,56,0.10)] ${item.featured ? "border-[#f7d95f]" : "border-[#dfe5ec]"}`}>
@@ -103,6 +160,12 @@ function ActionCard({ item }) {
 export default function DashboardPageClient() {
   const router = useRouter();
   const [customer, setCustomer] = useState(null);
+  const [profileComplete, setProfileComplete] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(null);
+  const [completionForm, setCompletionForm] = useState(emptyCompletionForm);
+  const [completionErrors, setCompletionErrors] = useState({});
+  const [completionMessage, setCompletionMessage] = useState("");
+  const [savingCompletion, setSavingCompletion] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -136,6 +199,9 @@ export default function DashboardPageClient() {
         const ordersData = ordersResponse.ok ? await ordersResponse.json() : { orders: [] };
         if (active) {
           setCustomer(data.customer);
+          setProfileComplete(Boolean(data.profileComplete));
+          setProfileCompletion(data.profileCompletion || null);
+          setCompletionForm(buildCompletionForm(data.customer));
           setOrders(ordersData.orders || []);
         }
       } catch {
@@ -166,6 +232,124 @@ export default function DashboardPageClient() {
 
   const customerFullName = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ").trim();
   const customerDisplayName = customerFullName || customer?.email || "JPSPARE Member";
+
+  function handleCompletionChange(event) {
+    const { name, value } = event.target;
+    setCompletionForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function validateCompletionForm() {
+    const errors = {};
+
+    if (!completionForm.firstName.trim() && !completionForm.lastName.trim()) {
+      errors.firstName = "First or last name is required.";
+    }
+
+    if (!completionForm.phone.trim()) {
+      errors.phone = "Phone number is required.";
+    }
+
+    if (!completionForm.addressLine1.trim()) {
+      errors.addressLine1 = "Delivery address is required.";
+    }
+
+    if (!completionForm.city.trim()) {
+      errors.city = "City is required.";
+    }
+
+    if (!completionForm.zone.trim()) {
+      errors.zone = "Zone or area is required.";
+    }
+
+    return errors;
+  }
+
+  async function refreshProfileState() {
+    const response = await fetch("/api/auth/me", {
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    setCustomer(data.customer);
+    setProfileComplete(Boolean(data.profileComplete));
+    setProfileCompletion(data.profileCompletion || null);
+    setCompletionForm(buildCompletionForm(data.customer));
+    return data;
+  }
+
+  async function handleCompletionSubmit(event) {
+    event.preventDefault();
+    setCompletionMessage("");
+    const errors = validateCompletionForm();
+    setCompletionErrors(errors);
+
+    if (Object.keys(errors).length) {
+      setCompletionMessage("Please fill the required profile and delivery fields.");
+      return;
+    }
+
+    setSavingCompletion(true);
+
+    try {
+      const profileResponse = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          firstName: completionForm.firstName,
+          lastName: completionForm.lastName,
+          phone: completionForm.phone,
+          email: completionForm.email,
+        }),
+      });
+      const profileData = await profileResponse.json().catch(() => ({}));
+
+      if (!profileResponse.ok) {
+        setCompletionMessage(profileData.message || "We could not update your profile right now.");
+        return;
+      }
+
+      const defaultAddress = customer?.addresses?.find((item) => item.isDefault) || customer?.addresses?.[0];
+      const addressPayload = {
+        type: "SHIPPING",
+        firstName: completionForm.firstName,
+        lastName: completionForm.lastName,
+        phone: completionForm.phone,
+        addressLine1: completionForm.addressLine1,
+        addressLine2: completionForm.addressLine2,
+        city: completionForm.city,
+        zone: completionForm.zone,
+        postalCode: completionForm.postalCode,
+        country: completionForm.country || "Bangladesh",
+        isDefault: true,
+      };
+      const addressResponse = await fetch(defaultAddress ? `/api/account/addresses/${defaultAddress.id}` : "/api/account/addresses", {
+        method: defaultAddress ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(addressPayload),
+      });
+      const addressData = await addressResponse.json().catch(() => ({}));
+
+      if (!addressResponse.ok) {
+        setCompletionMessage(addressData.error || "We could not save your delivery address right now.");
+        return;
+      }
+
+      const refreshed = await refreshProfileState();
+      setCompletionErrors({});
+      setCompletionMessage(refreshed?.profileComplete ? "Profile completed. You can now place orders." : "Information saved. Please review the remaining required fields.");
+    } catch {
+      setCompletionMessage("Unable to save profile information right now.");
+    } finally {
+      setSavingCompletion(false);
+    }
+  }
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", {
@@ -215,6 +399,59 @@ export default function DashboardPageClient() {
           </p>
           {error ? <p className="mx-auto mt-4 max-w-[820px] text-[15px] font-bold text-[#df171d]">{error}</p> : null}
         </div>
+
+        {!loading ? (
+          <section className="relative z-10 mx-auto mt-16 max-w-[1220px] rounded-[14px] border border-[#dfe5ec] bg-white p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
+            <div className="flex items-start justify-between gap-5 max-lg:flex-col">
+              <div>
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-black uppercase tracking-[0.11em] ${profileComplete ? "bg-[#e9fbf3] text-[#047857]" : "bg-[#fff1f1] text-[#c8191f]"}`}>
+                  <Icon name={profileComplete ? "award" : "settings"} className="size-4" />
+                  {profileComplete ? "Profile Complete" : "Profile Required"}
+                </span>
+                <h2 className="mt-5 text-[30px] font-black tracking-[-0.03em] text-[#111827]">
+                  {profileComplete ? "Your Profile Is Ready" : "Complete Your Profile"}
+                </h2>
+                <p className="mt-3 max-w-[640px] text-[17px] leading-7 text-[#5f6878]">
+                  Add your contact and delivery information to place orders smoothly.
+                </p>
+              </div>
+              {!profileComplete && profileCompletion?.missingFields?.length ? (
+                <div className="flex max-w-[420px] flex-wrap gap-2">
+                  {profileCompletion.missingFields.map((field) => (
+                    <span key={field} className="rounded-full bg-[#fff1f1] px-3 py-1.5 text-[12px] font-black text-[#c8191f]">
+                      {profileFieldLabels[field] || field}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            {!profileComplete ? (
+              <form onSubmit={handleCompletionSubmit} className="mt-7 grid gap-5 lg:grid-cols-2">
+                <CompletionField label="First Name" name="firstName" value={completionForm.firstName} onChange={handleCompletionChange} placeholder="Fazlur" error={completionErrors.firstName} />
+                <CompletionField label="Last Name" name="lastName" value={completionForm.lastName} onChange={handleCompletionChange} placeholder="Rahman" />
+                <CompletionField label="Phone" name="phone" value={completionForm.phone} onChange={handleCompletionChange} required placeholder="017XXXXXXXX" error={completionErrors.phone} />
+                <CompletionField label="Email" name="email" value={completionForm.email} onChange={handleCompletionChange} type="email" placeholder="you@example.com" />
+                <CompletionField label="Address Line 1" name="addressLine1" value={completionForm.addressLine1} onChange={handleCompletionChange} required placeholder="House, road, area" error={completionErrors.addressLine1} className="lg:col-span-2" />
+                <CompletionField label="Address Line 2" name="addressLine2" value={completionForm.addressLine2} onChange={handleCompletionChange} placeholder="Apartment, floor, landmark" className="lg:col-span-2" />
+                <CompletionField label="City" name="city" value={completionForm.city} onChange={handleCompletionChange} required error={completionErrors.city} />
+                <CompletionField label="Zone/Area" name="zone" value={completionForm.zone} onChange={handleCompletionChange} required placeholder="Tejgaon" error={completionErrors.zone} />
+                <CompletionField label="Postal Code" name="postalCode" value={completionForm.postalCode} onChange={handleCompletionChange} placeholder="1208" />
+                <CompletionField label="Country" name="country" value={completionForm.country} onChange={handleCompletionChange} placeholder="Bangladesh" />
+                <div className="flex items-center gap-4 lg:col-span-2 max-sm:flex-col max-sm:items-stretch">
+                  <button type="submit" disabled={savingCompletion} className="inline-flex h-12 items-center justify-center rounded-[9px] bg-[#ef3338] px-7 text-[15px] font-black text-white shadow-[0_12px_26px_rgba(239,51,56,0.20)] transition hover:bg-[#111827] disabled:cursor-not-allowed disabled:opacity-60">
+                    {savingCompletion ? "Saving..." : "Save Information"}
+                  </button>
+                  {completionMessage ? <p className={`text-[14px] font-bold ${completionMessage.includes("completed") ? "text-[#047857]" : "text-[#c8191f]"}`}>{completionMessage}</p> : null}
+                </div>
+              </form>
+            ) : (
+              <p className="mt-7 rounded-[10px] bg-[#e9fbf3] px-5 py-4 text-[15px] font-bold text-[#047857]">
+                Your required contact and delivery information is saved.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <div className="relative z-10 mx-auto mt-24 grid max-w-[1220px] gap-8 md:grid-cols-3">
           {stats.map((item) => (

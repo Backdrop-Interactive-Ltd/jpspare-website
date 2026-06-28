@@ -12,6 +12,22 @@ const paymentMethods = [
   { value: "NAGAD", title: "Nagad", detail: "Mobile wallet structure ready" },
 ];
 
+const profileFieldLabels = {
+  name: "Full name",
+  phone: "Phone number",
+  addressLine1: "Delivery address",
+  city: "City",
+  zone: "Zone/Area",
+};
+
+const profileFieldInputs = {
+  name: "fullName",
+  phone: "phone",
+  addressLine1: "addressLine1",
+  city: "city",
+  zone: "area",
+};
+
 function formatPrice(value = 0) {
   return `৳${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -78,6 +94,7 @@ export default function CheckoutPageClient() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [checkoutIssue, setCheckoutIssue] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [order, setOrder] = useState(null);
 
@@ -125,10 +142,23 @@ export default function CheckoutPageClient() {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
+  function focusMissingProfileField(missingFields = []) {
+    const firstInputName = missingFields.map((field) => profileFieldInputs[field]).find(Boolean);
+
+    if (!firstInputName) {
+      return;
+    }
+
+    const input = document.querySelector(`[name="${firstInputName}"]`);
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus({ preventScroll: true });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
     setMessage("");
+    setCheckoutIssue(null);
     setFieldErrors({});
 
     const address = {
@@ -168,7 +198,21 @@ export default function CheckoutPageClient() {
       router.push(redirectUrl);
     } else {
       setFieldErrors(data.fieldErrors || {});
-      setMessage(data.error || "We could not place this order. Please review your details and try again.");
+      if (response.status === 401 && data.code === "LOGIN_REQUIRED") {
+        setCheckoutIssue({
+          type: "login",
+          message: data.message || "Please login with OTP before placing your order.",
+        });
+      } else if (response.status === 422 && data.code === "PROFILE_INCOMPLETE") {
+        const missingFields = data.profileCompletion?.missingFields || [];
+        setCheckoutIssue({
+          type: "profile",
+          message: data.message || "Please complete your profile and delivery information before placing your order.",
+          missingFields,
+        });
+      } else {
+        setMessage(data.error || "We could not place this order. Please review your details and try again.");
+      }
     }
 
     setSubmitting(false);
@@ -315,6 +359,34 @@ export default function CheckoutPageClient() {
               <div className="mt-6 flex justify-between border-t border-[#cfd5df] pt-6 text-[28px] font-black"><span>Total</span><span>{formatPrice(total)}</span></div>
 
               {message ? <p className="mt-5 rounded-[9px] bg-[#fff1f1] px-4 py-3 text-sm font-bold text-[#c8191f]">{message}</p> : null}
+
+              {checkoutIssue ? (
+                <div className="mt-5 rounded-[10px] border border-[#fecaca] bg-[#fff1f1] p-4 text-[#991b1b]">
+                  <p className="text-sm font-black">{checkoutIssue.message}</p>
+                  {checkoutIssue.type === "profile" && checkoutIssue.missingFields?.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {checkoutIssue.missingFields.map((field) => (
+                        <span key={field} className="rounded-full bg-white px-3 py-1 text-[12px] font-black text-[#c8191f] shadow-sm">
+                          {profileFieldLabels[field] || field}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {checkoutIssue.type === "login" ? (
+                    <Link href="/signin?redirect=/checkout" className="mt-4 inline-flex h-11 items-center justify-center rounded-[9px] bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(239,51,56,0.18)] transition hover:bg-[#111827]">
+                      Login to Continue
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => focusMissingProfileField(checkoutIssue.missingFields)}
+                      className="mt-4 inline-flex h-11 items-center justify-center rounded-[9px] bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(239,51,56,0.18)] transition hover:bg-[#111827]"
+                    >
+                      Complete Information
+                    </button>
+                  )}
+                </div>
+              ) : null}
 
               <button type="submit" disabled={submitting || !cart.items?.length} className="mt-7 flex h-[58px] w-full items-center justify-center gap-3 rounded-[10px] bg-[#ef3338] text-[18px] font-black text-white shadow-[0_14px_28px_rgba(239,51,56,0.22)] transition hover:bg-[#111827] disabled:cursor-not-allowed disabled:opacity-50">
                 <Icon name="card" /> {submitting ? "Placing Order..." : "Place Order"} <Icon name="arrowRight" />
