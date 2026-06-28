@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
+import { sendOtp } from "@/lib/auth/otp-delivery";
 import { prisma } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,10 @@ const OTP_MAX_ATTEMPTS = 5;
 
 function jsonError(code, status) {
   return NextResponse.json({ ok: false, code, error: code }, { status });
+}
+
+function safeErrorCode(error, fallback) {
+  return error?.code || fallback;
 }
 
 function normalizePhone(value) {
@@ -123,7 +128,7 @@ export async function POST(request) {
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_SECONDS * 1000);
 
-    await prisma.customerOtp.create({
+    const otpRecord = await prisma.customerOtp.create({
       data: {
         identifier,
         channel,
@@ -135,17 +140,44 @@ export async function POST(request) {
       },
     });
 
-    // TODO: Send OTP via SMS/email provider. Dev response exposes the OTP outside production only.
+    let deliverySkipped = false;
+    let deliveryErrorCode = null;
+
+    try {
+      await sendOtp({ channel, identifier, otp });
+    } catch (deliveryError) {
+      deliveryErrorCode = safeErrorCode(deliveryError, channel === "PHONE" ? "OTP_SMS_DELIVERY_FAILED" : "OTP_EMAIL_DELIVERY_FAILED");
+
+      if (process.env.NODE_ENV === "production") {
+        await prisma.customerOtp.update({
+          where: { id: otpRecord.id },
+          data: { usedAt: new Date() },
+        });
+
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "OTP_DELIVERY_FAILED",
+            code: deliveryErrorCode,
+          },
+          { status: deliveryErrorCode === "OTP_PROVIDER_NOT_CONFIGURED" ? 503 : 500 }
+        );
+      }
+
+      deliverySkipped = true;
+    }
+
     return NextResponse.json({
       ok: true,
+      message: "OTP sent successfully.",
       channel,
       identifierMasked: maskIdentifier(channel, identifier),
       expiresInSeconds: OTP_EXPIRY_SECONDS,
       resendAfterSeconds: OTP_COOLDOWN_SECONDS,
-      ...(process.env.NODE_ENV !== "production" ? { devOtp: otp } : {}),
+      ...(process.env.NODE_ENV !== "production" ? { devOtp: otp, deliverySkipped, ...(deliveryErrorCode ? { deliveryErrorCode } : {}) } : {}),
     });
   } catch (error) {
-    console.error("OTP request failed", error);
+    console.error("OTP request failed", { code: error?.code || "OTP_REQUEST_FAILED", message: error?.message || "OTP request failed" });
     return jsonError("OTP_REQUEST_FAILED", 500);
   }
 }
