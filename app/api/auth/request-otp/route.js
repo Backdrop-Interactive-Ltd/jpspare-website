@@ -174,7 +174,9 @@ export async function POST(request) {
       identifierMasked: maskIdentifier(channel, identifier),
       expiresInSeconds: OTP_EXPIRY_SECONDS,
       resendAfterSeconds: OTP_COOLDOWN_SECONDS,
-      ...(process.env.NODE_ENV !== "production" ? { devOtp: otp, deliverySkipped, ...(deliveryErrorCode ? { deliveryErrorCode } : {}) } : {}),
+      ...(process.env.NODE_ENV !== "production" && deliverySkipped
+        ? { devOtp: otp, deliverySkipped, ...(deliveryErrorCode ? { deliveryErrorCode } : {}) }
+        : {}),
     });
   } catch (error) {
     console.error("OTP request failed", { code: error?.code || "OTP_REQUEST_FAILED", message: error?.message || "OTP request failed" });

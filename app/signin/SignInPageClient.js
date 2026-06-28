@@ -83,7 +83,7 @@ export default function SignInPageClient() {
     if (response.ok && data.ok) {
       setStep("otp");
       setMaskedIdentifier(data.identifierMasked || "your contact");
-      setDevOtp(data.devOtp || "");
+      setDevOtp(data.devOtp && (data.deliverySkipped || data.deliveryErrorCode) ? data.devOtp : "");
       setMessage("OTP sent. Please check your phone or email.");
       setMessageType("success");
     } else {
