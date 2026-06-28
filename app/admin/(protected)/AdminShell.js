@@ -15,6 +15,7 @@ const menuItems = [
   { label: "Orders", href: "/admin/orders", icon: "◫" },
   { label: "Inventory", href: "/admin/inventory", icon: "▣" },
   { label: "API Settings", href: "/admin/api-settings", icon: "⌁" },
+  { label: "OTP Settings", href: "/admin/otp-settings", icon: "✉" },
   { label: "Users", href: "/admin/users", icon: "♙", superOnly: true },
   { label: "Roles", href: "/admin/roles", icon: "◉", superOnly: true },
   { label: "Settings", href: "/admin/settings", icon: "⚙" },
