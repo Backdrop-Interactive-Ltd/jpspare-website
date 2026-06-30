@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 import { setCustomerSession } from "../../../../lib/auth/customer-session";
+import { hashPassword } from "../../../../lib/auth/password";
+import { resetPasswordAttempts } from "../../../../lib/auth/password-attempts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -61,6 +63,10 @@ function isValidOtp(otp) {
   return /^\d{6}$/.test(otp);
 }
 
+function isValidOptionalPassword(password) {
+  return !password || password.length >= 6;
+}
+
 function verifyOtpHash(otp, storedHash) {
   const [salt, hash] = String(storedHash || "").split(":");
 
@@ -118,6 +124,8 @@ export async function POST(request) {
     const body = await request.json().catch(() => ({}));
     const { channel, identifier } = normalizeIdentifier(body);
     const otp = String(body.otp || "").trim();
+    const password = String(body.password || "").trim();
+    const resetPassword = Boolean(body.resetPassword);
 
     if (!identifier) {
       return jsonError("IDENTIFIER_REQUIRED", 400);
@@ -133,6 +141,10 @@ export async function POST(request) {
 
     if (!isValidOtp(otp)) {
       return jsonError("INVALID_OTP", 400);
+    }
+
+    if (!isValidOptionalPassword(password)) {
+      return jsonError("INVALID_PASSWORD", 400);
     }
 
     const otpRecord = await prisma.customerOtp.findFirst({
@@ -176,14 +188,21 @@ export async function POST(request) {
       return jsonError("CUSTOMER_BLOCKED", 403);
     }
 
+    const shouldSetPassword = Boolean(password && (!customer.passwordHash || resetPassword));
+    const passwordHash = shouldSetPassword ? await hashPassword(password) : null;
+
     await prisma.$transaction([
       prisma.customerOtp.update({
         where: { id: otpRecord.id },
         data: { usedAt: new Date() },
       }),
+      resetPasswordAttempts(identifier, channel),
       prisma.customer.update({
         where: { id: customer.id },
-        data: { lastLoginAt: new Date() },
+        data: {
+          lastLoginAt: new Date(),
+          ...(shouldSetPassword ? { passwordHash } : {}),
+        },
       }),
     ]);
 

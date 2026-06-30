@@ -553,6 +553,24 @@ model CustomerOtp {
   @@index([createdAt])
 }
 
+model CustomerPasswordAttempt {
+  id            String     @id @default(cuid())
+  identifier    String
+  channel       OtpChannel
+  attempts      Int        @default(0)
+  lockedUntil   DateTime?
+  lastAttemptAt DateTime?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([identifier, channel])
+  @@index([lockedUntil])
+  @@index([lastAttemptAt])
+  @@index([channel])
+}
+
 model OtpProvider {
   id                  String          @id @default(cuid())
   name                String
