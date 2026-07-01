@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function POST(request) {
   const payload = await readPaymentPayload(request);
   const validation = await validateSslCommerzPayment(payload);
-  const paid = validation.ok || String(payload.status || "").toUpperCase() === "VALID";
+  const paid = validation.ok;
   const order = await updateOrderPaymentFromGateway({
     payload,
     validation,
