@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 
 const AUTO_WAIT_MS = 10450;
 const SLIDE_DURATION_MS = 700;
@@ -119,8 +120,7 @@ export default function TopDealBar({ announcement }) {
 
     let mounted = true;
 
-    fetch("/api/homepage", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    getHomepageClientData()
       .then((payload) => {
         if (mounted && payload?.cms?.announcement) setRemoteAnnouncement(payload.cms.announcement);
       })

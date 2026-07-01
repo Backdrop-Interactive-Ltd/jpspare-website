@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 
 export default function DynamicLogoMark({ logo }) {
   const [logoSrc, setLogoSrc] = useState(logo || "/jpspare-logo-wide-clean.png");
@@ -11,8 +12,7 @@ export default function DynamicLogoMark({ logo }) {
 
     let mounted = true;
 
-    fetch("/api/homepage", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    getHomepageClientData()
       .then((payload) => {
         if (!mounted) return;
         const cmsLogo = payload?.cms?.header?.logo;

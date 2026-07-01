@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 import { searchCatalog } from "../lib/searchCatalog";
 import { formatPriceDisplay } from "./price-format";
 
@@ -215,8 +216,7 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
 
     let mounted = true;
 
-    fetch("/api/homepage", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    getHomepageClientData()
       .then((payload) => {
         if (!mounted) return;
         const cmsTexts = payload?.cms?.header?.searchPlaceholders;

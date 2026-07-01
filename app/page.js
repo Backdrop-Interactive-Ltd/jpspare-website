@@ -1182,15 +1182,15 @@ function SearchHeaderBar({ settings }) {
 function Hero() {
   const image3Slides = [
     {
-      src: "/hero-image-3-slide-1.png",
+      src: "/hero-image-3-slide-1.webp",
       alt: "Mobil 1 engine oil genuine product banner",
     },
     {
-      src: "/hero-image-3-slide-2.png",
+      src: "/hero-image-3-slide-2.webp",
       alt: "Yesido VC13 car jump starter banner",
     },
     {
-      src: "/hero-image-3-slide-3.png",
+      src: "/hero-image-3-slide-3.webp",
       alt: "Car cover protection service banner",
     },
   ];
@@ -1200,7 +1200,7 @@ function Hero() {
       <div className="grid w-full max-w-none gap-3 bg-[#f2f3f5] md:grid-cols-[minmax(0,4fr)_minmax(220px,1fr)]">
         <section className="relative h-[220px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-[665px]" aria-label="Mobil online shopping banner">
           <img
-            src="/hero-image-1-mobil-banner.png"
+            src="/hero-image-1-mobil-banner.webp"
             alt="Buy Mobil online with home delivery"
             className="absolute inset-0 h-full w-full object-cover"
           />
@@ -1208,7 +1208,7 @@ function Hero() {
         <div className="grid h-[292px] gap-3 md:h-[665px] md:grid-rows-[1fr_2fr]">
           <section className="hero-zoom-panel relative h-[110px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label="Download app offer banner">
             <img
-              src="/hero-image-2-app-banner.png"
+              src="/hero-image-2-app-banner.webp"
               alt="Download the app and get 250 off on your first order"
               className="absolute inset-0 h-full w-full object-cover"
             />
