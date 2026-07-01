@@ -44,9 +44,7 @@ function CartSuccessToast() {
   );
 }
 
-export default function PublicChrome() {
-  const pathname = usePathname();
-
+function PublicChromeContent() {
   useEffect(() => {
     let scrollTimer;
 
@@ -67,10 +65,6 @@ export default function PublicChrome() {
     };
   }, []);
 
-  if (pathname?.startsWith("/admin")) {
-    return null;
-  }
-
   return (
     <>
       <CartSuccessToast />
@@ -78,4 +72,14 @@ export default function PublicChrome() {
       <BackToTopButton />
     </>
   );
+}
+
+export default function PublicChrome() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
+  return <PublicChromeContent />;
 }

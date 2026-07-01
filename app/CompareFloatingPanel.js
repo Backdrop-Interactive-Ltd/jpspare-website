@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const COMPARE_SELECTION_KEY = "jpspare-product-compare-selection";
 const COMPARE_ITEMS_KEY = "jpspare-product-compare-items";
 const MAX_COMPARE_ITEMS = 3;
+const COMPARE_PANEL_ROUTES = ["/products", "/collection", "/collections", "/category", "/search", "/compare"];
+
+function shouldShowComparePanel(pathname) {
+  if (pathname === "/") return true;
+  return COMPARE_PANEL_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
+}
 
 function Icon({ name, className = "size-4" }) {
   const paths = {
@@ -79,7 +86,7 @@ function ProductThumb({ item }) {
   );
 }
 
-export default function CompareFloatingPanel() {
+function CompareFloatingPanelContent() {
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(true);
   const count = items.length;
@@ -172,4 +179,12 @@ export default function CompareFloatingPanel() {
       )}
     </aside>
   );
+}
+
+export default function CompareFloatingPanel() {
+  const pathname = usePathname();
+
+  if (!shouldShowComparePanel(pathname)) return null;
+
+  return <CompareFloatingPanelContent />;
 }
