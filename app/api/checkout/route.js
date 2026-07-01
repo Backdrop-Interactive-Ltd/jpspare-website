@@ -236,7 +236,10 @@ export async function POST(request) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("Checkout failed", error);
+    console.error("Checkout failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return NextResponse.json(
       {
         error: "We could not save this order right now. Please try again or contact support.",

@@ -38,6 +38,53 @@ function collectCategoryIds(categories, parentId) {
   return ids;
 }
 
+function serializeMoney(value) {
+  if (value === null || value === undefined) return null;
+  return typeof value?.toString === "function" ? value.toString() : value;
+}
+
+function serializeProductImage(image) {
+  return {
+    url: image.url,
+    alt: image.alt,
+    isThumbnail: image.isThumbnail,
+    sortOrder: image.sortOrder,
+  };
+}
+
+function serializePublicProduct(product) {
+  const images = (product.images || []).map(serializeProductImage);
+  const image = images.find((item) => item.isThumbnail)?.url || images[0]?.url || product.media?.[0]?.media?.url || null;
+
+  return {
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    name: product.title,
+    sku: product.sku,
+    shortDescription: product.shortDescription,
+    price: serializeMoney(product.price),
+    discountPrice: serializeMoney(product.discountPrice),
+    compareAtPrice: serializeMoney(product.compareAtPrice),
+    stockStatus: product.stockStatus,
+    image,
+    images,
+    category: product.category
+      ? {
+          name: product.category.name,
+          slug: product.category.slug,
+        }
+      : null,
+    brand: product.brand
+      ? {
+          name: product.brand.name,
+          slug: product.brand.slug,
+          logoUrl: product.brand.logoUrl,
+        }
+      : null,
+  };
+}
+
 export async function GET(request) {
   let hasProductFilters = false;
   let page = 1;
@@ -118,7 +165,8 @@ export async function GET(request) {
     const pagination = createPagination(page, limit, total);
 
     if (items.length) {
-      return Response.json({ items, data: items, pagination, meta: pagination, fallback: false });
+      const publicItems = items.map(serializePublicProduct);
+      return Response.json({ items: publicItems, data: publicItems, pagination, meta: pagination, fallback: false });
     }
 
     if (hasProductFilters) {

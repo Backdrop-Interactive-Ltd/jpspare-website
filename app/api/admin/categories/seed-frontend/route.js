@@ -13,7 +13,10 @@ export async function POST() {
     const stats = await seedFrontendCategories(prisma);
     return json({ ok: true, ...stats });
   } catch (error) {
-    console.error("Frontend category seed failed", error);
+    console.error("Frontend category seed failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return apiError("Unable to import frontend categories.", 500);
   }
 }

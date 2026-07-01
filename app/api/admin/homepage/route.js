@@ -34,7 +34,10 @@ export async function PUT(request) {
     revalidatePath("/admin/homepage");
     return json({ cms });
   } catch (error) {
-    console.error("Homepage CMS save failed:", error);
+    console.error("Homepage CMS save failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return apiError(error.message || "Unable to save homepage CMS", 400);
   }
 }

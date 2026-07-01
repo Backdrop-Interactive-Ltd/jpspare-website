@@ -110,7 +110,10 @@ export async function GET(request) {
   } catch (error) {
     const authResponse = apiKeyAuthErrorResponse(error);
     if (authResponse.status !== 500) return authResponse;
-    console.error("BMS products lookup failed", error);
+    console.error("BMS products lookup failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return serverErrorResponse();
   }
 }

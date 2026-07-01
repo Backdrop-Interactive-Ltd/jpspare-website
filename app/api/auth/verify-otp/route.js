@@ -218,7 +218,10 @@ export async function POST(request) {
       profileComplete: getProfileComplete(refreshedCustomer),
     });
   } catch (error) {
-    console.error("OTP verify failed", error);
+    console.error("OTP verify failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return jsonError("OTP_VERIFY_FAILED", 500);
   }
 }

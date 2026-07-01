@@ -116,7 +116,10 @@ export async function PATCH(request) {
       return jsonError("PROFILE_CONFLICT", "This phone or email is already linked to another account.", 409);
     }
 
-    console.error("Profile update failed", error);
+    console.error("Profile update failed", {
+      message: error?.message,
+      code: error?.code,
+    });
     return jsonError("PROFILE_UPDATE_FAILED", "We could not update your profile right now.", 500);
   }
 }
