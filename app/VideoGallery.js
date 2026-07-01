@@ -51,7 +51,7 @@ const videos = [
     duration: "6:10",
     views: "184",
     code: "ACCESSORIES-SETUP",
-    image: "/black-odor-red-console.jpg",
+    image: "/black-odor-red-console.webp",
     position: "center",
   },
   {

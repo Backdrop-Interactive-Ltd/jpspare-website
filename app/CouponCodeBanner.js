@@ -57,7 +57,7 @@ export default function CouponCodeBanner() {
       <div className="w-full max-w-none px-0">
         <div className="relative min-h-[360px] overflow-hidden bg-[#ef3338] px-8 py-8 text-white shadow-[0_18px_42px_rgba(239,51,56,0.18)] max-lg:px-5 max-sm:min-h-[420px] max-sm:px-4">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_22%,rgba(247,217,95,0.30),transparent_20%),linear-gradient(90deg,#111827_0%,#dc171d_46%,#ff6b1d_100%)]" />
-          <div className="absolute inset-y-0 right-0 w-[54%] bg-[url('/jpspare-hero-slide-2.png')] bg-cover bg-center opacity-28 mix-blend-screen max-lg:w-[72%] max-sm:opacity-18" />
+          <div className="absolute inset-y-0 right-0 w-[54%] bg-[url('/jpspare-hero-slide-2.webp')] bg-cover bg-center opacity-28 mix-blend-screen max-lg:w-[72%] max-sm:opacity-18" />
           <div className="absolute right-[24%] top-[92px] z-10 grid size-[86px] place-items-center rounded-full bg-[#f7d95f] text-center text-[18px] font-black leading-[0.9] text-[#dc171d] shadow-[0_14px_28px_rgba(15,23,42,0.22)] ring-4 ring-white/60 max-lg:right-8 max-sm:hidden">
             <span>
               Up to<br />

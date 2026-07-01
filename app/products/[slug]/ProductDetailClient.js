@@ -47,7 +47,7 @@ const productReviews = [
     date: "02/25/2026",
     initial: "A",
     text: "Using form last 3 years much better than typical washer fluid. Very to use highly effective guys 👌",
-    image: "/black-odor-red-front.jpg",
+    image: "/black-odor-red-front.webp",
   },
   {
     name: "Musa",
@@ -61,17 +61,17 @@ const productReviews = [
     date: "01/18/2026",
     initial: "R",
     text: "Good quality product and delivery was fast. Packaging looked premium.",
-    image: "/black-odor-promo.jpg",
+    image: "/black-odor-promo.webp",
   },
 ];
 
 const gallerySlides = [
-  { label: "Black Odor Red", src: "/black-odor-red-front.jpg" },
-  { label: "Black Odor Amber", src: "/black-odor-amber-front.jpg" },
-  { label: "Black Odor Blue Console", src: "/black-odor-blue-console.jpg" },
-  { label: "Black Odor Red Console", src: "/black-odor-red-console.jpg" },
+  { label: "Black Odor Red", src: "/black-odor-red-front.webp" },
+  { label: "Black Odor Amber", src: "/black-odor-amber-front.webp" },
+  { label: "Black Odor Blue Console", src: "/black-odor-blue-console.webp" },
+  { label: "Black Odor Red Console", src: "/black-odor-red-console.webp" },
   { label: "Black Odor Green Console", src: "/black-odor-green-console.jpg" },
-  { label: "Black Odor Promo", src: "/black-odor-promo.jpg" },
+  { label: "Black Odor Promo", src: "/black-odor-promo.webp" },
 ];
 
 function slugify(value) {
@@ -586,7 +586,7 @@ function DescriptionPanel() {
       )}
 
       <div className="relative mt-8 aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5]">
-        <Image src="/black-odor-red-console.jpg" alt="JPSPARE product showcase" fill sizes="(max-width: 1040px) 100vw, 1040px" className="object-cover" />
+        <Image src="/black-odor-red-console.webp" alt="JPSPARE product showcase" fill sizes="(max-width: 1040px) 100vw, 1040px" className="object-cover" />
       </div>
     </section>
   );

@@ -30,7 +30,7 @@ export const articles = [
     read: "3 min read",
     author: "JPSPARE Experts",
     excerpt: "Driving during the rainy season can be stressful. Wet roads, poor visibility, and unexpected traffic require extra care.",
-    image: "/black-odor-red-console.jpg",
+    image: "/black-odor-red-console.webp",
     position: "center",
     tag: "Safety",
     views: "2.3k",
