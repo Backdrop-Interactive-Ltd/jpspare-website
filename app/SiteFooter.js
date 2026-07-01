@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FooterVehicleFitmentLink from "./FooterVehicleFitmentLink";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 
 const footerColumns = [
   {
@@ -96,8 +97,7 @@ export default function SiteFooter() {
   useEffect(() => {
     let active = true;
 
-    fetch("/api/homepage", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    getHomepageClientData()
       .then((payload) => {
         if (active) setFooterCms(payload?.cms?.footer || null);
       })

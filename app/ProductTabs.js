@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getHomepageFeaturedProductsClientData } from "@/lib/homepage/featured-products-client-cache";
 import CartDrawer from "./CartDrawer";
 import { addProductToCart, addProductToWishlist } from "./commerce-client";
 import { formatPriceDisplay, parsePriceValue } from "./price-format";
@@ -520,8 +521,7 @@ export default function ProductTabs({ cmsProducts = [] }) {
 
     let mounted = true;
 
-    fetch("/api/homepage/featured-products", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    getHomepageFeaturedProductsClientData()
       .then((payload) => {
         if (!mounted) return;
         const products = payload?.products;
