@@ -237,6 +237,35 @@ function newAboutValue() {
   };
 }
 
+function newPrivacyStat() {
+  return {
+    value: "New",
+    label: "New stat",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newPrivacyPolicyCard() {
+  return {
+    title: "New policy section",
+    body: "",
+    bullets: [],
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newPrivacyPrinciple() {
+  return {
+    title: "New principle",
+    description: "",
+    icon: "shield",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -877,6 +906,215 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updatePrivacySection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          [section]: {
+            ...current.sitePages?.privacyPolicy?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updatePrivacyPrinciplesSection(patch) {
+    updatePrivacySection("principles", patch);
+  }
+
+  function updatePrivacyStat(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          stats: (current.sitePages?.privacyPolicy?.stats || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addPrivacyStat() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          stats: [...(current.sitePages?.privacyPolicy?.stats || []), newPrivacyStat()],
+        },
+      },
+    }));
+  }
+
+  function removePrivacyStat(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          stats: (current.sitePages?.privacyPolicy?.stats || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function movePrivacyStat(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.privacyPolicy?.stats || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          privacyPolicy: {
+            ...current.sitePages?.privacyPolicy,
+            stats: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updatePrivacyPolicyCard(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          policyCards: (current.sitePages?.privacyPolicy?.policyCards || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addPrivacyPolicyCard() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          policyCards: [...(current.sitePages?.privacyPolicy?.policyCards || []), newPrivacyPolicyCard()],
+        },
+      },
+    }));
+  }
+
+  function removePrivacyPolicyCard(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          policyCards: (current.sitePages?.privacyPolicy?.policyCards || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function movePrivacyPolicyCard(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.privacyPolicy?.policyCards || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          privacyPolicy: {
+            ...current.sitePages?.privacyPolicy,
+            policyCards: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updatePrivacyPrinciple(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          principles: {
+            ...current.sitePages?.privacyPolicy?.principles,
+            items: (current.sitePages?.privacyPolicy?.principles?.items || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+          },
+        },
+      },
+    }));
+  }
+
+  function addPrivacyPrinciple() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          principles: {
+            ...current.sitePages?.privacyPolicy?.principles,
+            items: [...(current.sitePages?.privacyPolicy?.principles?.items || []), newPrivacyPrinciple()],
+          },
+        },
+      },
+    }));
+  }
+
+  function removePrivacyPrinciple(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        privacyPolicy: {
+          ...current.sitePages?.privacyPolicy,
+          principles: {
+            ...current.sitePages?.privacyPolicy?.principles,
+            items: (current.sitePages?.privacyPolicy?.principles?.items || []).filter((_, itemIndex) => itemIndex !== index),
+          },
+        },
+      },
+    }));
+  }
+
+  function movePrivacyPrinciple(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.privacyPolicy?.principles?.items || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          privacyPolicy: {
+            ...current.sitePages?.privacyPolicy,
+            principles: {
+              ...current.sitePages?.privacyPolicy?.principles,
+              items: reordered,
+            },
+          },
+        },
+      };
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -1475,6 +1713,200 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               {!(cms.sitePages?.about?.values || []).length ? (
                 <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No About page values yet.</p>
               ) : null}
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Static Pages"
+        title="Privacy Policy CMS"
+        description="Edit saved Privacy Policy content foundation. Public /privacy-policy rendering is not wired in this task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Privacy Policy CMS")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Privacy Policy"}
+          </button>
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="SEO Title">
+                <input value={cms.sitePages?.privacyPolicy?.seo?.metaTitle || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("seo", { metaTitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="SEO Description">
+                <input value={cms.sitePages?.privacyPolicy?.seo?.metaDescription || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("seo", { metaDescription: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Title">
+                <input value={cms.sitePages?.privacyPolicy?.hero?.title || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Subtitle">
+                <input value={cms.sitePages?.privacyPolicy?.hero?.eyebrow || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("hero", { eyebrow: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <textarea value={cms.sitePages?.privacyPolicy?.hero?.description || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero Stats</p>
+              <button type="button" disabled={readOnly} onClick={addPrivacyStat} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Stat
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.privacyPolicy?.stats || []).map((item, index) => (
+                <div key={`privacy-stat-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Stat {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => movePrivacyStat(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.privacyPolicy?.stats || []).length - 1} onClick={() => movePrivacyStat(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removePrivacyStat(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.3fr_120px]">
+                    <Field label="Value">
+                      <input value={item.value || ""} disabled={readOnly} onChange={(event) => updatePrivacyStat(index, { value: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Label">
+                      <input value={item.label || ""} disabled={readOnly} onChange={(event) => updatePrivacyStat(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updatePrivacyStat(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updatePrivacyStat(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Policy Cards</p>
+              <button type="button" disabled={readOnly} onClick={addPrivacyPolicyCard} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Card
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.privacyPolicy?.policyCards || []).map((item, index) => (
+                <div key={`privacy-card-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Card {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => movePrivacyPolicyCard(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.privacyPolicy?.policyCards || []).length - 1} onClick={() => movePrivacyPolicyCard(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removePrivacyPolicyCard(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.8fr_120px]">
+                    <Field label="Title">
+                      <input value={item.title || ""} disabled={readOnly} onChange={(event) => updatePrivacyPolicyCard(index, { title: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Description">
+                      <input value={item.body || item.description || ""} disabled={readOnly} onChange={(event) => updatePrivacyPolicyCard(index, { body: event.target.value, description: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updatePrivacyPolicyCard(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Bullets">
+                      <textarea value={arrayToLines(item.bullets)} disabled={readOnly} onChange={(event) => updatePrivacyPolicyCard(index, { bullets: linesToArray(event.target.value) })} className={textareaClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updatePrivacyPolicyCard(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Privacy Principles</p>
+              <button type="button" disabled={readOnly} onClick={addPrivacyPrinciple} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Principle
+              </button>
+            </div>
+            <div className="mb-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Principles heading">
+                <input value={cms.sitePages?.privacyPolicy?.principles?.title || ""} disabled={readOnly} onChange={(event) => updatePrivacyPrinciplesSection({ title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Principles description">
+                <input value={cms.sitePages?.privacyPolicy?.principles?.description || ""} disabled={readOnly} onChange={(event) => updatePrivacyPrinciplesSection({ description: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.privacyPolicy?.principles?.items || []).map((item, index) => (
+                <div key={`privacy-principle-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Principle {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => movePrivacyPrinciple(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.privacyPolicy?.principles?.items || []).length - 1} onClick={() => movePrivacyPrinciple(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removePrivacyPrinciple(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.6fr_140px_120px]">
+                    <Field label="Title">
+                      <input value={item.title || item.label || ""} disabled={readOnly} onChange={(event) => updatePrivacyPrinciple(index, { title: event.target.value, label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Description">
+                      <input value={item.description || ""} disabled={readOnly} onChange={(event) => updatePrivacyPrinciple(index, { description: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Icon">
+                      <input value={item.icon || ""} disabled={readOnly} onChange={(event) => updatePrivacyPrinciple(index, { icon: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updatePrivacyPrinciple(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updatePrivacyPrinciple(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Contact / CTA</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Heading">
+                <input value={cms.sitePages?.privacyPolicy?.cta?.title || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("cta", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <input value={cms.sitePages?.privacyPolicy?.cta?.description || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("cta", { description: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Email">
+                <input value={cms.sitePages?.privacyPolicy?.contact?.email || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("contact", { email: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Phone">
+                <input value={cms.sitePages?.privacyPolicy?.contact?.phone || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("contact", { phone: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button text">
+                <input value={cms.sitePages?.privacyPolicy?.cta?.buttonText || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("cta", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button link">
+                <input value={cms.sitePages?.privacyPolicy?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
             </div>
           </div>
         </div>
