@@ -178,6 +178,16 @@ function newFooterLink() {
   };
 }
 
+function newMegaMenuFeature() {
+  return {
+    icon: "tag",
+    title: "New Feature",
+    subtitle: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -368,6 +378,81 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
         navigation: {
           ...current.navigation,
           main: reordered,
+        },
+      };
+    });
+  }
+
+  function updateMegaMenuSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          [section]: {
+            ...current.navigation?.megaMenu?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateMegaMenuFeature(index, patch) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featureCards: (current.navigation?.megaMenu?.featureCards || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addMegaMenuFeature() {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featureCards: [...(current.navigation?.megaMenu?.featureCards || []), newMegaMenuFeature()],
+        },
+      },
+    }));
+  }
+
+  function removeMegaMenuFeature(index) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featureCards: (current.navigation?.megaMenu?.featureCards || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveMegaMenuFeature(index, direction) {
+    setCms((current) => {
+      const items = [...(current.navigation?.megaMenu?.featureCards || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        navigation: {
+          ...current.navigation,
+          megaMenu: {
+            ...current.navigation?.megaMenu,
+            featureCards: reordered,
+          },
         },
       };
     });
@@ -597,6 +682,151 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               No navigation items yet. Add one to start configuring the header menu.
             </p>
           ) : null}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Mega Menu"
+        title="Mega Menu CMS"
+        description="Manage stored mega menu promo, help, and feature content. Storefront rendering is not wired in this task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Mega Menu CMS")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Mega Menu"}
+          </button>
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Mega Menu Promo Card</p>
+              <Toggle
+                label="Enabled"
+                checked={cms.navigation?.megaMenu?.promoCard?.enabled !== false}
+                disabled={readOnly}
+                onChange={(value) => updateMegaMenuSection("promoCard", { enabled: value })}
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label="Eyebrow">
+                <input value={cms.navigation?.megaMenu?.promoCard?.eyebrow || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("promoCard", { eyebrow: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Title">
+                <input value={cms.navigation?.megaMenu?.promoCard?.title || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("promoCard", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Subtitle">
+                <input value={cms.navigation?.megaMenu?.promoCard?.subtitle || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("promoCard", { subtitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button text">
+                <input value={cms.navigation?.megaMenu?.promoCard?.buttonText || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("promoCard", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button link">
+                <input value={cms.navigation?.megaMenu?.promoCard?.buttonLink || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("promoCard", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <ImageField
+                label="Promo image"
+                value={cms.navigation?.megaMenu?.promoCard?.image || ""}
+                folder="general"
+                readOnly={readOnly}
+                onSelect={(url) => updateMegaMenuSection("promoCard", { image: url })}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Mega Menu Help Bar</p>
+              <Toggle
+                label="Enabled"
+                checked={cms.navigation?.megaMenu?.helpBar?.enabled !== false}
+                disabled={readOnly}
+                onChange={(value) => updateMegaMenuSection("helpBar", { enabled: value })}
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label="Title">
+                <input value={cms.navigation?.megaMenu?.helpBar?.title || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("helpBar", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Subtitle">
+                <input value={cms.navigation?.megaMenu?.helpBar?.subtitle || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("helpBar", { subtitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Call label">
+                <input value={cms.navigation?.megaMenu?.helpBar?.callLabel || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("helpBar", { callLabel: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Phone">
+                <input
+                  value={cms.navigation?.megaMenu?.helpBar?.phone || cms.navigation?.megaMenu?.helpBar?.callNumber || ""}
+                  disabled={readOnly}
+                  onChange={(event) => updateMegaMenuSection("helpBar", { phone: event.target.value, callNumber: event.target.value })}
+                  className={inputClass(readOnly)}
+                />
+              </Field>
+              <Field label="Chat label">
+                <input value={cms.navigation?.megaMenu?.helpBar?.chatLabel || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("helpBar", { chatLabel: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Chat link">
+                <input value={cms.navigation?.megaMenu?.helpBar?.chatLink || ""} disabled={readOnly} onChange={(event) => updateMegaMenuSection("helpBar", { chatLink: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Mega Menu Feature Cards</p>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={addMegaMenuFeature}
+                className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60"
+              >
+                Add Feature
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.navigation?.megaMenu?.featureCards || []).map((item, index) => (
+                <div key={`${item.title}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Feature {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveMegaMenuFeature(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Up
+                      </button>
+                      <button type="button" disabled={readOnly || index === (cms.navigation?.megaMenu?.featureCards || []).length - 1} onClick={() => moveMegaMenuFeature(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Down
+                      </button>
+                      <button type="button" disabled={readOnly} onClick={() => removeMegaMenuFeature(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[140px_1fr_1.4fr_120px]">
+                    <Field label="Icon">
+                      <input value={item.icon || ""} disabled={readOnly} onChange={(event) => updateMegaMenuFeature(index, { icon: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Title">
+                      <input value={item.title || ""} disabled={readOnly} onChange={(event) => updateMegaMenuFeature(index, { title: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Subtitle">
+                      <input value={item.subtitle || ""} disabled={readOnly} onChange={(event) => updateMegaMenuFeature(index, { subtitle: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateMegaMenuFeature(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateMegaMenuFeature(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+              {!(cms.navigation?.megaMenu?.featureCards || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No mega menu feature cards yet.</p>
+              ) : null}
+            </div>
+          </div>
         </div>
       </SectionCard>
 
