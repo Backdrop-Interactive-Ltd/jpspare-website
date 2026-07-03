@@ -293,6 +293,122 @@ function newReturnsChecklistItem() {
   };
 }
 
+function newHelpListItem(type) {
+  if (type === "contactCards") {
+    return {
+      title: "New contact card",
+      description: "",
+      icon: "phone",
+      href: "",
+      enabled: true,
+      sortOrder: 999,
+    };
+  }
+
+  if (type === "businessHours") {
+    return {
+      label: "New hours item",
+      value: "",
+      enabled: true,
+      sortOrder: 999,
+    };
+  }
+
+  if (type === "helpTopics") {
+    return {
+      title: "New help topic",
+      description: "",
+      href: "",
+      enabled: true,
+      sortOrder: 999,
+    };
+  }
+
+  return {
+    title: "New benefit",
+    description: "",
+    icon: "check",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function HelpListEditor({ title, group, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
+  const list = Array.isArray(items) ? items : [];
+  const isHours = group === "businessHours";
+  const isTopic = group === "helpTopics";
+  const isContact = group === "contactCards";
+
+  return (
+    <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">{title}</p>
+        <button type="button" disabled={readOnly} onClick={() => onAdd(group)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+          Add Item
+        </button>
+      </div>
+      <div className="space-y-3">
+        {list.map((item, index) => (
+          <div key={`${group}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-black text-[#667085]">Item {index + 1}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={readOnly || index === 0} onClick={() => onMove(group, index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                <button type="button" disabled={readOnly || index === list.length - 1} onClick={() => onMove(group, index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                <button type="button" disabled={readOnly} onClick={() => onRemove(group, index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+              </div>
+            </div>
+            {isHours ? (
+              <div className="grid gap-3 lg:grid-cols-[1fr_1fr_120px]">
+                <Field label="Label">
+                  <input value={item.label || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { label: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Value">
+                  <input value={item.value || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { value: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Sort order">
+                  <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => onUpdate(group, index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-[1fr_1.5fr_120px_120px]">
+                <Field label="Title">
+                  <input value={item.title || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { title: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Description">
+                  <input value={item.description || item.body || item.note || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { description: event.target.value, body: event.target.value, note: isContact ? event.target.value : item.note })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Icon">
+                  <input value={item.icon || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { icon: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Sort order">
+                  <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => onUpdate(group, index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                </Field>
+                {isContact ? (
+                  <Field label="Link">
+                    <input value={item.href || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { href: event.target.value })} className={inputClass(readOnly)} />
+                  </Field>
+                ) : null}
+                {isTopic ? (
+                  <Field label="Link">
+                    <input value={item.href || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { href: event.target.value })} className={inputClass(readOnly)} />
+                  </Field>
+                ) : null}
+              </div>
+            )}
+            <div className="mt-3">
+              <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdate(group, index, { enabled: value })} />
+            </div>
+          </div>
+        ))}
+        {!list.length ? (
+          <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No {title.toLowerCase()} yet.</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -1335,6 +1451,88 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updateHelpSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        help: {
+          ...current.sitePages?.help,
+          [section]: {
+            ...current.sitePages?.help?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function getHelpList(current, group) {
+    if (group === "businessHours") return current.sitePages?.help?.businessHours?.items || [];
+    return current.sitePages?.help?.[group] || [];
+  }
+
+  function setHelpList(current, group, items) {
+    if (group === "businessHours") {
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          help: {
+            ...current.sitePages?.help,
+            businessHours: {
+              ...current.sitePages?.help?.businessHours,
+              items,
+            },
+          },
+        },
+      };
+    }
+
+    return {
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        help: {
+          ...current.sitePages?.help,
+          [group]: items,
+        },
+      },
+    };
+  }
+
+  function updateHelpListItem(group, index, patch) {
+    setCms((current) => {
+      const items = getHelpList(current, group).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+      return setHelpList(current, group, items);
+    });
+  }
+
+  function addHelpListItem(group) {
+    setCms((current) => {
+      const items = [...getHelpList(current, group), newHelpListItem(group)];
+      return setHelpList(current, group, items);
+    });
+  }
+
+  function removeHelpListItem(group, index) {
+    setCms((current) => {
+      const items = getHelpList(current, group).filter((_, itemIndex) => itemIndex !== index);
+      return setHelpList(current, group, items);
+    });
+  }
+
+  function moveHelpListItem(group, index, direction) {
+    setCms((current) => {
+      const items = [...getHelpList(current, group)];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return setHelpList(current, group, reordered);
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -2352,6 +2550,140 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
                   }}
                   className={inputClass(readOnly)}
                 />
+              </Field>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Static Pages"
+        title="Help Page CMS"
+        description="Edit saved Help Center content foundation. Public /help rendering is not wired in this task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Help Page CMS")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Help Page"}
+          </button>
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="SEO Title">
+                <input value={cms.sitePages?.help?.seo?.metaTitle || ""} disabled={readOnly} onChange={(event) => updateHelpSection("seo", { metaTitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="SEO Description">
+                <input value={cms.sitePages?.help?.seo?.metaDescription || ""} disabled={readOnly} onChange={(event) => updateHelpSection("seo", { metaDescription: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Title">
+                <input value={cms.sitePages?.help?.hero?.title || ""} disabled={readOnly} onChange={(event) => updateHelpSection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Subtitle">
+                <input value={cms.sitePages?.help?.hero?.subtitle || cms.sitePages?.help?.hero?.eyebrow || ""} disabled={readOnly} onChange={(event) => updateHelpSection("hero", { subtitle: event.target.value, eyebrow: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <textarea value={cms.sitePages?.help?.hero?.description || ""} disabled={readOnly} onChange={(event) => updateHelpSection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+              </Field>
+              <Field label="Contact Email">
+                <input value={cms.sitePages?.help?.hero?.email || ""} disabled={readOnly} onChange={(event) => updateHelpSection("hero", { email: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Contact Phone">
+                <input value={cms.sitePages?.help?.hero?.phone || ""} disabled={readOnly} onChange={(event) => updateHelpSection("hero", { phone: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <HelpListEditor
+            title="Contact Cards"
+            group="contactCards"
+            items={cms.sitePages?.help?.contactCards || []}
+            readOnly={readOnly}
+            onAdd={addHelpListItem}
+            onUpdate={updateHelpListItem}
+            onRemove={removeHelpListItem}
+            onMove={moveHelpListItem}
+          />
+
+          <HelpListEditor
+            title="Business Hours"
+            group="businessHours"
+            items={cms.sitePages?.help?.businessHours?.items || []}
+            readOnly={readOnly}
+            onAdd={addHelpListItem}
+            onUpdate={updateHelpListItem}
+            onRemove={removeHelpListItem}
+            onMove={moveHelpListItem}
+          />
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Emergency Support</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Title">
+                <input value={cms.sitePages?.help?.emergencySupport?.title || ""} disabled={readOnly} onChange={(event) => updateHelpSection("emergencySupport", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Phone">
+                <input value={cms.sitePages?.help?.emergencySupport?.phone || ""} disabled={readOnly} onChange={(event) => updateHelpSection("emergencySupport", { phone: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <textarea value={cms.sitePages?.help?.emergencySupport?.description || ""} disabled={readOnly} onChange={(event) => updateHelpSection("emergencySupport", { description: event.target.value })} className={textareaClass(readOnly)} />
+              </Field>
+              <Field label="Button text">
+                <input value={cms.sitePages?.help?.emergencySupport?.buttonText || ""} disabled={readOnly} onChange={(event) => updateHelpSection("emergencySupport", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button link">
+                <input value={cms.sitePages?.help?.emergencySupport?.buttonLink || ""} disabled={readOnly} onChange={(event) => updateHelpSection("emergencySupport", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <HelpListEditor
+            title="Support Benefits"
+            group="supportBenefits"
+            items={cms.sitePages?.help?.supportBenefits || []}
+            readOnly={readOnly}
+            onAdd={addHelpListItem}
+            onUpdate={updateHelpListItem}
+            onRemove={removeHelpListItem}
+            onMove={moveHelpListItem}
+          />
+
+          <HelpListEditor
+            title="Help Topics"
+            group="helpTopics"
+            items={cms.sitePages?.help?.helpTopics || []}
+            readOnly={readOnly}
+            onAdd={addHelpListItem}
+            onUpdate={updateHelpListItem}
+            onRemove={removeHelpListItem}
+            onMove={moveHelpListItem}
+          />
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">CTA</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Heading">
+                <input value={cms.sitePages?.help?.cta?.title || cms.sitePages?.help?.cta?.heading || ""} disabled={readOnly} onChange={(event) => updateHelpSection("cta", { title: event.target.value, heading: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <input value={cms.sitePages?.help?.cta?.description || ""} disabled={readOnly} onChange={(event) => updateHelpSection("cta", { description: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button text">
+                <input value={cms.sitePages?.help?.cta?.buttonText || ""} disabled={readOnly} onChange={(event) => updateHelpSection("cta", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button link">
+                <input value={cms.sitePages?.help?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => updateHelpSection("cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
               </Field>
             </div>
           </div>
