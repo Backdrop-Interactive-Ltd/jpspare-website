@@ -185,17 +185,43 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     setSection(section, { [field]: value });
   }
 
+  function setFooterBranding(field, value) {
+    const legacyFieldMap = {
+      logo: "footerLogo",
+      about: "aboutText",
+      copyright: "copyrightText",
+    };
+    const legacyField = legacyFieldMap[field];
+
+    setCms((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        [field]: value,
+        ...(legacyField ? { [legacyField]: value } : {}),
+      },
+    }));
+  }
+
   function setFooterContact(field, value) {
     setCms((current) => ({
       ...current,
-      footer: { ...current.footer, contact: { ...current.footer.contact, [field]: value } },
+      footer: {
+        ...current.footer,
+        contacts: { ...current.footer.contacts, [field]: value },
+        contact: { ...current.footer.contact, [field]: value },
+      },
     }));
   }
 
   function setFooterSocial(field, value) {
     setCms((current) => ({
       ...current,
-      footer: { ...current.footer, socialLinks: { ...current.footer.socialLinks, [field]: value } },
+      footer: {
+        ...current.footer,
+        socials: { ...current.footer.socials, [field]: value },
+        socialLinks: { ...current.footer.socialLinks, [field]: value },
+      },
     }));
   }
 
@@ -606,31 +632,57 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
         </SectionCard>
 
         <SectionCard eyebrow="Footer" title="Footer CMS">
-          <div className="space-y-5">
-            <ImageField label="Footer logo" value={cms.footer.footerLogo} folder="general" readOnly={readOnly} onSelect={(url) => setNested("footer", "footerLogo", url)} />
-            <Field label="About text">
-              <textarea value={cms.footer.aboutText || ""} disabled={readOnly} onChange={(event) => setNested("footer", "aboutText", event.target.value)} className={textareaClass(readOnly)} />
-            </Field>
-            <Field label="Copyright text">
-              <input value={cms.footer.copyrightText || ""} disabled={readOnly} onChange={(event) => setNested("footer", "copyrightText", event.target.value)} className={inputClass(readOnly)} />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Phone">
-                <input value={cms.footer.contact?.phone || ""} disabled={readOnly} onChange={(event) => setFooterContact("phone", event.target.value)} className={inputClass(readOnly)} />
-              </Field>
-              <Field label="Email">
-                <input value={cms.footer.contact?.email || ""} disabled={readOnly} onChange={(event) => setFooterContact("email", event.target.value)} className={inputClass(readOnly)} />
-              </Field>
-              <Field label="Address">
-                <input value={cms.footer.contact?.address || ""} disabled={readOnly} onChange={(event) => setFooterContact("address", event.target.value)} className={inputClass(readOnly)} />
-              </Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {["facebook", "instagram", "youtube"].map((field) => (
-                <Field key={field} label={field}>
-                  <input value={cms.footer.socialLinks?.[field] || ""} disabled={readOnly} onChange={(event) => setFooterSocial(field, event.target.value)} className={inputClass(readOnly)} />
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Footer Branding</p>
+              <div className="mt-4 space-y-5">
+                <ImageField label="Footer Logo URL" value={cms.footer.logo || cms.footer.footerLogo} folder="general" readOnly={readOnly} onSelect={(url) => setFooterBranding("logo", url)} />
+                <Field label="About Text">
+                  <textarea value={cms.footer.about || cms.footer.aboutText || ""} disabled={readOnly} onChange={(event) => setFooterBranding("about", event.target.value)} className={textareaClass(readOnly)} />
                 </Field>
-              ))}
+                <Field label="Copyright Text">
+                  <input value={cms.footer.copyright || cms.footer.copyrightText || ""} disabled={readOnly} onChange={(event) => setFooterBranding("copyright", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Contact Information</p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Primary Phone">
+                  <input value={cms.footer.contacts?.phone || cms.footer.contact?.phone || ""} disabled={readOnly} onChange={(event) => setFooterContact("phone", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Secondary Phone">
+                  <input value={cms.footer.contacts?.secondaryPhone || cms.footer.contact?.secondaryPhone || ""} disabled={readOnly} onChange={(event) => setFooterContact("secondaryPhone", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Email">
+                  <input value={cms.footer.contacts?.email || cms.footer.contact?.email || ""} disabled={readOnly} onChange={(event) => setFooterContact("email", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Address">
+                  <input value={cms.footer.contacts?.address || cms.footer.contact?.address || ""} disabled={readOnly} onChange={(event) => setFooterContact("address", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Social Media</p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {["facebook", "instagram", "youtube", "tiktok"].map((field) => (
+                  <Field key={field} label={field}>
+                    <input value={cms.footer.socials?.[field] || cms.footer.socialLinks?.[field] || ""} disabled={readOnly} onChange={(event) => setFooterSocial(field, event.target.value)} className={inputClass(readOnly)} />
+                  </Field>
+                ))}
+              </div>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => saveCms("Footer CMS")}
+                disabled={saving || readOnly}
+                className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? "Saving..." : "Save Footer"}
+              </button>
             </div>
           </div>
         </SectionCard>
