@@ -285,6 +285,16 @@ function newReturnsPolicy() {
   };
 }
 
+function newGenericPolicySection() {
+  return {
+    title: "New section",
+    description: "",
+    bullets: [],
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function newReturnsChecklistItem() {
   return {
     label: "New checklist item",
@@ -406,6 +416,140 @@ function HelpListEditor({ title, group, items, readOnly, onAdd, onUpdate, onRemo
         ) : null}
       </div>
     </div>
+  );
+}
+
+function GenericPolicyCmsEditor({ title, description, pageKey, page, readOnly, saving, onSave, onUpdateSection, onUpdateItem, onAddItem, onRemoveItem, onMoveItem }) {
+  const sections = Array.isArray(page?.sections) ? page.sections : [];
+
+  return (
+    <SectionCard
+      eyebrow="Static Pages"
+      title={title}
+      description={description}
+      action={
+        <button
+          type="button"
+          onClick={() => onSave(title)}
+          disabled={saving || readOnly}
+          className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? "Saving..." : `Save ${title}`}
+        </button>
+      }
+    >
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="SEO Title">
+              <input
+                value={page?.seo?.metaTitle || page?.seo?.title || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection(pageKey, "seo", { metaTitle: event.target.value, title: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="SEO Description">
+              <input
+                value={page?.seo?.metaDescription || page?.seo?.description || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection(pageKey, "seo", { metaDescription: event.target.value, description: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Hero Title">
+              <input value={page?.hero?.title || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "hero", { title: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Hero Subtitle">
+              <input
+                value={page?.hero?.subtitle || page?.hero?.eyebrow || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection(pageKey, "hero", { subtitle: event.target.value, eyebrow: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="Hero Description">
+              <textarea value={page?.hero?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Sections</p>
+            <button type="button" disabled={readOnly} onClick={() => onAddItem(pageKey)} className="h-10 rounded-xl border border-red-200 bg-red-50 px-4 text-xs font-black text-[#ef3338] disabled:opacity-60">
+              Add Section
+            </button>
+          </div>
+          <div className="mt-4 space-y-3">
+            {sections.map((item, index) => (
+              <div key={`${pageKey}-section-${index}`} className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-black text-[#111827]">Section #{index + 1}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={readOnly || index === 0} onClick={() => onMoveItem(pageKey, index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                      Up
+                    </button>
+                    <button type="button" disabled={readOnly || index === sections.length - 1} onClick={() => onMoveItem(pageKey, index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                      Down
+                    </button>
+                    <button type="button" disabled={readOnly} onClick={() => onRemoveItem(pageKey, index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <Field label="Title">
+                    <input value={item.title || ""} disabled={readOnly} onChange={(event) => onUpdateItem(pageKey, index, { title: event.target.value })} className={inputClass(readOnly)} />
+                  </Field>
+                  <Field label="Sort Order">
+                    <input type="number" value={item.sortOrder ?? 999} disabled={readOnly} onChange={(event) => onUpdateItem(pageKey, index, { sortOrder: Number(event.target.value) || 0 })} className={inputClass(readOnly)} />
+                  </Field>
+                  <Field label="Description">
+                    <textarea value={item.description || item.body || ""} disabled={readOnly} onChange={(event) => onUpdateItem(pageKey, index, { description: event.target.value, body: event.target.value })} className={textareaClass(readOnly)} />
+                  </Field>
+                  <Field label="Bullets" hint="One bullet per line.">
+                    <textarea value={arrayToLines(item.bullets)} disabled={readOnly} onChange={(event) => onUpdateItem(pageKey, index, { bullets: linesToArray(event.target.value) })} className={textareaClass(readOnly)} />
+                  </Field>
+                  <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdateItem(pageKey, index, { enabled: value })} />
+                </div>
+              </div>
+            ))}
+            {!sections.length ? <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-semibold text-[#667085]">No sections added yet.</p> : null}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">CTA</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Heading">
+              <input
+                value={page?.cta?.heading || page?.cta?.title || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection(pageKey, "cta", { heading: event.target.value, title: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="Description">
+              <input value={page?.cta?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "cta", { description: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button text">
+              <input value={page?.cta?.buttonText || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "cta", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button link">
+              <input value={page?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -1530,6 +1674,81 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
       [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
       const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
       return setHelpList(current, group, reordered);
+    });
+  }
+
+  function updateGenericPolicySection(pageKey, section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        [pageKey]: {
+          ...current.sitePages?.[pageKey],
+          [section]: {
+            ...current.sitePages?.[pageKey]?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateGenericPolicyItem(pageKey, index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        [pageKey]: {
+          ...current.sitePages?.[pageKey],
+          sections: (current.sitePages?.[pageKey]?.sections || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addGenericPolicyItem(pageKey) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        [pageKey]: {
+          ...current.sitePages?.[pageKey],
+          sections: [...(current.sitePages?.[pageKey]?.sections || []), newGenericPolicySection()],
+        },
+      },
+    }));
+  }
+
+  function removeGenericPolicyItem(pageKey, index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        [pageKey]: {
+          ...current.sitePages?.[pageKey],
+          sections: (current.sitePages?.[pageKey]?.sections || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveGenericPolicyItem(pageKey, index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.[pageKey]?.sections || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          [pageKey]: {
+            ...current.sitePages?.[pageKey],
+            sections: reordered,
+          },
+        },
+      };
     });
   }
 
@@ -2689,6 +2908,36 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
           </div>
         </div>
       </SectionCard>
+
+      <GenericPolicyCmsEditor
+        title="Terms & Conditions CMS"
+        description="Edit saved Terms & Conditions content foundation. Public /terms route is not created in this task."
+        pageKey="terms"
+        page={cms.sitePages?.terms}
+        readOnly={readOnly}
+        saving={saving}
+        onSave={saveCms}
+        onUpdateSection={updateGenericPolicySection}
+        onUpdateItem={updateGenericPolicyItem}
+        onAddItem={addGenericPolicyItem}
+        onRemoveItem={removeGenericPolicyItem}
+        onMoveItem={moveGenericPolicyItem}
+      />
+
+      <GenericPolicyCmsEditor
+        title="Shipping Policy CMS"
+        description="Edit saved Shipping Policy content foundation. Public /shipping route is not created in this task."
+        pageKey="shipping"
+        page={cms.sitePages?.shipping}
+        readOnly={readOnly}
+        saving={saving}
+        onSave={saveCms}
+        onUpdateSection={updateGenericPolicySection}
+        onUpdateItem={updateGenericPolicyItem}
+        onAddItem={addGenericPolicyItem}
+        onRemoveItem={removeGenericPolicyItem}
+        onMoveItem={moveGenericPolicyItem}
+      />
 
       <SectionCard eyebrow="Hero" title="Hero Banner Slider" description="Create, reorder, and activate responsive homepage slides.">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
