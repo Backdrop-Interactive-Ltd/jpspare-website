@@ -1,11 +1,23 @@
 import Link from "next/link";
 import TopDealBar from "../TopDealBar";
 import { Header } from "../page";
+import { getHomepageCms } from "@/lib/homepage/cms";
 
-export const metadata = {
+const fallbackMetadata = {
   title: "Returns & Warranty | JPSPARE",
   description: "JPSPARE returns, warranty, shipping, inspection, and support policy.",
 };
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata() {
+  const returnsWarranty = await getReturnsWarrantyCms();
+
+  return {
+    title: returnsWarranty.seo?.metaTitle || fallbackMetadata.title,
+    description: returnsWarranty.seo?.metaDescription || fallbackMetadata.description,
+  };
+}
 
 const policyCards = [
   {
@@ -40,6 +52,89 @@ const policyCards = [
   },
 ];
 
+const heroStats = [
+  ["7", "Day Window"],
+  ["OEM", "Warranty"],
+  ["24/7", "Support"],
+  ["May 2026", "Updated"],
+];
+
+const fallbackReturnsWarranty = {
+  seo: fallbackMetadata,
+  hero: {
+    backLabel: "Back to Home",
+    backLink: "/",
+    eyebrow: "Policy Center",
+    title: "Returns & Warranty",
+    highlightedText: "Warranty",
+    description: "Clear return, inspection, and warranty guidelines for JPSPARE products. Please review these terms before making a claim.",
+  },
+  stats: heroStats.map(([value, label], index) => ({ value, label, enabled: true, sortOrder: (index + 1) * 10 })),
+  notice: {
+    title: "Important Notice",
+    description: "By purchasing from JPSPARE, you agree to our return, warranty, inspection, and support policies.",
+  },
+  returnPolicies: policyCards
+    .filter((item) => item.title !== "Warranty Coverage")
+    .map((item, index) => ({ ...item, description: item.body, enabled: true, sortOrder: (index + 1) * 10 })),
+  warrantyPolicies: policyCards
+    .filter((item) => item.title === "Warranty Coverage")
+    .map((item, index) => ({ ...item, description: item.body, enabled: true, sortOrder: (index + 1) * 10 })),
+  claimChecklist: ["Order number", "Product details", "Clear photos or videos", "Installation details if applicable"].map((label, index) => ({ label, enabled: true, sortOrder: (index + 1) * 10 })),
+  supportContact: {
+    eyebrow: "JPSPARE Support",
+    email: "info@jpspare.com.bd",
+    phone: "01718914582",
+    heading: "Need Help With A Claim?",
+    description: "Our support team will guide you through inspection, replacement, or warranty support.",
+    buttonText: "Contact Support",
+    buttonLink: "/help",
+  },
+  cta: {
+    enabled: true,
+    eyebrow: "Need Help With A Claim?",
+    title: "Contact us with your order number and product details.",
+    description: "Our support team will guide you through inspection, replacement, or warranty support.",
+    buttonText: "Contact Support",
+    buttonLink: "/help",
+  },
+};
+
+async function getReturnsWarrantyCms() {
+  try {
+    const cms = await getHomepageCms();
+    return cms?.sitePages?.returnsWarranty || fallbackReturnsWarranty;
+  } catch {
+    return fallbackReturnsWarranty;
+  }
+}
+
+function enabledItems(items, fallback) {
+  const source = Array.isArray(items) && items.length ? items : fallback;
+  return source
+    .filter((item) => item?.enabled !== false)
+    .sort((a, b) => (Number(a?.sortOrder) || 0) - (Number(b?.sortOrder) || 0));
+}
+
+function policyItems(returnsWarranty) {
+  const returnPolicies = enabledItems(returnsWarranty.returnPolicies, fallbackReturnsWarranty.returnPolicies);
+  const warrantyPolicies = enabledItems(returnsWarranty.warrantyPolicies, fallbackReturnsWarranty.warrantyPolicies);
+  return [...returnPolicies, ...warrantyPolicies].sort((a, b) => (Number(a?.sortOrder) || 0) - (Number(b?.sortOrder) || 0));
+}
+
+function renderHighlightedText(text, highlightedText, className = "text-[#ff4a50]") {
+  if (!text || !highlightedText || !text.includes(highlightedText)) return text;
+  const [before, after] = text.split(highlightedText);
+
+  return (
+    <>
+      {before}
+      <span className={className}>{highlightedText}</span>
+      {after}
+    </>
+  );
+}
+
 function Icon({ name, className = "size-5" }) {
   const icons = {
     arrowLeft: "M19 12H5m7-7-7 7 7 7",
@@ -58,7 +153,16 @@ function Icon({ name, className = "size-5" }) {
   );
 }
 
-export default function ReturnsWarrantyPage() {
+export default async function ReturnsWarrantyPage() {
+  const returnsWarranty = await getReturnsWarrantyCms();
+  const hero = returnsWarranty.hero || fallbackReturnsWarranty.hero;
+  const stats = enabledItems(returnsWarranty.stats, fallbackReturnsWarranty.stats);
+  const notice = returnsWarranty.notice || fallbackReturnsWarranty.notice;
+  const checklist = enabledItems(returnsWarranty.claimChecklist, fallbackReturnsWarranty.claimChecklist);
+  const supportContact = returnsWarranty.supportContact || fallbackReturnsWarranty.supportContact;
+  const cta = returnsWarranty.cta || fallbackReturnsWarranty.cta;
+  const cards = policyItems(returnsWarranty);
+
   return (
     <>
       <TopDealBar />
@@ -69,27 +173,22 @@ export default function ReturnsWarrantyPage() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(239,51,56,0.14),transparent_30%),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:auto,44px_44px,44px_44px]" />
             <div className="relative flex w-full flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-[820px]">
-                <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.12em] text-[#ffb5b8] transition hover:text-white">
+                <Link href={hero.backLink || fallbackReturnsWarranty.hero.backLink} className="inline-flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.12em] text-[#ffb5b8] transition hover:text-white">
                   <Icon name="arrowLeft" className="size-4" />
-                  Back to Home
+                  {hero.backLabel || fallbackReturnsWarranty.hero.backLabel}
                 </Link>
                 <span className="mt-8 inline-flex items-center rounded-full border border-[#ff8c91]/30 bg-[#ef3338]/15 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#ffb5b8]">
-                  Policy Center
+                  {hero.eyebrow || fallbackReturnsWarranty.hero.eyebrow}
                 </span>
                 <h1 className="mt-6 text-[42px] font-black leading-tight tracking-[-0.04em] sm:text-[56px]">
-                  Returns & <span className="text-[#ff4a50]">Warranty</span>
+                  {renderHighlightedText(hero.title || fallbackReturnsWarranty.hero.title, hero.highlightedText || fallbackReturnsWarranty.hero.highlightedText)}
                 </h1>
                 <p className="mt-4 max-w-[760px] text-[16px] font-medium leading-7 text-white/68">
-                  Clear return, inspection, and warranty guidelines for JPSPARE products. Please review these terms before making a claim.
+                  {hero.description || fallbackReturnsWarranty.hero.description}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-white/15 bg-white/8 p-3 backdrop-blur-sm sm:grid-cols-4 lg:ml-auto lg:min-w-[520px]">
-                {[
-                  ["7", "Day Window"],
-                  ["OEM", "Warranty"],
-                  ["24/7", "Support"],
-                  ["May 2026", "Updated"],
-                ].map(([value, label]) => (
+                {stats.map(({ value, label }) => (
                   <div key={label} className="rounded-[6px] bg-black/15 px-3 py-3 text-center">
                     <p className="text-[19px] font-black text-[#ff5b61]">{value}</p>
                     <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-white/55">{label}</p>
@@ -109,9 +208,9 @@ export default function ReturnsWarrantyPage() {
                     <Icon name="document" />
                   </span>
                   <div>
-                    <h2 className="text-[20px] font-black text-[#7c2d12]">Important Notice</h2>
+                    <h2 className="text-[20px] font-black text-[#7c2d12]">{notice.title || fallbackReturnsWarranty.notice.title}</h2>
                     <p className="mt-3 text-[14px] font-semibold leading-7 text-[#9f1d20]">
-                      By purchasing from JPSPARE, you agree to our return, warranty, inspection, and support policies.
+                      {notice.description || fallbackReturnsWarranty.notice.description}
                     </p>
                   </div>
                 </div>
@@ -120,32 +219,32 @@ export default function ReturnsWarrantyPage() {
               <div className="rounded-[8px] border border-[#e1e7ef] bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
                 <h2 className="text-[20px] font-black">Claim Checklist</h2>
                 <div className="mt-5 space-y-3">
-                  {["Order number", "Product details", "Clear photos or videos", "Installation details if applicable"].map((item) => (
-                    <div key={item} className="flex items-center gap-3 rounded-[8px] bg-[#f8fafc] px-4 py-3 text-[13px] font-bold text-[#344054]">
+                  {checklist.map((item) => (
+                    <div key={item.label} className="flex items-center gap-3 rounded-[8px] bg-[#f8fafc] px-4 py-3 text-[13px] font-bold text-[#344054]">
                       <span className="grid size-6 place-items-center rounded-full bg-[#ef3338] text-white">
                         <Icon name="check" className="size-3.5" />
                       </span>
-                      {item}
+                      {item.label}
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="rounded-[8px] bg-[#111827] p-7 text-white shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-                <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ff8c91]">JPSPARE Support</p>
-                <a href="mailto:info@jpspare.com.bd" className="mt-5 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
+                <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ff8c91]">{supportContact.eyebrow || fallbackReturnsWarranty.supportContact.eyebrow}</p>
+                <a href={`mailto:${supportContact.email || fallbackReturnsWarranty.supportContact.email}`} className="mt-5 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
                   <Icon name="mail" className="size-4 text-[#ff5b61]" />
-                  info@jpspare.com.bd
+                  {supportContact.email || fallbackReturnsWarranty.supportContact.email}
                 </a>
-                <a href="tel:01718914582" className="mt-3 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
+                <a href={`tel:${supportContact.phone || fallbackReturnsWarranty.supportContact.phone}`} className="mt-3 flex items-center gap-3 text-[14px] font-semibold text-white/75 transition hover:text-white">
                   <Icon name="phone" className="size-4 text-[#ff5b61]" />
-                  01718914582
+                  {supportContact.phone || fallbackReturnsWarranty.supportContact.phone}
                 </a>
               </div>
             </aside>
 
             <div className="grid gap-5 md:grid-cols-2">
-              {policyCards.map((section, index) => (
+              {cards.map((section, index) => (
                 <article key={section.title} className="rounded-[8px] border border-[#e1e7ef] bg-white p-7 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[#ef3338]/40">
                   <div className="flex items-start gap-4">
                     <span className="grid size-10 shrink-0 place-items-center rounded-[8px] bg-[#fff1f2] text-[14px] font-black text-[#ef3338]">
@@ -153,11 +252,11 @@ export default function ReturnsWarrantyPage() {
                     </span>
                     <div>
                       <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#111827]">{section.title}</h2>
-                      <p className="mt-3 text-[14px] font-medium leading-7 text-[#526071]">{section.body}</p>
+                      <p className="mt-3 text-[14px] font-medium leading-7 text-[#526071]">{section.body || section.description}</p>
                     </div>
                   </div>
                   <ul className="mt-5 space-y-2 border-t border-[#edf0f3] pt-5">
-                    {section.bullets.map((bullet) => (
+                    {(section.bullets || []).map((bullet) => (
                       <li key={bullet} className="flex items-center gap-2 text-[13px] font-bold text-[#667085]">
                         <Icon name="check" className="size-4 text-[#ef3338]" />
                         {bullet}
@@ -169,12 +268,12 @@ export default function ReturnsWarrantyPage() {
               <article className="rounded-[8px] border border-[#ffd0d2] bg-[#fff1ee] p-7 md:col-span-2">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ef3338]">Need Help With A Claim?</p>
-                    <h2 className="mt-2 text-[24px] font-black">Contact us with your order number and product details.</h2>
-                    <p className="mt-2 text-[14px] font-medium text-[#667085]">Our support team will guide you through inspection, replacement, or warranty support.</p>
+                    <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#ef3338]">{cta.eyebrow || supportContact.heading || fallbackReturnsWarranty.cta.eyebrow}</p>
+                    <h2 className="mt-2 text-[24px] font-black">{cta.title || supportContact.heading || fallbackReturnsWarranty.cta.title}</h2>
+                    <p className="mt-2 text-[14px] font-medium text-[#667085]">{cta.description || supportContact.description || fallbackReturnsWarranty.cta.description}</p>
                   </div>
-                  <Link href="/help" className="inline-flex h-12 shrink-0 items-center justify-center rounded-[8px] bg-[#ef3338] px-7 text-[14px] font-black text-white shadow-[0_16px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d91f24]">
-                    Contact Support
+                  <Link href={cta.buttonLink || supportContact.buttonLink || fallbackReturnsWarranty.cta.buttonLink} className="inline-flex h-12 shrink-0 items-center justify-center rounded-[8px] bg-[#ef3338] px-7 text-[14px] font-black text-white shadow-[0_16px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d91f24]">
+                    {cta.buttonText || supportContact.buttonText || fallbackReturnsWarranty.cta.buttonText}
                   </Link>
                 </div>
               </article>
