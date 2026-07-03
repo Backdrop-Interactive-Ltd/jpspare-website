@@ -44,6 +44,67 @@ const whyItems = [
   ["Quality Guarantee", "All parts come with warranty and quality assurance"],
 ];
 
+const fallbackHelp = {
+  hero: {
+    eyebrow: "24/7 Customer Support Available",
+    title: "Get In Touch",
+    highlightedText: "Touch",
+    description: "Need help finding the perfect part? Our automotive experts are here to assist you with genuine Japanese auto parts and professional guidance.",
+    phone: "01718914582",
+    email: "info@jpspare.com.bd",
+    hours: "Sat-Thu 10PM-8PM, Fri 10PM-8PM",
+  },
+  intro: {
+    title: "Multiple Ways to Reach Us",
+    highlightedText: "Reach Us",
+    description: "Choose the most convenient way to get in touch with our automotive parts experts. We are committed to providing exceptional service and support.",
+  },
+  contactCards: contactCards.map((card, index) => ({ ...card, enabled: true, sortOrder: (index + 1) * 10 })),
+  businessHours: {
+    title: "Business Hours",
+    items: [
+      { label: "Saturday - Thursday", value: "10:00 AM - 8:00 PM", enabled: true, sortOrder: 10 },
+      { label: "Friday", value: "10:00 AM - 8:00 PM", enabled: true, sortOrder: 20 },
+      { label: "Emergency Support", value: "24/7 Available", enabled: true, sortOrder: 30 },
+    ],
+    note: "Emergency parts support available 24/7 for urgent automotive needs. Contact us anytime for critical breakdowns.",
+  },
+  emergencySupport: {
+    title: "Emergency Support",
+    description: "Need immediate assistance? Our 24/7 emergency support is available for critical automotive breakdowns and urgent part requirements.",
+    phone: "01718914582",
+    availability: "Available 24/7",
+    buttonText: "Emergency Call",
+    buttonLink: "tel:01718914582",
+  },
+  supportBenefits: whyItems.map(([title, description], index) => ({ title, description, enabled: true, sortOrder: (index + 1) * 10 })),
+  helpTopics: [],
+  cta: {
+    title: "Why Choose Us?",
+    description: "Need expert advice? Our support team will help you choose the right part before you order.",
+  },
+};
+
+function enabledItems(items, fallback) {
+  const source = Array.isArray(items) && items.length ? items : fallback;
+  return source
+    .filter((item) => item?.enabled !== false)
+    .sort((a, b) => (Number(a?.sortOrder) || 0) - (Number(b?.sortOrder) || 0));
+}
+
+function renderHighlightedText(text, highlightedText, className = "text-[#ef4444]") {
+  if (!text || !highlightedText || !text.includes(highlightedText)) return text;
+  const [before, after] = text.split(highlightedText);
+
+  return (
+    <>
+      {before}
+      <span className={className}>{highlightedText}</span>
+      {after}
+    </>
+  );
+}
+
 function HelpIcon({ name, className = "size-5" }) {
   const common = { className, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
 
@@ -120,7 +181,16 @@ function toneClasses(tone) {
   return tones[tone] || tones.orange;
 }
 
-export default function HelpPageClient() {
+export default function HelpPageClient({ help }) {
+  const hero = help?.hero || fallbackHelp.hero;
+  const intro = help?.intro || fallbackHelp.intro;
+  const cards = enabledItems(help?.contactCards, fallbackHelp.contactCards);
+  const businessHours = help?.businessHours || fallbackHelp.businessHours;
+  const hoursItems = enabledItems(businessHours.items, fallbackHelp.businessHours.items);
+  const emergencySupport = help?.emergencySupport || fallbackHelp.emergencySupport;
+  const supportBenefits = enabledItems(help?.supportBenefits, fallbackHelp.supportBenefits);
+  const cta = help?.cta || fallbackHelp.cta;
+
   return (
     <main className="bg-[#f4f6f8] text-[#111827]">
       <section className="w-full px-4 pb-8 pt-0 sm:px-6 lg:px-10">
@@ -129,26 +199,26 @@ export default function HelpPageClient() {
           <div className="relative flex min-h-[220px] w-full flex-col justify-center">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#ff8c91]/30 bg-[#ef3338]/15 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#ffb5b8]">
             <HelpIcon name="phone" className="size-3.5" />
-            24/7 Customer Support Available
+            {hero.eyebrow || fallbackHelp.hero.eyebrow}
           </span>
           <h1 className="mt-6 text-[52px] font-black leading-tight tracking-[-0.04em] max-md:text-[40px] max-sm:text-[32px]">
-            Get In <span className="text-[#ef4444]">Touch</span>
+            {renderHighlightedText(hero.title || fallbackHelp.hero.title, hero.highlightedText || fallbackHelp.hero.highlightedText)}
           </h1>
           <p className="mt-4 max-w-[720px] text-[17px] font-medium leading-8 text-white/72 max-sm:text-[15px] max-sm:leading-7">
-            Need help finding the perfect part? Our automotive experts are here to assist you with genuine Japanese auto parts and professional guidance.
+            {hero.description || fallbackHelp.hero.description}
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-5 text-[13px] font-bold text-white/78">
-            <a href="tel:01718914582" className="inline-flex items-center gap-2 hover:text-white">
+            <a href={`tel:${hero.phone || fallbackHelp.hero.phone}`} className="inline-flex items-center gap-2 hover:text-white">
               <HelpIcon name="phone" className="size-4 text-[#ef4444]" />
-              01718914582
+              {hero.phone || fallbackHelp.hero.phone}
             </a>
-            <a href="mailto:info@jpspare.com.bd" className="inline-flex items-center gap-2 hover:text-white">
+            <a href={`mailto:${hero.email || fallbackHelp.hero.email}`} className="inline-flex items-center gap-2 hover:text-white">
               <HelpIcon name="mail" className="size-4 text-[#ef4444]" />
-              info@jpspare.com.bd
+              {hero.email || fallbackHelp.hero.email}
             </a>
             <span className="inline-flex items-center gap-2">
               <HelpIcon name="clock" className="size-4 text-[#ef4444]" />
-              Sat-Thu 10PM-8PM, Fri 10PM-8PM
+              {hero.hours || fallbackHelp.hero.hours}
             </span>
           </div>
           </div>
@@ -158,15 +228,15 @@ export default function HelpPageClient() {
       <section className="mx-auto w-full max-w-[1635px] px-4 py-10 sm:px-6 lg:px-10">
         <div className="text-center">
           <h2 className="text-[30px] font-black tracking-[-0.02em] max-sm:text-[26px]">
-            Multiple Ways to <span className="text-[#ef4444]">Reach Us</span>
+            {renderHighlightedText(intro.title || fallbackHelp.intro.title, intro.highlightedText || fallbackHelp.intro.highlightedText)}
           </h2>
           <p className="mx-auto mt-3 max-w-[620px] text-[15px] font-medium leading-7 text-[#6b7280]">
-            Choose the most convenient way to get in touch with our automotive parts experts. We are committed to providing exceptional service and support.
+            {intro.description || fallbackHelp.intro.description}
           </p>
         </div>
 
         <div className="mt-10 grid grid-cols-4 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
-          {contactCards.map((card) => (
+          {cards.map((card) => (
             <article key={card.title} className="rounded-[8px] border border-[#e5eaf1] bg-white p-7 shadow-[0_14px_30px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[#f2c7c9] hover:shadow-[0_22px_46px_rgba(239,51,56,0.12)]">
               <span className={`inline-flex size-10 items-center justify-center rounded-[8px] ${toneClasses(card.tone)}`}>
                 <HelpIcon name={card.icon} className="size-5" />
@@ -174,7 +244,7 @@ export default function HelpPageClient() {
               <h3 className="mt-5 text-[15px] font-black">{card.title}</h3>
               <p className="mt-3 text-[12px] font-bold text-[#111827]">{card.detail}</p>
               <p className="mt-1 text-[12px] font-medium text-[#6b7280]">{card.sub}</p>
-              <p className="mt-3 text-[11px] font-medium text-[#9ca3af]">{card.note}</p>
+              <p className="mt-3 text-[11px] font-medium text-[#9ca3af]">{card.note || card.description || ""}</p>
             </article>
           ))}
         </div>
@@ -186,24 +256,18 @@ export default function HelpPageClient() {
                 <span className="inline-flex size-9 items-center justify-center rounded-[8px] bg-[#ef4444] text-white">
                   <HelpIcon name="clock" className="size-5" />
                 </span>
-                <h3 className="text-[20px] font-black">Business Hours</h3>
+                <h3 className="text-[20px] font-black">{businessHours.title || fallbackHelp.businessHours.title}</h3>
               </div>
               <dl className="mt-5 space-y-3 text-[14px] font-medium text-[#4b5563]">
-                <div className="flex items-center justify-between gap-4">
-                  <dt>Saturday - Thursday</dt>
-                  <dd className="text-[#111827]">10:00 AM - 8:00 PM</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt>Friday</dt>
-                  <dd className="text-[#111827]">10:00 AM - 8:00 PM</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt>Emergency Support</dt>
-                  <dd className="text-[#111827]">24/7 Available</dd>
-                </div>
+                {hoursItems.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between gap-4">
+                    <dt>{item.label}</dt>
+                    <dd className="text-[#111827]">{item.value}</dd>
+                  </div>
+                ))}
               </dl>
               <div className="mt-5 rounded-[8px] border border-[#fee2e2] bg-[#fff7ed] px-4 py-3 text-[12px] font-medium leading-5 text-[#6b7280]">
-                <strong className="text-[#111827]">Note:</strong> Emergency parts support available 24/7 for urgent automotive needs. Contact us anytime for critical breakdowns.
+                <strong className="text-[#111827]">Note:</strong> {businessHours.note || fallbackHelp.businessHours.note}
               </div>
             </article>
 
@@ -212,17 +276,17 @@ export default function HelpPageClient() {
                 <span className="inline-flex size-10 items-center justify-center rounded-[8px] bg-[#ef4444]">
                   <HelpIcon name="headphones" />
                 </span>
-                Emergency Support
+                {emergencySupport.title || fallbackHelp.emergencySupport.title}
               </h3>
               <p className="mt-5 max-w-[620px] text-[16px] font-medium leading-[1.55] text-[#374151]">
-                Need immediate assistance? Our 24/7 emergency support is available for critical automotive breakdowns and urgent part requirements.
+                {emergencySupport.description || fallbackHelp.emergencySupport.description}
               </p>
               <div className="mt-auto flex items-center justify-between gap-4 pt-4 max-sm:flex-col max-sm:items-start">
                 <div>
-                  <p className="text-[18px] font-black tracking-[-0.02em] text-[#374151]">01718914582</p>
-                  <p className="mt-3 text-[14px] font-medium text-[#6b7280]">Available 24/7</p>
+                  <p className="text-[18px] font-black tracking-[-0.02em] text-[#374151]">{emergencySupport.phone || fallbackHelp.emergencySupport.phone}</p>
+                  <p className="mt-3 text-[14px] font-medium text-[#6b7280]">{emergencySupport.availability || fallbackHelp.emergencySupport.availability}</p>
                 </div>
-                <a href="tel:01718914582" className="inline-flex h-10 items-center rounded-[7px] bg-[#ef4444] px-5 text-[14px] font-bold text-white">Emergency Call</a>
+                <a href={emergencySupport.buttonLink || fallbackHelp.emergencySupport.buttonLink} className="inline-flex h-10 items-center rounded-[7px] bg-[#ef4444] px-5 text-[14px] font-bold text-white">{emergencySupport.buttonText || fallbackHelp.emergencySupport.buttonText}</a>
               </div>
             </article>
           </div>
@@ -232,19 +296,19 @@ export default function HelpPageClient() {
               <span className="inline-flex size-10 items-center justify-center rounded-[8px] bg-[#ef4444] text-white">
                 <HelpIcon name="pin" className="size-5" />
               </span>
-              <h3 className="text-[20px] font-black">Why Choose Us?</h3>
+              <h3 className="text-[20px] font-black">{cta.title || fallbackHelp.cta.title}</h3>
             </div>
             <div className="mt-8 space-y-6">
-              {whyItems.map(([title, body]) => (
-                <div key={title} className="relative pl-5">
+              {supportBenefits.map((item) => (
+                <div key={item.title} className="relative pl-5">
                   <span className="absolute left-0 top-2 size-1.5 rounded-full bg-[#ef4444]" />
-                  <h4 className="text-[20px] font-black leading-tight">{title}</h4>
-                  <p className="mt-1 text-[12px] font-medium leading-5 text-white/60">{body}</p>
+                  <h4 className="text-[20px] font-black leading-tight">{item.title}</h4>
+                  <p className="mt-1 text-[12px] font-medium leading-5 text-white/60">{item.description || item.body}</p>
                 </div>
               ))}
             </div>
             <div className="mt-8 rounded-[7px] border border-white/15 bg-white/10 p-5 text-[12px] font-medium text-white/55">
-              Need expert advice? Our support team will help you choose the right part before you order.
+              {cta.description || fallbackHelp.cta.description}
             </div>
           </article>
         </div>
