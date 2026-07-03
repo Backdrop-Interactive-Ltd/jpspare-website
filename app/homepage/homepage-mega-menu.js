@@ -293,6 +293,7 @@ const premiumCategoryRail = [
   { label: "Tyres", icon: "car", key: "tyres", items: ["By Brand", "By Rim Size", "All Tyres", "Tyre Accessories"] },
   { label: "Lubricants", icon: "drop", key: "lubricants", items: ["Engine Oil", "Gear Oil", "Brake Fluid", "Coolant", "Power Steering Fluid"] },
 ];
+const premiumCategoryRailByKey = premiumCategoryRail.reduce((items, item) => ({ ...items, [item.key]: item }), {});
 
 const premiumMenuColumns = [
   {
@@ -418,16 +419,37 @@ function normalizeMegaMenuFeaturedBrands(megaMenu) {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+function normalizeMegaMenuCategoryRail(megaMenu) {
+  const items = Array.isArray(megaMenu?.categoryRail) ? megaMenu.categoryRail : premiumCategoryRail;
+
+  return items
+    .map((item, index) => {
+      const fallback = premiumCategoryRailByKey[item?.key] || {};
+      return {
+        key: cleanText(item?.key, fallback.key),
+        label: cleanText(item?.label, fallback.label),
+        icon: cleanText(item?.icon, fallback.icon || "package"),
+        enabled: item?.enabled !== false,
+        sortOrder: Number.isFinite(Number(item?.sortOrder)) ? Number(item.sortOrder) : fallback.sortOrder || (index + 1) * 10,
+        items: fallback.items || [],
+      };
+    })
+    .filter((item) => item.enabled && item.key && item.label)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
 function phoneHref(phone) {
   const digits = String(phone || "").replace(/[^\d+]/g, "");
   return digits ? `tel:${digits}` : "#";
 }
 
-function PremiumRail({ openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
+function PremiumRail({ megaMenu, openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
+  const categoryRail = normalizeMegaMenuCategoryRail(megaMenu);
+
   return (
     <aside className="w-[275px] shrink-0 border-r border-[#e5e7eb] pr-5">
       <nav className="space-y-1">
-        {premiumCategoryRail.map((item) => (
+        {categoryRail.map((item) => (
           <div key={item.label}>
             <button
               type="button"
@@ -458,10 +480,16 @@ function PremiumRail({ openCategory, selectedSubcategory, onToggleCategory, onSe
                     <span className="truncate">{subcategory}</span>
                   </button>
                 ))}
+                {!item.items.length ? (
+                  <p className="px-2 py-2 text-[12px] font-bold text-[#64748b]">No subcategories yet.</p>
+                ) : null}
               </div>
             )}
           </div>
         ))}
+        {!categoryRail.length ? (
+          <p className="rounded-[9px] border border-dashed border-[#e5e7eb] p-3 text-[12px] font-bold text-[#64748b]">No categories enabled.</p>
+        ) : null}
       </nav>
     </aside>
   );
@@ -619,6 +647,7 @@ function PremiumMegaMenuShell({ children, megaMenu }) {
     <div className={`invisible absolute left-10 top-full z-[120] max-w-[calc(100vw-80px)] translate-y-2 rounded-[16px] border border-[#e5e7eb] bg-white p-5 text-[#111827] opacity-0 shadow-[0_28px_76px_rgba(15,23,42,0.18)] transition duration-200 ease-out group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 max-lg:hidden ${hasRevealContent ? "w-[1635px]" : "w-fit"}`}>
       <div className="flex gap-5">
         <PremiumRail
+          megaMenu={megaMenu}
           openCategory={openCategory}
           selectedSubcategory={selectedSubcategory}
           onToggleCategory={handleToggleCategory}
