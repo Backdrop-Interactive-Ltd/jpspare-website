@@ -362,6 +362,38 @@ function newFaqQuestion() {
   };
 }
 
+function newCareersBenefit() {
+  return {
+    title: "New benefit",
+    description: "",
+    icon: "check",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newCareersProcessStep() {
+  return {
+    title: "New step",
+    description: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newCareersOpening() {
+  return {
+    title: "New opening",
+    department: "",
+    location: "",
+    type: "Full-time",
+    description: "",
+    applyLink: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function HelpListEditor({ title, group, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const list = Array.isArray(items) ? items : [];
   const isHours = group === "businessHours";
@@ -734,6 +766,175 @@ function FaqCmsEditor({
             {!categories.length ? <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-semibold text-[#667085]">No FAQ categories added yet.</p> : null}
           </div>
         </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">CTA</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Heading">
+              <input value={page?.cta?.heading || page?.cta?.title || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { heading: event.target.value, title: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Description">
+              <input value={page?.cta?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { description: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button text">
+              <input value={page?.cta?.buttonText || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button link">
+              <input value={page?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function CareersListEditor({ title, group, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
+  const list = Array.isArray(items) ? items : [];
+  const isOpening = group === "openings";
+  const isBenefit = group === "benefits";
+
+  return (
+    <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">{title}</p>
+        <button type="button" disabled={readOnly} onClick={() => onAdd(group)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+          Add Item
+        </button>
+      </div>
+      <div className="space-y-3">
+        {list.map((item, index) => (
+          <div key={`${group}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-black text-[#667085]">Item {index + 1}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={readOnly || index === 0} onClick={() => onMove(group, index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                  Up
+                </button>
+                <button type="button" disabled={readOnly || index === list.length - 1} onClick={() => onMove(group, index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                  Down
+                </button>
+                <button type="button" disabled={readOnly} onClick={() => onRemove(group, index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            {isOpening ? (
+              <div className="grid gap-3 lg:grid-cols-2">
+                <Field label="Title">
+                  <input value={item.title || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { title: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Department">
+                  <input value={item.department || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { department: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Location">
+                  <input value={item.location || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { location: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Type">
+                  <input value={item.type || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { type: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Description">
+                  <textarea value={item.description || item.body || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { description: event.target.value, body: event.target.value })} className={textareaClass(readOnly)} />
+                </Field>
+                <Field label="Apply Link">
+                  <input value={item.applyLink || item.href || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { applyLink: event.target.value, href: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Sort order">
+                  <input type="number" value={item.sortOrder ?? 999} disabled={readOnly} onChange={(event) => onUpdate(group, index, { sortOrder: Number(event.target.value) || 0 })} className={inputClass(readOnly)} />
+                </Field>
+                <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdate(group, index, { enabled: value })} />
+              </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-[1fr_1.5fr_120px_120px]">
+                <Field label="Title">
+                  <input value={item.title || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { title: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Description">
+                  <input value={item.description || item.body || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { description: event.target.value, body: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                {isBenefit ? (
+                  <Field label="Icon">
+                    <input value={item.icon || ""} disabled={readOnly} onChange={(event) => onUpdate(group, index, { icon: event.target.value })} className={inputClass(readOnly)} />
+                  </Field>
+                ) : null}
+                <Field label="Sort order">
+                  <input type="number" value={item.sortOrder ?? 999} disabled={readOnly} onChange={(event) => onUpdate(group, index, { sortOrder: Number(event.target.value) || 0 })} className={inputClass(readOnly)} />
+                </Field>
+                <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdate(group, index, { enabled: value })} />
+              </div>
+            )}
+          </div>
+        ))}
+        {!list.length ? <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No {title.toLowerCase()} yet.</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function CareersCmsEditor({ page, readOnly, saving, onSave, onUpdateSection, onAddItem, onUpdateItem, onRemoveItem, onMoveItem }) {
+  return (
+    <SectionCard
+      eyebrow="Static Pages"
+      title="Careers CMS"
+      description="Edit Careers content foundation. Public /careers route is not created or wired in this task."
+      action={
+        <button
+          type="button"
+          onClick={() => onSave("Careers CMS")}
+          disabled={saving || readOnly}
+          className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save Careers CMS"}
+        </button>
+      }
+    >
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="SEO Title">
+              <input
+                value={page?.seo?.metaTitle || page?.seo?.title || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("seo", { metaTitle: event.target.value, title: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="SEO Description">
+              <input
+                value={page?.seo?.metaDescription || page?.seo?.description || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("seo", { metaDescription: event.target.value, description: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Title">
+              <input value={page?.hero?.title || ""} disabled={readOnly} onChange={(event) => onUpdateSection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Subtitle">
+              <input
+                value={page?.hero?.subtitle || page?.hero?.eyebrow || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("hero", { subtitle: event.target.value, eyebrow: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="Description">
+              <textarea value={page?.hero?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+
+        <CareersListEditor title="Benefits" group="benefits" items={page?.benefits || []} readOnly={readOnly} onAdd={onAddItem} onUpdate={onUpdateItem} onRemove={onRemoveItem} onMove={onMoveItem} />
+        <CareersListEditor title="Hiring Process" group="hiringProcess" items={page?.hiringProcess || []} readOnly={readOnly} onAdd={onAddItem} onUpdate={onUpdateItem} onRemove={onRemoveItem} onMove={onMoveItem} />
+        <CareersListEditor title="Job Openings" group="openings" items={page?.openings || []} readOnly={readOnly} onAdd={onAddItem} onUpdate={onUpdateItem} onRemove={onRemoveItem} onMove={onMoveItem} />
 
         <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">CTA</p>
@@ -2115,6 +2316,87 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updateCareersSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        careers: {
+          ...current.sitePages?.careers,
+          [section]: {
+            ...current.sitePages?.careers?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function newCareersItem(group) {
+    if (group === "openings") return newCareersOpening();
+    if (group === "hiringProcess") return newCareersProcessStep();
+    return newCareersBenefit();
+  }
+
+  function updateCareersItem(group, index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        careers: {
+          ...current.sitePages?.careers,
+          [group]: (current.sitePages?.careers?.[group] || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addCareersItem(group) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        careers: {
+          ...current.sitePages?.careers,
+          [group]: [...(current.sitePages?.careers?.[group] || []), newCareersItem(group)],
+        },
+      },
+    }));
+  }
+
+  function removeCareersItem(group, index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        careers: {
+          ...current.sitePages?.careers,
+          [group]: (current.sitePages?.careers?.[group] || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveCareersItem(group, index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.careers?.[group] || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          careers: {
+            ...current.sitePages?.careers,
+            [group]: reordered,
+          },
+        },
+      };
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -3286,6 +3568,18 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
         onAddQuestion={addFaqQuestion}
         onRemoveQuestion={removeFaqQuestion}
         onMoveQuestion={moveFaqQuestion}
+      />
+
+      <CareersCmsEditor
+        page={cms.sitePages?.careers}
+        readOnly={readOnly}
+        saving={saving}
+        onSave={saveCms}
+        onUpdateSection={updateCareersSection}
+        onAddItem={addCareersItem}
+        onUpdateItem={updateCareersItem}
+        onRemoveItem={removeCareersItem}
+        onMoveItem={moveCareersItem}
       />
 
       <GenericPolicyCmsEditor
