@@ -321,6 +321,88 @@ const premiumBrandsMenu = [
   { name: "JAPANPARTS", className: "text-[#111827]" },
 ];
 
+const fallbackMegaMenuPromoCard = {
+  enabled: true,
+  eyebrow: "Premium",
+  title: "Brake Parts",
+  subtitle: "Safety. Performance. Reliability.",
+  buttonText: "Shop Now",
+  buttonLink: "/products?q=brake",
+  image: "",
+};
+
+const fallbackMegaMenuHelpBar = {
+  enabled: true,
+  title: "Need Help Finding the Right Part?",
+  subtitle: "Our experts are ready to help you find the perfect fit.",
+  callLabel: "Call Us Now",
+  phone: "09617 22 66 88",
+  chatLabel: "Chat with Expert",
+  chatLink: "/help",
+  chatText: "We're Online",
+};
+
+const fallbackMegaMenuFeatureCards = [
+  { icon: "tag", title: "15% Offer", subtitle: "On selected brake parts", enabled: true, sortOrder: 10 },
+  { icon: "shield", title: "100% Authentic", subtitle: "Genuine & Trusted", enabled: true, sortOrder: 20 },
+  { icon: "truck", title: "Fast Shipping", subtitle: "Across Bangladesh", enabled: true, sortOrder: 30 },
+  { icon: "rotate", title: "Easy Returns", subtitle: "7 Days Return Policy", enabled: true, sortOrder: 40 },
+];
+
+function cleanText(value, fallback = "") {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text || fallback;
+}
+
+function normalizeMegaMenuPromoCard(megaMenu) {
+  const card = megaMenu?.promoCard;
+  if (!card) return fallbackMegaMenuPromoCard;
+  return {
+    enabled: card.enabled !== false,
+    eyebrow: cleanText(card.eyebrow, fallbackMegaMenuPromoCard.eyebrow),
+    title: cleanText(card.title, fallbackMegaMenuPromoCard.title),
+    subtitle: cleanText(card.subtitle, fallbackMegaMenuPromoCard.subtitle),
+    buttonText: cleanText(card.buttonText, fallbackMegaMenuPromoCard.buttonText),
+    buttonLink: cleanText(card.buttonLink, fallbackMegaMenuPromoCard.buttonLink),
+    image: cleanText(card.image),
+  };
+}
+
+function normalizeMegaMenuHelpBar(megaMenu) {
+  const helpBar = megaMenu?.helpBar;
+  if (!helpBar) return fallbackMegaMenuHelpBar;
+  return {
+    enabled: helpBar.enabled !== false,
+    title: cleanText(helpBar.title, fallbackMegaMenuHelpBar.title),
+    subtitle: cleanText(helpBar.subtitle, fallbackMegaMenuHelpBar.subtitle),
+    callLabel: cleanText(helpBar.callLabel, fallbackMegaMenuHelpBar.callLabel),
+    phone: cleanText(helpBar.phone || helpBar.callNumber, fallbackMegaMenuHelpBar.phone),
+    chatLabel: cleanText(helpBar.chatLabel, fallbackMegaMenuHelpBar.chatLabel),
+    chatLink: cleanText(helpBar.chatLink, fallbackMegaMenuHelpBar.chatLink),
+    chatText: cleanText(helpBar.chatText, fallbackMegaMenuHelpBar.chatText),
+  };
+}
+
+function normalizeMegaMenuFeatureCards(megaMenu) {
+  const cards = Array.isArray(megaMenu?.featureCards) ? megaMenu.featureCards : fallbackMegaMenuFeatureCards;
+
+  return cards
+    .map((card, index) => ({
+      icon: cleanText(card?.icon, "tag"),
+      title: cleanText(card?.title),
+      subtitle: cleanText(card?.subtitle),
+      enabled: card?.enabled !== false,
+      sortOrder: Number.isFinite(Number(card?.sortOrder)) ? Number(card.sortOrder) : (index + 1) * 10,
+    }))
+    .filter((card) => card.enabled && card.title)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function phoneHref(phone) {
+  const digits = String(phone || "").replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : "#";
+}
+
 function PremiumRail({ openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
   return (
     <aside className="w-[275px] shrink-0 border-r border-[#e5e7eb] pr-5">
@@ -413,43 +495,56 @@ function PremiumBrandColumn() {
   );
 }
 
-function PremiumPromoPanel() {
+function PremiumPromoPanel({ megaMenu }) {
+  const promoCard = normalizeMegaMenuPromoCard(megaMenu);
+  const featureCards = normalizeMegaMenuFeatureCards(megaMenu);
+  if (!promoCard.enabled && !featureCards.length) return null;
+
   return (
     <aside className="w-[280px] shrink-0 space-y-4">
-      <div className="relative h-[285px] overflow-hidden rounded-[14px] bg-[#0b1220] p-6 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]">
-        <div className="absolute -right-12 top-[68px] size-44 rounded-full border-[26px] border-[#374151] opacity-95" />
-        <div className="absolute -right-4 top-[100px] size-24 rounded-full border-[16px] border-[#ef3338] opacity-95" />
-        <div className="absolute right-8 top-[137px] size-5 rounded-full bg-[#111827]" />
-        <p className="relative text-[16px] font-bold text-[#ef3338]">Premium</p>
-        <h3 className="relative mt-2 text-[32px] font-black leading-[1.02] tracking-[-0.04em]">Brake<br />Parts</h3>
-        <p className="relative mt-4 max-w-[150px] text-[15px] font-medium leading-6 text-white/90">Safety. Performance. Reliability.</p>
-        <a href="/products?q=brake" className="group/shop absolute bottom-6 left-6 inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d71920]">
-          Shop Now <Icon name="arrow" className="size-4 transition group-hover/shop:translate-x-1" />
-        </a>
-      </div>
-      <div className="space-y-3 rounded-[12px] border border-[#e5e7eb] bg-white p-4">
-        {[
-          ["tag", "15% Offer", "On selected brake parts"],
-          ["shield", "100% Authentic", "Genuine & Trusted"],
-          ["truck", "Fast Shipping", "Across Bangladesh"],
-          ["rotate", "Easy Returns", "7 Days Return Policy"],
-        ].map(([icon, title, subtitle]) => (
-          <div key={title} className="flex items-start gap-4">
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#fff1f2] text-[#ef3338]">
-              <Icon name={icon} className="size-[15px]" />
-            </span>
-            <span>
-              <strong className="block text-[13px] font-black text-[#111827]">{title}</strong>
-              <span className="block text-[12px] text-[#6b7280]">{subtitle}</span>
-            </span>
-          </div>
-        ))}
-      </div>
+      {promoCard.enabled && (
+        <div className="relative h-[285px] overflow-hidden rounded-[14px] bg-[#0b1220] p-6 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]">
+          {promoCard.image ? (
+            <img src={promoCard.image} alt="" className="absolute inset-y-0 right-0 h-full w-[58%] object-cover opacity-80" />
+          ) : (
+            <>
+              <div className="absolute -right-12 top-[68px] size-44 rounded-full border-[26px] border-[#374151] opacity-95" />
+              <div className="absolute -right-4 top-[100px] size-24 rounded-full border-[16px] border-[#ef3338] opacity-95" />
+              <div className="absolute right-8 top-[137px] size-5 rounded-full bg-[#111827]" />
+            </>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b1220] via-[#0b1220]/90 to-[#0b1220]/20" />
+          <p className="relative text-[16px] font-bold text-[#ef3338]">{promoCard.eyebrow}</p>
+          <h3 className="relative mt-2 text-[32px] font-black leading-[1.02] tracking-[-0.04em]">{promoCard.title}</h3>
+          <p className="relative mt-4 max-w-[150px] text-[15px] font-medium leading-6 text-white/90">{promoCard.subtitle}</p>
+          <a href={promoCard.buttonLink} className="group/shop absolute bottom-6 left-6 inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d71920]">
+            {promoCard.buttonText} <Icon name="arrow" className="size-4 transition group-hover/shop:translate-x-1" />
+          </a>
+        </div>
+      )}
+      {featureCards.length > 0 && (
+        <div className="space-y-3 rounded-[12px] border border-[#e5e7eb] bg-white p-4">
+          {featureCards.map((card) => (
+            <div key={`${card.title}-${card.sortOrder}`} className="flex items-start gap-4">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#fff1f2] text-[#ef3338]">
+                <Icon name={card.icon} className="size-[15px]" />
+              </span>
+              <span>
+                <strong className="block text-[13px] font-black text-[#111827]">{card.title}</strong>
+                <span className="block text-[12px] text-[#6b7280]">{card.subtitle}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </aside>
   );
 }
 
-function PremiumHelpBar() {
+function PremiumHelpBar({ megaMenu }) {
+  const helpBar = normalizeMegaMenuHelpBar(megaMenu);
+  if (!helpBar.enabled) return null;
+
   return (
     <div className="ml-[300px] mt-4 flex min-h-[76px] items-center justify-between gap-5 rounded-[10px] border border-[#e5e7eb] bg-[#f8fafc] px-7 py-3">
       <div className="flex items-center gap-5">
@@ -457,25 +552,25 @@ function PremiumHelpBar() {
           <Icon name="headphones" className="size-6" />
         </span>
         <span>
-        <h4 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">Need Help Finding the Right Part?</h4>
-        <p className="mt-1 text-[13px] font-medium text-[#4b5563]">Our experts are ready to help you find the perfect fit.</p>
+        <h4 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">{helpBar.title}</h4>
+        <p className="mt-1 text-[13px] font-medium text-[#4b5563]">{helpBar.subtitle}</p>
         </span>
       </div>
       <div className="flex gap-4">
-        <a href="tel:09617226688" className="flex h-[54px] w-[210px] items-center gap-4 rounded-[9px] border border-[#e5e7eb] bg-white px-5 text-[#111827] transition hover:border-[#fecdd3] hover:text-[#ef3338]">
+        <a href={phoneHref(helpBar.phone)} className="flex h-[54px] w-[210px] items-center gap-4 rounded-[9px] border border-[#e5e7eb] bg-white px-5 text-[#111827] transition hover:border-[#fecdd3] hover:text-[#ef3338]">
           <Icon name="phone" className="size-5 text-[#ef3338]" />
-          <span><span className="block text-[13px] font-medium">Call Us Now</span><strong className="block text-[16px] font-black">09617 22 66 88</strong></span>
+          <span><span className="block text-[13px] font-medium">{helpBar.callLabel}</span><strong className="block text-[16px] font-black">{helpBar.phone}</strong></span>
         </a>
-        <a href="/help" className="flex h-[54px] w-[225px] items-center gap-4 rounded-[9px] border border-[#fecdd3] bg-[#fff1f2] px-5 text-[#ef3338] transition hover:bg-[#fee2e2]">
+        <a href={helpBar.chatLink} className="flex h-[54px] w-[225px] items-center gap-4 rounded-[9px] border border-[#fecdd3] bg-[#fff1f2] px-5 text-[#ef3338] transition hover:bg-[#fee2e2]">
           <Icon name="headphones" className="size-5" />
-          <span><span className="block text-[14px] font-black">Chat with Expert</span><span className="block text-[13px] font-medium">We're Online</span></span>
+          <span><span className="block text-[14px] font-black">{helpBar.chatLabel}</span><span className="block text-[13px] font-medium">{helpBar.chatText}</span></span>
         </a>
       </div>
     </div>
   );
 }
 
-function PremiumMegaMenuShell({ children }) {
+function PremiumMegaMenuShell({ children, megaMenu }) {
   const [openCategory, setOpenCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const menuContent = typeof children === "function" ? children({ selectedSubcategory }) : children;
@@ -507,9 +602,9 @@ function PremiumMegaMenuShell({ children }) {
             </div>
           </main>
         )}
-        <PremiumPromoPanel />
+        <PremiumPromoPanel megaMenu={megaMenu} />
       </div>
-      {hasRevealContent && <PremiumHelpBar />}
+      {hasRevealContent && <PremiumHelpBar megaMenu={megaMenu} />}
     </div>
   );
 }
@@ -529,25 +624,25 @@ function PremiumRevealContent({ selectedSubcategory }) {
   );
 }
 
-function CarPartsMegaMenu({ category }) {
+function CarPartsMegaMenu({ category, megaMenu }) {
   return (
-    <PremiumMegaMenuShell>
+    <PremiumMegaMenuShell megaMenu={megaMenu}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
     </PremiumMegaMenuShell>
   );
 }
 
-function TyresMegaMenu({ category }) {
+function TyresMegaMenu({ category, megaMenu }) {
   return (
-    <PremiumMegaMenuShell>
+    <PremiumMegaMenuShell megaMenu={megaMenu}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
     </PremiumMegaMenuShell>
   );
 }
 
-function LubricantMegaMenu({ category }) {
+function LubricantMegaMenu({ category, megaMenu }) {
   return (
-    <PremiumMegaMenuShell>
+    <PremiumMegaMenuShell megaMenu={megaMenu}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
     </PremiumMegaMenuShell>
   );
@@ -568,17 +663,17 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
   );
 }
 
-function CarAccessoriesMegaMenu({ category }) {
+function CarAccessoriesMegaMenu({ category, megaMenu }) {
   return (
-    <PremiumMegaMenuShell>
+    <PremiumMegaMenuShell megaMenu={megaMenu}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
     </PremiumMegaMenuShell>
   );
 }
 
-function BrowseCategoriesMegaMenu() {
+function BrowseCategoriesMegaMenu({ megaMenu }) {
   return (
-    <PremiumMegaMenuShell>
+    <PremiumMegaMenuShell megaMenu={megaMenu}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
     </PremiumMegaMenuShell>
   );
@@ -611,6 +706,7 @@ function normalizeCmsNavItems(items) {
 
 export function MainNavBar({ showTrackOrder = true, menuCategories }) {
   const [cmsNavItems, setCmsNavItems] = useState(null);
+  const [cmsMegaMenu, setCmsMegaMenu] = useState(null);
   const sourceNavItems = cmsNavItems || navItems;
 
   useEffect(() => {
@@ -620,9 +716,13 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
       .then((payload) => {
         if (!mounted) return;
         setCmsNavItems(normalizeCmsNavItems(payload?.cms?.navigation?.main));
+        setCmsMegaMenu(payload?.cms?.navigation?.megaMenu || null);
       })
       .catch(() => {
-        if (mounted) setCmsNavItems(null);
+        if (mounted) {
+          setCmsNavItems(null);
+          setCmsMegaMenu(null);
+        }
       });
 
     return () => {
@@ -657,7 +757,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <BrowseCategoriesMegaMenu />
+                <BrowseCategoriesMegaMenu megaMenu={cmsMegaMenu} />
               </div>
             ) : item.href === "/collections/car-accessories" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
@@ -665,7 +765,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <CarAccessoriesMegaMenu category={getMenuCategory(menuCategories, "car-accessories")} />
+                <CarAccessoriesMegaMenu category={getMenuCategory(menuCategories, "car-accessories")} megaMenu={cmsMegaMenu} />
               </div>
             ) : item.href === "/collections/car-parts" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
@@ -673,7 +773,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <CarPartsMegaMenu category={getMenuCategory(menuCategories, "car-parts")} />
+                <CarPartsMegaMenu category={getMenuCategory(menuCategories, "car-parts")} megaMenu={cmsMegaMenu} />
               </div>
             ) : item.href === "/collections/tyres" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
@@ -681,7 +781,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <TyresMegaMenu category={getMenuCategory(menuCategories, "tyres")} />
+                <TyresMegaMenu category={getMenuCategory(menuCategories, "tyres")} megaMenu={cmsMegaMenu} />
               </div>
             ) : item.href === "/collections/lubricant" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
@@ -689,7 +789,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <LubricantMegaMenu category={getMenuCategory(menuCategories, "lubricant")} />
+                <LubricantMegaMenu category={getMenuCategory(menuCategories, "lubricant")} megaMenu={cmsMegaMenu} />
               </div>
             ) : item.label === "PARTS QUOTE" ? (
               <PartsQuoteModalLink
