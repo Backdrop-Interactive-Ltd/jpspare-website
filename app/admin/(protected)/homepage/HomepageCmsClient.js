@@ -343,6 +343,25 @@ function newHelpListItem(type) {
   };
 }
 
+function newFaqCategory() {
+  return {
+    title: "New category",
+    description: "",
+    enabled: true,
+    sortOrder: 999,
+    items: [],
+  };
+}
+
+function newFaqQuestion() {
+  return {
+    question: "New question",
+    answer: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function HelpListEditor({ title, group, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const list = Array.isArray(items) ? items : [];
   const isHours = group === "businessHours";
@@ -545,6 +564,191 @@ function GenericPolicyCmsEditor({ title, description, pageKey, page, readOnly, s
             </Field>
             <Field label="Button link">
               <input value={page?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => onUpdateSection(pageKey, "cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function FaqCmsEditor({
+  page,
+  readOnly,
+  saving,
+  onSave,
+  onUpdateSection,
+  onUpdateCategory,
+  onAddCategory,
+  onRemoveCategory,
+  onMoveCategory,
+  onUpdateQuestion,
+  onAddQuestion,
+  onRemoveQuestion,
+  onMoveQuestion,
+}) {
+  const categories = Array.isArray(page?.categories) ? page.categories : [];
+
+  return (
+    <SectionCard
+      eyebrow="Static Pages"
+      title="FAQ CMS"
+      description="Edit FAQ content foundation. Public /faq route is not created or wired in this task."
+      action={
+        <button
+          type="button"
+          onClick={() => onSave("FAQ CMS")}
+          disabled={saving || readOnly}
+          className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save FAQ CMS"}
+        </button>
+      }
+    >
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="SEO Title">
+              <input
+                value={page?.seo?.metaTitle || page?.seo?.title || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("seo", { metaTitle: event.target.value, title: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="SEO Description">
+              <input
+                value={page?.seo?.metaDescription || page?.seo?.description || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("seo", { metaDescription: event.target.value, description: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Title">
+              <input value={page?.hero?.title || ""} disabled={readOnly} onChange={(event) => onUpdateSection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Subtitle">
+              <input
+                value={page?.hero?.subtitle || page?.hero?.eyebrow || ""}
+                disabled={readOnly}
+                onChange={(event) => onUpdateSection("hero", { subtitle: event.target.value, eyebrow: event.target.value })}
+                className={inputClass(readOnly)}
+              />
+            </Field>
+            <Field label="Description">
+              <textarea value={page?.hero?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">FAQ Categories</p>
+            <button type="button" disabled={readOnly} onClick={onAddCategory} className="h-10 rounded-xl border border-red-200 bg-red-50 px-4 text-xs font-black text-[#ef3338] disabled:opacity-60">
+              Add Category
+            </button>
+          </div>
+          <div className="mt-4 space-y-4">
+            {categories.map((category, categoryIndex) => {
+              const questions = Array.isArray(category.items) ? category.items : [];
+              return (
+                <div key={`faq-category-${categoryIndex}`} className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-black text-[#111827]">Category #{categoryIndex + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || categoryIndex === 0} onClick={() => onMoveCategory(categoryIndex, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Up
+                      </button>
+                      <button type="button" disabled={readOnly || categoryIndex === categories.length - 1} onClick={() => onMoveCategory(categoryIndex, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Down
+                      </button>
+                      <button type="button" disabled={readOnly} onClick={() => onRemoveCategory(categoryIndex)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <Field label="Title">
+                      <input value={category.title || ""} disabled={readOnly} onChange={(event) => onUpdateCategory(categoryIndex, { title: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort Order">
+                      <input type="number" value={category.sortOrder ?? 999} disabled={readOnly} onChange={(event) => onUpdateCategory(categoryIndex, { sortOrder: Number(event.target.value) || 0 })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Description">
+                      <textarea value={category.description || category.body || ""} disabled={readOnly} onChange={(event) => onUpdateCategory(categoryIndex, { description: event.target.value, body: event.target.value })} className={textareaClass(readOnly)} />
+                    </Field>
+                    <Toggle label="Enabled" checked={category.enabled !== false} disabled={readOnly} onChange={(value) => onUpdateCategory(categoryIndex, { enabled: value })} />
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Questions</p>
+                      <button type="button" disabled={readOnly} onClick={() => onAddQuestion(categoryIndex)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                        Add Question
+                      </button>
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      {questions.map((item, questionIndex) => (
+                        <div key={`faq-question-${categoryIndex}-${questionIndex}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-black text-[#667085]">Question {questionIndex + 1}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" disabled={readOnly || questionIndex === 0} onClick={() => onMoveQuestion(categoryIndex, questionIndex, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                                Up
+                              </button>
+                              <button type="button" disabled={readOnly || questionIndex === questions.length - 1} onClick={() => onMoveQuestion(categoryIndex, questionIndex, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                                Down
+                              </button>
+                              <button type="button" disabled={readOnly} onClick={() => onRemoveQuestion(categoryIndex, questionIndex)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid gap-3 lg:grid-cols-[1.2fr_1.6fr_120px]">
+                            <Field label="Question">
+                              <input value={item.question || item.title || ""} disabled={readOnly} onChange={(event) => onUpdateQuestion(categoryIndex, questionIndex, { question: event.target.value, title: event.target.value })} className={inputClass(readOnly)} />
+                            </Field>
+                            <Field label="Answer">
+                              <textarea value={item.answer || item.description || item.body || ""} disabled={readOnly} onChange={(event) => onUpdateQuestion(categoryIndex, questionIndex, { answer: event.target.value, description: event.target.value, body: event.target.value })} className={textareaClass(readOnly)} />
+                            </Field>
+                            <Field label="Sort order">
+                              <input type="number" value={item.sortOrder ?? 999} disabled={readOnly} onChange={(event) => onUpdateQuestion(categoryIndex, questionIndex, { sortOrder: Number(event.target.value) || 0 })} className={inputClass(readOnly)} />
+                            </Field>
+                            <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdateQuestion(categoryIndex, questionIndex, { enabled: value })} />
+                          </div>
+                        </div>
+                      ))}
+                      {!questions.length ? <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No questions in this category yet.</p> : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {!categories.length ? <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-semibold text-[#667085]">No FAQ categories added yet.</p> : null}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">CTA</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Field label="Heading">
+              <input value={page?.cta?.heading || page?.cta?.title || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { heading: event.target.value, title: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Description">
+              <input value={page?.cta?.description || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { description: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button text">
+              <input value={page?.cta?.buttonText || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { buttonText: event.target.value })} className={inputClass(readOnly)} />
+            </Field>
+            <Field label="Button link">
+              <input value={page?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => onUpdateSection("cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
             </Field>
           </div>
         </div>
@@ -1752,6 +1956,165 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updateFaqSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          [section]: {
+            ...current.sitePages?.faq?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateFaqCategory(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: (current.sitePages?.faq?.categories || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addFaqCategory() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: [...(current.sitePages?.faq?.categories || []), newFaqCategory()],
+        },
+      },
+    }));
+  }
+
+  function removeFaqCategory(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: (current.sitePages?.faq?.categories || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveFaqCategory(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.faq?.categories || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          faq: {
+            ...current.sitePages?.faq,
+            categories: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updateFaqQuestion(categoryIndex, questionIndex, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: (current.sitePages?.faq?.categories || []).map((category, itemIndex) => {
+            if (itemIndex !== categoryIndex) return category;
+            return {
+              ...category,
+              items: (category.items || []).map((item, nestedIndex) => (nestedIndex === questionIndex ? { ...item, ...patch } : item)),
+            };
+          }),
+        },
+      },
+    }));
+  }
+
+  function addFaqQuestion(categoryIndex) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: (current.sitePages?.faq?.categories || []).map((category, itemIndex) => {
+            if (itemIndex !== categoryIndex) return category;
+            return {
+              ...category,
+              items: [...(category.items || []), newFaqQuestion()],
+            };
+          }),
+        },
+      },
+    }));
+  }
+
+  function removeFaqQuestion(categoryIndex, questionIndex) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        faq: {
+          ...current.sitePages?.faq,
+          categories: (current.sitePages?.faq?.categories || []).map((category, itemIndex) => {
+            if (itemIndex !== categoryIndex) return category;
+            return {
+              ...category,
+              items: (category.items || []).filter((_, nestedIndex) => nestedIndex !== questionIndex),
+            };
+          }),
+        },
+      },
+    }));
+  }
+
+  function moveFaqQuestion(categoryIndex, questionIndex, direction) {
+    setCms((current) => {
+      const categories = (current.sitePages?.faq?.categories || []).map((category, itemIndex) => {
+        if (itemIndex !== categoryIndex) return category;
+        const items = [...(category.items || [])];
+        const nextIndex = questionIndex + direction;
+        if (nextIndex < 0 || nextIndex >= items.length) return category;
+        [items[questionIndex], items[nextIndex]] = [items[nextIndex], items[questionIndex]];
+        return {
+          ...category,
+          items: items.map((item, nestedIndex) => ({ ...item, sortOrder: (nestedIndex + 1) * 10 })),
+        };
+      });
+
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          faq: {
+            ...current.sitePages?.faq,
+            categories,
+          },
+        },
+      };
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -2908,6 +3271,22 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
           </div>
         </div>
       </SectionCard>
+
+      <FaqCmsEditor
+        page={cms.sitePages?.faq}
+        readOnly={readOnly}
+        saving={saving}
+        onSave={saveCms}
+        onUpdateSection={updateFaqSection}
+        onUpdateCategory={updateFaqCategory}
+        onAddCategory={addFaqCategory}
+        onRemoveCategory={removeFaqCategory}
+        onMoveCategory={moveFaqCategory}
+        onUpdateQuestion={updateFaqQuestion}
+        onAddQuestion={addFaqQuestion}
+        onRemoveQuestion={removeFaqQuestion}
+        onMoveQuestion={moveFaqQuestion}
+      />
 
       <GenericPolicyCmsEditor
         title="Terms & Conditions CMS"
