@@ -266,6 +266,33 @@ function newPrivacyPrinciple() {
   };
 }
 
+function newReturnsStat() {
+  return {
+    value: "New",
+    label: "New stat",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newReturnsPolicy() {
+  return {
+    title: "New policy",
+    description: "",
+    bullets: [],
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newReturnsChecklistItem() {
+  return {
+    label: "New checklist item",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -1115,6 +1142,199 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updateReturnsSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          [section]: {
+            ...current.sitePages?.returnsWarranty?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateReturnsStat(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          stats: (current.sitePages?.returnsWarranty?.stats || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addReturnsStat() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          stats: [...(current.sitePages?.returnsWarranty?.stats || []), newReturnsStat()],
+        },
+      },
+    }));
+  }
+
+  function removeReturnsStat(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          stats: (current.sitePages?.returnsWarranty?.stats || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveReturnsStat(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.returnsWarranty?.stats || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          returnsWarranty: {
+            ...current.sitePages?.returnsWarranty,
+            stats: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updateReturnsPolicy(group, index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          [group]: (current.sitePages?.returnsWarranty?.[group] || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addReturnsPolicy(group) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          [group]: [...(current.sitePages?.returnsWarranty?.[group] || []), newReturnsPolicy()],
+        },
+      },
+    }));
+  }
+
+  function removeReturnsPolicy(group, index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          [group]: (current.sitePages?.returnsWarranty?.[group] || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveReturnsPolicy(group, index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.returnsWarranty?.[group] || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          returnsWarranty: {
+            ...current.sitePages?.returnsWarranty,
+            [group]: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updateReturnsChecklistItem(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          claimChecklist: (current.sitePages?.returnsWarranty?.claimChecklist || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addReturnsChecklistItem() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          claimChecklist: [...(current.sitePages?.returnsWarranty?.claimChecklist || []), newReturnsChecklistItem()],
+        },
+      },
+    }));
+  }
+
+  function removeReturnsChecklistItem(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        returnsWarranty: {
+          ...current.sitePages?.returnsWarranty,
+          claimChecklist: (current.sitePages?.returnsWarranty?.claimChecklist || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveReturnsChecklistItem(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.returnsWarranty?.claimChecklist || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          returnsWarranty: {
+            ...current.sitePages?.returnsWarranty,
+            claimChecklist: reordered,
+          },
+        },
+      };
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -1906,6 +2126,232 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               </Field>
               <Field label="Button link">
                 <input value={cms.sitePages?.privacyPolicy?.cta?.buttonLink || ""} disabled={readOnly} onChange={(event) => updatePrivacySection("cta", { buttonLink: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Static Pages"
+        title="Returns & Warranty CMS"
+        description="Edit saved Returns & Warranty content foundation. Public /returns-warranty rendering is not wired in this task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Returns & Warranty CMS")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Returns & Warranty"}
+          </button>
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">SEO</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="SEO Title">
+                <input value={cms.sitePages?.returnsWarranty?.seo?.metaTitle || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("seo", { metaTitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="SEO Description">
+                <input value={cms.sitePages?.returnsWarranty?.seo?.metaDescription || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("seo", { metaDescription: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Title">
+                <input value={cms.sitePages?.returnsWarranty?.hero?.title || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Subtitle">
+                <input value={cms.sitePages?.returnsWarranty?.hero?.subtitle || cms.sitePages?.returnsWarranty?.hero?.eyebrow || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("hero", { subtitle: event.target.value, eyebrow: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Description">
+                <textarea value={cms.sitePages?.returnsWarranty?.hero?.description || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero Stats</p>
+              <button type="button" disabled={readOnly} onClick={addReturnsStat} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Stat
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.returnsWarranty?.stats || []).map((item, index) => (
+                <div key={`returns-stat-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Stat {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveReturnsStat(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.returnsWarranty?.stats || []).length - 1} onClick={() => moveReturnsStat(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removeReturnsStat(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.3fr_120px]">
+                    <Field label="Value">
+                      <input value={item.value || ""} disabled={readOnly} onChange={(event) => updateReturnsStat(index, { value: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Label">
+                      <input value={item.label || ""} disabled={readOnly} onChange={(event) => updateReturnsStat(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateReturnsStat(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateReturnsStat(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+              {!(cms.sitePages?.returnsWarranty?.stats || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No Returns & Warranty stats yet.</p>
+              ) : null}
+            </div>
+          </div>
+
+          {[
+            { key: "returnPolicies", label: "Return Policies" },
+            { key: "warrantyPolicies", label: "Warranty Policies" },
+          ].map((group) => (
+            <div key={group.key} className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">{group.label}</p>
+                <button type="button" disabled={readOnly} onClick={() => addReturnsPolicy(group.key)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                  Add Policy
+                </button>
+              </div>
+              <div className="space-y-3">
+                {(cms.sitePages?.returnsWarranty?.[group.key] || []).map((item, index) => (
+                  <div key={`${group.key}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-black text-[#667085]">{group.label.slice(0, -1)} {index + 1}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" disabled={readOnly || index === 0} onClick={() => moveReturnsPolicy(group.key, index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                        <button type="button" disabled={readOnly || index === (cms.sitePages?.returnsWarranty?.[group.key] || []).length - 1} onClick={() => moveReturnsPolicy(group.key, index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                        <button type="button" disabled={readOnly} onClick={() => removeReturnsPolicy(group.key, index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 lg:grid-cols-[1fr_1.8fr_120px]">
+                      <Field label="Title">
+                        <input value={item.title || ""} disabled={readOnly} onChange={(event) => updateReturnsPolicy(group.key, index, { title: event.target.value })} className={inputClass(readOnly)} />
+                      </Field>
+                      <Field label="Description">
+                        <input value={item.description || item.body || ""} disabled={readOnly} onChange={(event) => updateReturnsPolicy(group.key, index, { description: event.target.value, body: event.target.value })} className={inputClass(readOnly)} />
+                      </Field>
+                      <Field label="Sort order">
+                        <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateReturnsPolicy(group.key, index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                      </Field>
+                      <Field label="Bullets">
+                        <textarea value={arrayToLines(item.bullets)} disabled={readOnly} onChange={(event) => updateReturnsPolicy(group.key, index, { bullets: linesToArray(event.target.value) })} className={textareaClass(readOnly)} />
+                      </Field>
+                    </div>
+                    <div className="mt-3">
+                      <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateReturnsPolicy(group.key, index, { enabled: value })} />
+                    </div>
+                  </div>
+                ))}
+                {!(cms.sitePages?.returnsWarranty?.[group.key] || []).length ? (
+                  <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No {group.label.toLowerCase()} yet.</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Claim Checklist</p>
+              <button type="button" disabled={readOnly} onClick={addReturnsChecklistItem} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Checklist Item
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.returnsWarranty?.claimChecklist || []).map((item, index) => (
+                <div key={`returns-checklist-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Checklist Item {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveReturnsChecklistItem(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.returnsWarranty?.claimChecklist || []).length - 1} onClick={() => moveReturnsChecklistItem(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removeReturnsChecklistItem(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_120px]">
+                    <Field label="Label">
+                      <input value={item.label || ""} disabled={readOnly} onChange={(event) => updateReturnsChecklistItem(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateReturnsChecklistItem(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateReturnsChecklistItem(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+              {!(cms.sitePages?.returnsWarranty?.claimChecklist || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No claim checklist items yet.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Support Contact / CTA</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="Heading">
+                <input
+                  value={cms.sitePages?.returnsWarranty?.supportContact?.heading || cms.sitePages?.returnsWarranty?.cta?.title || ""}
+                  disabled={readOnly}
+                  onChange={(event) => {
+                    updateReturnsSection("supportContact", { heading: event.target.value });
+                    updateReturnsSection("cta", { title: event.target.value });
+                  }}
+                  className={inputClass(readOnly)}
+                />
+              </Field>
+              <Field label="Description">
+                <input
+                  value={cms.sitePages?.returnsWarranty?.supportContact?.description || cms.sitePages?.returnsWarranty?.cta?.description || ""}
+                  disabled={readOnly}
+                  onChange={(event) => {
+                    updateReturnsSection("supportContact", { description: event.target.value });
+                    updateReturnsSection("cta", { description: event.target.value });
+                  }}
+                  className={inputClass(readOnly)}
+                />
+              </Field>
+              <Field label="Phone">
+                <input value={cms.sitePages?.returnsWarranty?.supportContact?.phone || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("supportContact", { phone: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Email">
+                <input value={cms.sitePages?.returnsWarranty?.supportContact?.email || ""} disabled={readOnly} onChange={(event) => updateReturnsSection("supportContact", { email: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Button text">
+                <input
+                  value={cms.sitePages?.returnsWarranty?.supportContact?.buttonText || cms.sitePages?.returnsWarranty?.cta?.buttonText || ""}
+                  disabled={readOnly}
+                  onChange={(event) => {
+                    updateReturnsSection("supportContact", { buttonText: event.target.value });
+                    updateReturnsSection("cta", { buttonText: event.target.value });
+                  }}
+                  className={inputClass(readOnly)}
+                />
+              </Field>
+              <Field label="Button link">
+                <input
+                  value={cms.sitePages?.returnsWarranty?.supportContact?.buttonLink || cms.sitePages?.returnsWarranty?.cta?.buttonLink || ""}
+                  disabled={readOnly}
+                  onChange={(event) => {
+                    updateReturnsSection("supportContact", { buttonLink: event.target.value });
+                    updateReturnsSection("cta", { buttonLink: event.target.value });
+                  }}
+                  className={inputClass(readOnly)}
+                />
               </Field>
             </div>
           </div>
