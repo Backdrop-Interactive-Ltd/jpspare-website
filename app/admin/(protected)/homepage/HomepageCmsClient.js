@@ -169,6 +169,70 @@ function newNavItem() {
   };
 }
 
+function newFooterLink() {
+  return {
+    label: "New Link",
+    href: "/",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
+  const links = Array.isArray(items) ? items : [];
+
+  return (
+    <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">{title}</p>
+        <button
+          type="button"
+          disabled={readOnly}
+          onClick={onAdd}
+          className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60"
+        >
+          Add Item
+        </button>
+      </div>
+      <div className="space-y-3">
+        {links.map((item, index) => (
+          <div key={`${title}-${item.label}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-black text-[#667085]">Link {index + 1}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={readOnly || index === 0} onClick={() => onMove(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                  Up
+                </button>
+                <button type="button" disabled={readOnly || index === links.length - 1} onClick={() => onMove(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                  Down
+                </button>
+                <button type="button" disabled={readOnly} onClick={() => onRemove(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                  Delete
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-[1fr_1.4fr_120px]">
+              <Field label="Label">
+                <input value={item.label || ""} disabled={readOnly} onChange={(event) => onUpdate(index, { label: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Link">
+                <input value={item.href || ""} disabled={readOnly} onChange={(event) => onUpdate(index, { href: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Sort order">
+                <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => onUpdate(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => onUpdate(index, { enabled: value })} />
+            </div>
+          </div>
+        ))}
+        {!links.length ? <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No links yet.</p> : null}
+      </div>
+    </div>
+  );
+}
+
 export default function HomepageCmsClient({ initialCms, options, canManage }) {
   const [cms, setCms] = useState(() => clone(initialCms));
   const [saving, setSaving] = useState(false);
@@ -304,6 +368,53 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
         navigation: {
           ...current.navigation,
           main: reordered,
+        },
+      };
+    });
+  }
+
+  function updateFooterLink(group, index, patch) {
+    setCms((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        [group]: (current.footer?.[group] || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+      },
+    }));
+  }
+
+  function addFooterLink(group) {
+    setCms((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        [group]: [...(current.footer?.[group] || []), newFooterLink()],
+      },
+    }));
+  }
+
+  function removeFooterLink(group, index) {
+    setCms((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        [group]: (current.footer?.[group] || []).filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  }
+
+  function moveFooterLink(group, index, direction) {
+    setCms((current) => {
+      const items = [...(current.footer?.[group] || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        footer: {
+          ...current.footer,
+          [group]: reordered,
         },
       };
     });
@@ -674,6 +785,43 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
                 ))}
               </div>
             </div>
+
+            <FooterLinksEditor
+              title="Quick Links"
+              items={cms.footer.quickLinks}
+              readOnly={readOnly}
+              onAdd={() => addFooterLink("quickLinks")}
+              onUpdate={(index, patch) => updateFooterLink("quickLinks", index, patch)}
+              onRemove={(index) => removeFooterLink("quickLinks", index)}
+              onMove={(index, direction) => moveFooterLink("quickLinks", index, direction)}
+            />
+            <FooterLinksEditor
+              title="Customer Service"
+              items={cms.footer.customerLinks}
+              readOnly={readOnly}
+              onAdd={() => addFooterLink("customerLinks")}
+              onUpdate={(index, patch) => updateFooterLink("customerLinks", index, patch)}
+              onRemove={(index) => removeFooterLink("customerLinks", index)}
+              onMove={(index, direction) => moveFooterLink("customerLinks", index, direction)}
+            />
+            <FooterLinksEditor
+              title="Account Links"
+              items={cms.footer.accountLinks}
+              readOnly={readOnly}
+              onAdd={() => addFooterLink("accountLinks")}
+              onUpdate={(index, patch) => updateFooterLink("accountLinks", index, patch)}
+              onRemove={(index) => removeFooterLink("accountLinks", index)}
+              onMove={(index, direction) => moveFooterLink("accountLinks", index, direction)}
+            />
+            <FooterLinksEditor
+              title="Company Links"
+              items={cms.footer.companyLinks}
+              readOnly={readOnly}
+              onAdd={() => addFooterLink("companyLinks")}
+              onUpdate={(index, patch) => updateFooterLink("companyLinks", index, patch)}
+              onRemove={(index) => removeFooterLink("companyLinks", index)}
+              onMove={(index, direction) => moveFooterLink("companyLinks", index, direction)}
+            />
             <div>
               <button
                 type="button"

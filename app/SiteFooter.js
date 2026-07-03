@@ -91,6 +91,43 @@ function FooterIcon({ name }) {
   return null;
 }
 
+function normalizeFooterLinks(value) {
+  if (!Array.isArray(value)) return null;
+
+  const links = value
+    .map((item, index) => ({
+      label: String(item?.label || "").trim(),
+      href: String(item?.href || "").trim(),
+      enabled: item?.enabled !== false,
+      sortOrder: Number.isFinite(Number(item?.sortOrder)) ? Number(item.sortOrder) : (index + 1) * 10,
+    }))
+    .filter((item) => item.label && item.href && item.enabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((item) => [item.label, item.href]);
+
+  return links.length ? links : null;
+}
+
+function getFooterColumns(footerCms) {
+  if (!footerCms || typeof footerCms !== "object") return footerColumns;
+
+  const quickLinks = normalizeFooterLinks(footerCms.quickLinks);
+  const companyLinks = normalizeFooterLinks(footerCms.companyLinks);
+  const customerLinks = normalizeFooterLinks(footerCms.customerLinks);
+  const accountLinks = normalizeFooterLinks(footerCms.accountLinks);
+
+  if (!quickLinks && !companyLinks && !customerLinks && !accountLinks) {
+    return footerColumns;
+  }
+
+  return [
+    { title: "Shop Parts", links: quickLinks || footerColumns[0].links },
+    { title: "Company", links: companyLinks || footerColumns[1].links },
+    { title: "Support", links: customerLinks || footerColumns[2].links },
+    { title: "My Account", links: accountLinks || footerColumns[3].links },
+  ];
+}
+
 export default function SiteFooter() {
   const [footerCms, setFooterCms] = useState(null);
 
@@ -126,6 +163,7 @@ export default function SiteFooter() {
     tiktok: footerCms?.socialLinks?.tiktok || "#social",
   };
   const footerBottomImage = footerCms?.bottomImage || "/footer-ssl-payment.jpg";
+  const activeFooterColumns = getFooterColumns(footerCms);
 
   return (
     <footer className="mt-auto border-t-[6px] border-[#ef3338] bg-[#f4f6f9] text-[#111827]">
@@ -189,7 +227,7 @@ export default function SiteFooter() {
 
             <div className="flex h-full flex-col self-stretch">
               <div className="grid grid-cols-4 gap-4 px-4 pb-5 pt-[96px] max-xl:grid-cols-2 max-lg:pt-4 max-sm:grid-cols-1">
-                {footerColumns.map((column) => (
+                {activeFooterColumns.map((column) => (
                   <div key={column.title}>
                     <h3 className="text-[15px] font-black">{column.title}</h3>
                     <ul className="mt-4 space-y-2">
