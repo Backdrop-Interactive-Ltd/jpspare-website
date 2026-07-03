@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import CategoryBrandRecommendations from "../CategoryBrandRecommendations";
 import AccessoryRecommendationScroller from "../AccessoryRecommendationScroller";
@@ -281,116 +284,271 @@ function MegaRecommendationBrandSplit({ recommendedItems, brandCategory, brandTi
   );
 }
 
-function CarPartsMegaMenu({ category }) {
-  const menuCategory = category || getMenuCategory(null, "car-parts");
-  const menuItems = menuCategory.children || carPartCategories;
+const carPartsSubcategoryRail = ["Brakes", "Bulb & Lighting", "Electrical Parts", "Filters", "Body Parts", "Wiper Blade", "Horn", "Battery", "Spark Plug", "Shock Absorber", "Engine Parts"];
+
+const premiumCategoryRail = [
+  { label: "Accessories", icon: "package", key: "accessories", items: ["Interior", "Exterior", "Electronics", "Car Care", "Utility"] },
+  { label: "Car Parts", icon: "gear", key: "car-parts", items: carPartsSubcategoryRail },
+  { label: "Tyres", icon: "car", key: "tyres", items: ["By Brand", "By Rim Size", "All Tyres", "Tyre Accessories"] },
+  { label: "Lubricants", icon: "drop", key: "lubricants", items: ["Engine Oil", "Gear Oil", "Brake Fluid", "Coolant", "Power Steering Fluid"] },
+];
+
+const premiumMenuColumns = [
+  {
+    title: "Brake System",
+    items: ["Brake Pad", "Brake Disc / Rotor", "Brake Shoe", "Brake Drum", "Brake Caliper", "Brake Master Cylinder"],
+    icon: "disc",
+  },
+  {
+    title: "Brake Fluid & Oil",
+    items: ["Brake Fluid", "Clutch Fluid", "Power Steering Fluid", "Engine Oil", "Gear Oil"],
+    icon: "drop",
+  },
+  {
+    title: "Brake Accessories",
+    items: ["Brake Hose", "Brake Cable", "Brake Repair Kit", "ABS Sensor", "Brake Springs", "Brake Hardware Kit"],
+    icon: "gear",
+  },
+];
+
+const premiumBrandsMenu = [
+  { name: "brembo", className: "text-[#ef3338]" },
+  { name: "DENSO", className: "text-[#e11d2e]" },
+  { name: "akebono", className: "text-[#2563eb]" },
+  { name: "ADVICS", className: "text-[#1d4f91]" },
+  { name: "NGK", className: "text-[#ef3338]" },
+  { name: "JAPANPARTS", className: "text-[#111827]" },
+];
+
+function PremiumRail({ openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
+  return (
+    <aside className="w-[275px] shrink-0 border-r border-[#e5e7eb] pr-5">
+      <nav className="space-y-1">
+        {premiumCategoryRail.map((item) => (
+          <div key={item.label}>
+            <button
+              type="button"
+              aria-expanded={openCategory === item.key}
+              onClick={() => onToggleCategory(item.key)}
+              className="group/rail flex h-10 w-full items-center gap-3 rounded-[9px] px-3 text-left text-[14px] font-bold text-[#111827] transition hover:bg-[#ef3338] hover:text-white"
+            >
+              <span className="grid size-7 shrink-0 place-items-center rounded-full border border-[#e5e7eb] bg-[#f8fafc] text-[#111827] transition group-hover/rail:border-white/30 group-hover/rail:bg-white/15 group-hover/rail:text-white">
+                <Icon name={item.icon} className="size-[15px]" />
+              </span>
+              <span className="min-w-0 flex-1 truncate uppercase tracking-[0.01em]">{item.label}</span>
+              <span className={`text-[18px] leading-none transition group-hover/rail:text-white ${openCategory === item.key ? "-rotate-90" : "rotate-90"}`}>›</span>
+            </button>
+            {openCategory === item.key && (
+              <div className="ml-10 mt-2 space-y-0.5 pb-2">
+                {item.items.map((subcategory) => (
+                  <button
+                    type="button"
+                    key={subcategory}
+                    onMouseEnter={() => onSelectSubcategory(item.key, subcategory)}
+                    onFocus={() => onSelectSubcategory(item.key, subcategory)}
+                    onClick={() => onSelectSubcategory(item.key, subcategory)}
+                    className={`group/sub flex h-8 w-full items-center gap-2 rounded-[7px] px-2 text-left text-[13px] font-bold transition hover:bg-[#fff1f2] hover:text-[#ef3338] ${selectedSubcategory === subcategory ? "bg-[#fff1f2] text-[#ef3338]" : "text-[#111827]"}`}
+                  >
+                    <span className={`grid size-[14px] shrink-0 place-items-center rounded-full border ${selectedSubcategory === subcategory ? "border-[#ef3338] text-[#ef3338]" : "border-[#94a3b8] text-[#64748b] group-hover/sub:border-[#ef3338] group-hover/sub:text-[#ef3338]"}`}>
+                      <span className="size-[4px] rounded-full bg-current" />
+                    </span>
+                    <span className="truncate">{subcategory}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function PremiumColumnHeading({ children }) {
+  return (
+    <h4 className="mb-3 text-[13px] font-black uppercase tracking-[-0.01em] text-[#111827]">
+      {children}
+      <span className="mt-2 block h-0.5 w-8 rounded-full bg-[#ef3338]" />
+    </h4>
+  );
+}
+
+function PremiumProductColumn({ title, items, icon }) {
+  return (
+    <section className="border-r border-[#e5e7eb] pr-5 last:border-r-0">
+      <PremiumColumnHeading>{title}</PremiumColumnHeading>
+      <ul className="space-y-1.5">
+        {items.map((item) => (
+          <li key={item}>
+            <a href={`/products?q=${encodeURIComponent(item)}`} className="group/product flex items-center gap-3 text-[13px] font-semibold text-[#111827] transition hover:text-[#ef3338]">
+              <span className="grid size-9 shrink-0 place-items-center rounded-[9px] border border-[#e5e7eb] bg-white text-[#111827] shadow-sm transition group-hover/product:border-[#fecdd3] group-hover/product:bg-[#fff1f2] group-hover/product:text-[#ef3338]">
+                <Icon name={icon} className="size-[17px]" />
+              </span>
+              <span>{item}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function PremiumBrandColumn() {
+  return (
+    <section>
+      <PremiumColumnHeading>Popular Brands</PremiumColumnHeading>
+      <div className="space-y-2">
+        {premiumBrandsMenu.map((brand) => (
+          <a key={brand.name} href={`/products?brand=${encodeURIComponent(slugify(brand.name))}`} className="group/brand flex h-11 items-center justify-between rounded-[9px] border border-[#e5e7eb] bg-white px-4 shadow-sm transition hover:border-[#fecdd3] hover:bg-[#fffafa]">
+            <span className={`text-[18px] font-black tracking-[-0.05em] ${brand.className}`}>{brand.name}</span>
+            <span className="text-[22px] text-[#6b7280] transition group-hover/brand:translate-x-0.5 group-hover/brand:text-[#ef3338]">›</span>
+          </a>
+        ))}
+      </div>
+      <a href="/brands" className="mt-3 inline-flex items-center gap-2 text-[13px] font-black text-[#ef3338] transition hover:text-[#d71920]">
+        View All Brands <Icon name="arrow" className="size-4" />
+      </a>
+    </section>
+  );
+}
+
+function PremiumPromoPanel() {
+  return (
+    <aside className="w-[280px] shrink-0 space-y-4">
+      <div className="relative h-[285px] overflow-hidden rounded-[14px] bg-[#0b1220] p-6 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]">
+        <div className="absolute -right-12 top-[68px] size-44 rounded-full border-[26px] border-[#374151] opacity-95" />
+        <div className="absolute -right-4 top-[100px] size-24 rounded-full border-[16px] border-[#ef3338] opacity-95" />
+        <div className="absolute right-8 top-[137px] size-5 rounded-full bg-[#111827]" />
+        <p className="relative text-[16px] font-bold text-[#ef3338]">Premium</p>
+        <h3 className="relative mt-2 text-[32px] font-black leading-[1.02] tracking-[-0.04em]">Brake<br />Parts</h3>
+        <p className="relative mt-4 max-w-[150px] text-[15px] font-medium leading-6 text-white/90">Safety. Performance. Reliability.</p>
+        <a href="/products?q=brake" className="group/shop absolute bottom-6 left-6 inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[14px] font-black text-white transition hover:bg-[#d71920]">
+          Shop Now <Icon name="arrow" className="size-4 transition group-hover/shop:translate-x-1" />
+        </a>
+      </div>
+      <div className="space-y-3 rounded-[12px] border border-[#e5e7eb] bg-white p-4">
+        {[
+          ["tag", "15% Offer", "On selected brake parts"],
+          ["shield", "100% Authentic", "Genuine & Trusted"],
+          ["truck", "Fast Shipping", "Across Bangladesh"],
+          ["rotate", "Easy Returns", "7 Days Return Policy"],
+        ].map(([icon, title, subtitle]) => (
+          <div key={title} className="flex items-start gap-4">
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#fff1f2] text-[#ef3338]">
+              <Icon name={icon} className="size-[15px]" />
+            </span>
+            <span>
+              <strong className="block text-[13px] font-black text-[#111827]">{title}</strong>
+              <span className="block text-[12px] text-[#6b7280]">{subtitle}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function PremiumHelpBar() {
+  return (
+    <div className="ml-[300px] mt-4 flex min-h-[76px] items-center justify-between gap-5 rounded-[10px] border border-[#e5e7eb] bg-[#f8fafc] px-7 py-3">
+      <div className="flex items-center gap-5">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#fff1f2] text-[#ef3338]">
+          <Icon name="headphones" className="size-6" />
+        </span>
+        <span>
+        <h4 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">Need Help Finding the Right Part?</h4>
+        <p className="mt-1 text-[13px] font-medium text-[#4b5563]">Our experts are ready to help you find the perfect fit.</p>
+        </span>
+      </div>
+      <div className="flex gap-4">
+        <a href="tel:09617226688" className="flex h-[54px] w-[210px] items-center gap-4 rounded-[9px] border border-[#e5e7eb] bg-white px-5 text-[#111827] transition hover:border-[#fecdd3] hover:text-[#ef3338]">
+          <Icon name="phone" className="size-5 text-[#ef3338]" />
+          <span><span className="block text-[13px] font-medium">Call Us Now</span><strong className="block text-[16px] font-black">09617 22 66 88</strong></span>
+        </a>
+        <a href="/help" className="flex h-[54px] w-[225px] items-center gap-4 rounded-[9px] border border-[#fecdd3] bg-[#fff1f2] px-5 text-[#ef3338] transition hover:bg-[#fee2e2]">
+          <Icon name="headphones" className="size-5" />
+          <span><span className="block text-[14px] font-black">Chat with Expert</span><span className="block text-[13px] font-medium">We're Online</span></span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function PremiumMegaMenuShell({ children }) {
+  const [openCategory, setOpenCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const menuContent = typeof children === "function" ? children({ selectedSubcategory }) : children;
+  const hasRevealContent = selectedSubcategory === "Brakes";
+
+  function handleToggleCategory(categoryKey) {
+    setOpenCategory((current) => (current === categoryKey ? null : categoryKey));
+    setSelectedSubcategory(null);
+  }
+
+  function handleSelectSubcategory(categoryKey, subcategory) {
+    setOpenCategory(categoryKey);
+    setSelectedSubcategory(subcategory);
+  }
 
   return (
-    <MegaMenuShell rootSlug="car-parts" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "car-parts")) || "Brakes • Filters • Electrical • Engine"} href={collectionHref(menuCategory.slug)}>
-      <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
-        <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedCarParts} brandCategory="car-parts" brandTitle="POPULAR BRAND" />
-          <MegaFeaturePanel icon="package" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel={`${menuItems.length} Categories`} eyebrowPosition="bottom">
-            <div data-menu-grid="car-parts" className="grid grid-cols-6 gap-3">
-              {menuItems.map((category, index) => (
-                <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
-              ))}
+    <div className={`invisible absolute left-10 top-full z-[120] max-w-[calc(100vw-80px)] translate-y-2 rounded-[16px] border border-[#e5e7eb] bg-white p-5 text-[#111827] opacity-0 shadow-[0_28px_76px_rgba(15,23,42,0.18)] transition duration-200 ease-out group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 max-lg:hidden ${hasRevealContent ? "w-[1635px]" : "w-fit"}`}>
+      <div className="flex gap-5">
+        <PremiumRail
+          openCategory={openCategory}
+          selectedSubcategory={selectedSubcategory}
+          onToggleCategory={handleToggleCategory}
+          onSelectSubcategory={handleSelectSubcategory}
+        />
+        {hasRevealContent && (
+          <main className="min-w-0 flex-1">
+            <div className="grid grid-cols-[0.95fr_0.95fr_1fr_0.9fr] gap-4">
+              {menuContent}
             </div>
-          </MegaFeaturePanel>
-        </div>
-        <PromoRail product="Parts" offer="15% Off Car Parts" />
+          </main>
+        )}
+        <PremiumPromoPanel />
       </div>
-    </MegaMenuShell>
+      {hasRevealContent && <PremiumHelpBar />}
+    </div>
+  );
+}
+
+function PremiumRevealContent({ selectedSubcategory }) {
+  if (selectedSubcategory !== "Brakes") {
+    return null;
+  }
+
+  return (
+    <>
+      {premiumMenuColumns.map((column) => (
+        <PremiumProductColumn key={column.title} {...column} />
+      ))}
+      <PremiumBrandColumn />
+    </>
+  );
+}
+
+function CarPartsMegaMenu({ category }) {
+  return (
+    <PremiumMegaMenuShell>
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+    </PremiumMegaMenuShell>
   );
 }
 
 function TyresMegaMenu({ category }) {
-  const menuCategory = category || getMenuCategory(null, "tyres");
-  const menuItems = menuCategory.children || [];
-
   return (
-    <MegaMenuShell rootSlug="tyres" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "tyres")) || "TYRES.RIM SIZE"} href={collectionHref(menuCategory.slug)}>
-      <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
-        <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedTyres} brandCategory="tyres" brandTitle="POPULAR BRAND" />
-          <MegaFeaturePanel icon="car" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel="Tyre Finder" eyebrowPosition="bottom">
-            {menuItems.length ? (
-              <div data-menu-grid="tyres" className="grid grid-cols-6 gap-3">
-                {menuItems.map((category, index) => (
-                  <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
-                ))}
-              </div>
-            ) : (
-            <div className="grid grid-cols-[1.65fr_1fr] gap-3">
-              <MegaDropdownCard title="By Brand" icon="star" tone="purple" href="/products?category=tyres">
-                <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3">
-                  {tyreBrands.map((brand) => (
-                    <a key={brand} href={`/products?brand=${encodeURIComponent(slugify(brand))}`} className="flex items-center gap-3 text-[12px] font-bold text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]">
-                      <span className="grid h-[22px] w-[60px] shrink-0 place-items-center rounded-[4px] border border-[#dfe3ea] bg-white px-1 text-[6px] font-black uppercase tracking-[-0.02em] text-[#111827] shadow-sm">
-                        {brand}
-                      </span>
-                      <span className="truncate">{brand}</span>
-                    </a>
-                  ))}
-                </div>
-              </MegaDropdownCard>
-
-              <MegaDropdownCard title="By Rim Size" icon="gear" tone="orange" href="/products?category=tyres">
-                <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5">
-                  {rimSizes.map((size) => (
-                    <li key={size}>
-                      <a href={`/products?q=${encodeURIComponent(size)}`} className="flex items-center gap-2 truncate text-[12px] font-bold leading-4 text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]">
-                        <span className="grid size-3 shrink-0 place-items-center rounded-full border border-[#ef3338]/40 bg-[#fff5f5]">
-                          <span className="size-1 rounded-full bg-[#ef3338]" />
-                        </span>
-                        {size}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </MegaDropdownCard>
-            </div>
-            )}
-          </MegaFeaturePanel>
-        </div>
-        <PromoRail product="Premium Tyres" offer="15% Off Tyres" />
-      </div>
-    </MegaMenuShell>
+    <PremiumMegaMenuShell>
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+    </PremiumMegaMenuShell>
   );
 }
 
 function LubricantMegaMenu({ category }) {
-  const menuCategory = category || getMenuCategory(null, "lubricant");
-  const menuItems = menuCategory.children || lubricantCategories;
-
   return (
-    <MegaMenuShell rootSlug="lubricant" topLabel={categoryTopLabel(menuCategory, getMenuCategory(null, "lubricant")) || "Engine Oil • Transmission • Coolant"} href={collectionHref(menuCategory.slug)}>
-      <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
-        <div className="min-w-0 space-y-4">
-          <MegaRecommendationBrandSplit recommendedItems={recommendedLubricants} brandCategory="lubricant" brandTitle="POPULAR BRAND" />
-          <MegaFeaturePanel icon="drop" eyebrow="BROWSE COLLECTION" title="SHOP BY CATEGORY" countLabel="Quality Fluids" eyebrowPosition="bottom">
-            <div data-menu-grid="lubricant" className="grid grid-cols-4 gap-3">
-              {menuItems.map((category, index) => (
-                <MegaDropdownCard key={category.title} {...category} cardIndex={index} />
-              ))}
-              <MegaDropdownCard title="By Brand" icon="tag" tone="purple" href="/products?category=lubricant">
-                <div className="mt-4 space-y-2.5">
-                  {lubricantBrands.map((brand) => (
-                    <a key={brand} href={`/products?brand=${encodeURIComponent(slugify(brand))}`} className="flex items-center gap-3 text-[12px] font-bold text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]">
-                      <span className="grid h-[22px] w-[60px] shrink-0 place-items-center rounded-[4px] border border-[#dfe3ea] bg-white px-1 text-[6.5px] font-black uppercase tracking-[-0.02em] text-[#111827] shadow-sm">
-                        {brand}
-                      </span>
-                      <span className="truncate">{brand}</span>
-                    </a>
-                  ))}
-                </div>
-              </MegaDropdownCard>
-            </div>
-          </MegaFeaturePanel>
-        </div>
-        <PromoRail product="Pro Grade Lubricants" offer="15% Off Lubricant" />
-      </div>
-    </MegaMenuShell>
+    <PremiumMegaMenuShell>
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+    </PremiumMegaMenuShell>
   );
 }
 
@@ -410,120 +568,26 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
 }
 
 function CarAccessoriesMegaMenu({ category }) {
-  const menuCategory = category || getMenuCategory(null, "car-accessories");
-  const menuItems = menuCategory.children || carAccessorySubcategories;
-
   return (
-    <div className="invisible absolute left-1/2 top-full z-[120] w-[calc(100%-80px)] max-w-[1640px] -translate-x-1/2 overflow-hidden rounded-b-[14px] border border-[#f0d5d8] bg-[#fbfcfd] text-[#111827] opacity-0 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-200 group-hover/nav:visible group-hover/nav:opacity-100 group-focus-within/nav:visible group-focus-within/nav:opacity-100 max-lg:hidden">
-      <div className="flex min-h-[58px] items-center justify-between gap-4 border-b border-[#f0d5d8] bg-[linear-gradient(90deg,#ffffff_0%,#fff7f7_62%,#fff0f0_100%)] px-7">
-        <span data-menu-top-label="car-accessories" className="shrink-0 rounded-full border border-[#f7d95f]/70 bg-[#fffbea] px-4 py-2 text-[12px] font-black uppercase tracking-[0.08em] text-[#8a5d00]">
-          {categoryTopLabel(menuCategory, getMenuCategory(null, "car-accessories")) || "Interior • Exterior • Care • Lifestyle"}
-        </span>
-        <a
-          href={collectionHref(menuCategory.slug)}
-          data-menu-view-more="car-accessories"
-          className="inline-flex h-8 shrink-0 items-center gap-2 rounded-[7px] bg-[#ef3338] px-4 text-[10px] font-black uppercase tracking-[0.04em] text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d]"
-        >
-          View More
-          <Icon name="arrow" className="size-3" />
-        </a>
-      </div>
-      <div className="p-7">
-        <div className="grid grid-cols-[minmax(0,1fr)_203px] gap-5">
-          <div className="min-w-0">
-            <section className="grid grid-cols-2 gap-4">
-              <div className="group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-0.5 hover:border-[#ef3338]/50 hover:bg-[#fffdfd] hover:shadow-[0_16px_30px_rgba(220,38,38,0.12)] hover:before:opacity-70">
-                <div className="mb-2 flex items-center gap-2.5">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[#fff1f2] text-[#ef3338] ring-1 ring-black/[0.04] transition duration-200 group-hover/category:scale-105">
-                    <Icon name="star" className="size-3.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">Recommended</h4>
-                    <span className="mt-1.5 block h-0.5 w-7 rounded-full bg-[#ef3338]/80 transition-all duration-200 group-hover/category:w-11 group-hover/category:bg-[#ef3338]" />
-                  </div>
-                </div>
-                <AccessoryRecommendationScroller items={recommendedAccessories} visibleCount={6} />
-              </div>
+    <PremiumMegaMenuShell>
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+    </PremiumMegaMenuShell>
+  );
+}
 
-              <div className="group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-0.5 hover:border-[#ef3338]/50 hover:bg-[#fffdfd] hover:shadow-[0_16px_30px_rgba(220,38,38,0.12)] hover:before:opacity-70">
-                <div className="mb-2 flex items-center gap-2.5">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[#fff1f2] text-[#ef3338] ring-1 ring-black/[0.04] transition duration-200 group-hover/category:scale-105">
-                    <Icon name="tag" className="size-3.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h4 className="truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]">Popular Brand</h4>
-                    <span className="mt-1.5 block h-0.5 w-7 rounded-full bg-[#ef3338]/80 transition-all duration-200 group-hover/category:w-11 group-hover/category:bg-[#ef3338]" />
-                  </div>
-                </div>
-                <CategoryBrandRecommendations category="car-accessories" limit={12} columns={6} logoSize={66} scrollable visibleCount={6} />
-              </div>
-            </section>
+function BrowseCategoriesMegaMenu() {
+  return (
+    <PremiumMegaMenuShell>
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+    </PremiumMegaMenuShell>
+  );
+}
 
-            <section className="mt-4 rounded-[10px] border border-[#f0cfd2] bg-[linear-gradient(135deg,#fff8f8_0%,#ffffff_52%,#fff9f2_100%)] p-4 shadow-[0_14px_34px_rgba(220,38,38,0.08)]">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-[8px] bg-[#ef3338] text-white shadow-[0_8px_18px_rgba(239,51,56,0.25)]">
-                    <Icon name="grid" className="size-4" />
-                  </span>
-                  <div>
-                    <h4 className="text-[17px] font-black leading-none text-[#111827]">SHOP BY CATEGORY</h4>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#ef3338]">Browse Collection</p>
-                  </div>
-                </div>
-                <span className="rounded-full border border-[#f0cfd2] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#ef3338]">
-                  {menuItems.length} Categories
-                </span>
-              </div>
-
-              <div data-menu-grid="car-accessories" className="grid grid-cols-6 gap-3">
-                {menuItems.map((category, index) => (
-                  <section
-                    key={category.title}
-                    data-menu-card-index={index}
-                    className={`group/category relative min-w-0 overflow-hidden rounded-[8px] border border-[#e3e7ed] bg-white p-3.5 shadow-[0_7px_18px_rgba(15,23,42,0.055)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-[#ef3338] before:opacity-0 before:transition-opacity before:duration-200 hover:-translate-y-1 hover:border-[#ef3338]/50 hover:shadow-[0_16px_30px_rgba(220,38,38,0.14)] hover:before:opacity-70 ${categoryTone(category.tone)}`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <span className={`grid size-9 shrink-0 place-items-center rounded-[8px] ring-1 ring-black/[0.04] transition duration-200 group-hover/category:scale-105 ${iconTone(category.tone)}`}>
-                        <Icon name={category.icon} className="size-4" />
-                      </span>
-                      <div className="min-w-0 pt-0.5">
-                        <a
-                          href={category.href || collectionHref(slugify(category.title))}
-                          data-menu-card-link
-                          className="block truncate text-[13px] font-black uppercase leading-[1.2] text-[#111827] transition group-hover/category:text-[#ef3338]"
-                          title={category.title}
-                        >
-                          {category.title}
-                        </a>
-                        <span className="mt-2 block h-0.5 w-7 rounded-full bg-[#ef3338]/80 transition-all duration-200 group-hover/category:w-11 group-hover/category:bg-[#ef3338]" />
-                      </div>
-                    </div>
-                    <ul className="mt-4 space-y-2.5">
-                      {category.links.map((link, index) => (
-                        <li key={typeof link === "string" ? link : link.label}>
-                          <a
-                            href={typeof link === "string" ? collectionHref(slugify(link)) : link.href}
-                            data-menu-sub-link-index={index}
-                            className="flex items-center gap-2 truncate text-[12px] font-bold leading-4 text-[#334155] transition hover:translate-x-0.5 hover:text-[#ef3338]"
-                            title={typeof link === "string" ? link : link.label}
-                          >
-                            <span className="grid size-3 shrink-0 place-items-center rounded-full border border-[#ef3338]/40 bg-[#fff5f5]">
-                              <span className="size-1 rounded-full bg-[#ef3338]" />
-                            </span>
-                            <span data-menu-sub-link-label className="truncate">{typeof link === "string" ? link : link.label}</span>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            </section>
-          </div>
-          <PromoRail product="Accessories" offer="15% Off Accessories" />
-        </div>
-      </div>
-    </div>
+function BrowseMenuIcon() {
+  return (
+    <svg className="h-[14px] w-[16px] shrink-0" viewBox="0 0 16 14" fill="none" aria-hidden="true">
+      <path d="M2 3h12M2 7h12M2 11h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -532,13 +596,32 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
     const category = menuCategorySlugs.includes(slugify(item.label)) ? getMenuCategory(menuCategories, slugify(item.label)) : null;
     return category ? { ...item, label: category.name.toUpperCase(), href: collectionHref(category.slug) } : item;
   });
+  const dropdownCategoryHrefs = new Set(["/collections/car-accessories", "/collections/car-parts", "/collections/tyres", "/collections/lubricant"]);
+  const navigationItems = categoryNavItems.reduce((items, item) => {
+    if (item.href === "/") {
+      items.push({ label: "BROWSE CATEGORIES", href: "/category", isBrowseCategories: true });
+    }
+
+    items.push(item);
+
+    return items;
+  }, []).filter((item) => item.isBrowseCategories || (item.href !== "/" && !dropdownCategoryHrefs.has(item.href)));
 
   return (
     <div className="relative z-[90] border-t border-[#111827]/40 bg-[#d3191d] text-white">
       <div className="mx-auto flex h-[48px] w-full max-w-[1720px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10 max-lg:h-auto max-lg:flex-wrap max-lg:py-2">
         <nav className="flex min-w-0 flex-1 items-center gap-[18px] overflow-visible text-[14px] font-bold leading-none max-xl:gap-3 max-xl:text-[13px] max-lg:w-full max-lg:flex-none max-lg:gap-4 max-lg:overflow-x-auto max-lg:pb-2 max-sm:text-[13px]">
-          {categoryNavItems.map((item) => (
-            item.href === "/collections/car-accessories" ? (
+          {navigationItems.map((item) => (
+            item.isBrowseCategories ? (
+              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
+                <a href={item.href} data-menu-root="browse-categories" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                  <BrowseMenuIcon />
+                  <span data-menu-root-label className="leading-none">{item.label}</span>
+                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
+                </a>
+                <BrowseCategoriesMegaMenu />
+              </div>
+            ) : item.href === "/collections/car-accessories" ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
                 <a href={item.href} data-menu-root="car-accessories" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
                   <span data-menu-root-label className="leading-none">{item.label}</span>
@@ -578,7 +661,7 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                 {item.label}
               </PartsQuoteModalLink>
             ) : (
-              <a key={item.label} href={item.href} className="inline-flex h-[32px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition hover:bg-[#dd3b3f] hover:!text-[#f7d95f]">
+              <a key={item.label} href={item.href} className={`inline-flex h-[32px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition hover:bg-[#dd3b3f] hover:!text-[#f7d95f] ${item.label === "BRANDS" ? "lg:ml-[8px] xl:ml-[10px] 2xl:ml-[12px]" : ""}`}>
                 <span className="leading-none">{item.label}</span>
                 {item.hasMenu && <ChevronDown className="size-[11px] translate-y-px" />}
               </a>

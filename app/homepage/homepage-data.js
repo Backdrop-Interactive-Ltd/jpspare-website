@@ -6,6 +6,7 @@ export const navItems = [
   { label: "LUBRICANT", href: "/collections/lubricant", hasMenu: true },
   { label: "BRANDS", href: "/brands" },
   { label: "MODIFICATION", href: "/modification" },
+  { label: "OFFERS", href: "/offers" },
   { label: "COMBO PACKAGE", href: "/combo-package" },
   { label: "PARTS QUOTE", href: "/parts-quote" },
 ];
