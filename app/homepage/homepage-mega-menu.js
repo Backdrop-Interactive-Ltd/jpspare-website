@@ -313,12 +313,12 @@ const premiumMenuColumns = [
 ];
 
 const premiumBrandsMenu = [
-  { name: "brembo", className: "text-[#ef3338]" },
-  { name: "DENSO", className: "text-[#e11d2e]" },
-  { name: "akebono", className: "text-[#2563eb]" },
-  { name: "ADVICS", className: "text-[#1d4f91]" },
-  { name: "NGK", className: "text-[#ef3338]" },
-  { name: "JAPANPARTS", className: "text-[#111827]" },
+  { label: "brembo", href: "/products?brand=brembo", logo: "", className: "text-[#ef3338]", enabled: true, sortOrder: 10 },
+  { label: "DENSO", href: "/products?brand=denso", logo: "", className: "text-[#e11d2e]", enabled: true, sortOrder: 20 },
+  { label: "akebono", href: "/products?brand=akebono", logo: "", className: "text-[#2563eb]", enabled: true, sortOrder: 30 },
+  { label: "ADVICS", href: "/products?brand=advics", logo: "", className: "text-[#1d4f91]", enabled: true, sortOrder: 40 },
+  { label: "NGK", href: "/products?brand=ngk", logo: "", className: "text-[#ef3338]", enabled: true, sortOrder: 50 },
+  { label: "JAPANPARTS", href: "/products?brand=japanparts", logo: "", className: "text-[#111827]", enabled: true, sortOrder: 60 },
 ];
 
 const fallbackMegaMenuPromoCard = {
@@ -352,6 +352,10 @@ const fallbackMegaMenuFeatureCards = [
 function cleanText(value, fallback = "") {
   const text = typeof value === "string" ? value.trim() : "";
   return text || fallback;
+}
+
+function isImageUrl(value) {
+  return value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://");
 }
 
 function normalizeMegaMenuPromoCard(megaMenu) {
@@ -395,6 +399,22 @@ function normalizeMegaMenuFeatureCards(megaMenu) {
       sortOrder: Number.isFinite(Number(card?.sortOrder)) ? Number(card.sortOrder) : (index + 1) * 10,
     }))
     .filter((card) => card.enabled && card.title)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function normalizeMegaMenuFeaturedBrands(megaMenu) {
+  const brands = Array.isArray(megaMenu?.featuredBrands) ? megaMenu.featuredBrands : premiumBrandsMenu;
+
+  return brands
+    .map((brand, index) => ({
+      label: cleanText(brand?.label || brand?.name),
+      href: cleanText(brand?.href, `/products?brand=${encodeURIComponent(slugify(brand?.label || brand?.name || ""))}`),
+      logo: cleanText(brand?.logo),
+      className: brand?.className || "text-[#ef3338]",
+      enabled: brand?.enabled !== false,
+      sortOrder: Number.isFinite(Number(brand?.sortOrder)) ? Number(brand.sortOrder) : (index + 1) * 10,
+    }))
+    .filter((brand) => brand.enabled && brand.label && brand.href)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
@@ -476,17 +496,26 @@ function PremiumProductColumn({ title, items, icon }) {
   );
 }
 
-function PremiumBrandColumn() {
+function PremiumBrandColumn({ megaMenu }) {
+  const brands = normalizeMegaMenuFeaturedBrands(megaMenu);
+
   return (
     <section>
       <PremiumColumnHeading>Popular Brands</PremiumColumnHeading>
       <div className="space-y-2">
-        {premiumBrandsMenu.map((brand) => (
-          <a key={brand.name} href={`/products?brand=${encodeURIComponent(slugify(brand.name))}`} className="group/brand flex h-11 items-center justify-between rounded-[9px] border border-[#e5e7eb] bg-white px-4 shadow-sm transition hover:border-[#fecdd3] hover:bg-[#fffafa]">
-            <span className={`text-[18px] font-black tracking-[-0.05em] ${brand.className}`}>{brand.name}</span>
+        {brands.map((brand) => (
+          <a key={`${brand.label}-${brand.sortOrder}`} href={brand.href} className="group/brand flex h-11 items-center justify-between rounded-[9px] border border-[#e5e7eb] bg-white px-4 shadow-sm transition hover:border-[#fecdd3] hover:bg-[#fffafa]">
+            {brand.logo && isImageUrl(brand.logo) ? (
+              <img src={brand.logo} alt={brand.label} className="max-h-7 max-w-[130px] object-contain" />
+            ) : (
+              <span className={`text-[18px] font-black tracking-[-0.05em] ${brand.className}`}>{brand.logo || brand.label}</span>
+            )}
             <span className="text-[22px] text-[#6b7280] transition group-hover/brand:translate-x-0.5 group-hover/brand:text-[#ef3338]">›</span>
           </a>
         ))}
+        {!brands.length ? (
+          <p className="rounded-[9px] border border-dashed border-[#e5e7eb] px-4 py-3 text-[12px] font-bold text-[#64748b]">No featured brands enabled.</p>
+        ) : null}
       </div>
       <a href="/brands" className="mt-3 inline-flex items-center gap-2 text-[13px] font-black text-[#ef3338] transition hover:text-[#d71920]">
         View All Brands <Icon name="arrow" className="size-4" />
@@ -609,7 +638,7 @@ function PremiumMegaMenuShell({ children, megaMenu }) {
   );
 }
 
-function PremiumRevealContent({ selectedSubcategory }) {
+function PremiumRevealContent({ selectedSubcategory, megaMenu }) {
   if (selectedSubcategory !== "Brakes") {
     return null;
   }
@@ -619,7 +648,7 @@ function PremiumRevealContent({ selectedSubcategory }) {
       {premiumMenuColumns.map((column) => (
         <PremiumProductColumn key={column.title} {...column} />
       ))}
-      <PremiumBrandColumn />
+      <PremiumBrandColumn megaMenu={megaMenu} />
     </>
   );
 }
@@ -627,7 +656,7 @@ function PremiumRevealContent({ selectedSubcategory }) {
 function CarPartsMegaMenu({ category, megaMenu }) {
   return (
     <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
 }
@@ -635,7 +664,7 @@ function CarPartsMegaMenu({ category, megaMenu }) {
 function TyresMegaMenu({ category, megaMenu }) {
   return (
     <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
 }
@@ -643,7 +672,7 @@ function TyresMegaMenu({ category, megaMenu }) {
 function LubricantMegaMenu({ category, megaMenu }) {
   return (
     <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
 }
@@ -666,7 +695,7 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
 function CarAccessoriesMegaMenu({ category, megaMenu }) {
   return (
     <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
 }
@@ -674,7 +703,7 @@ function CarAccessoriesMegaMenu({ category, megaMenu }) {
 function BrowseCategoriesMegaMenu({ megaMenu }) {
   return (
     <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} />}
+      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
 }

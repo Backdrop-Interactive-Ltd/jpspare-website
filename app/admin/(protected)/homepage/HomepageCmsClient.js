@@ -188,6 +188,16 @@ function newMegaMenuFeature() {
   };
 }
 
+function newMegaMenuBrand() {
+  return {
+    label: "New Brand",
+    href: "/brands",
+    logo: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -452,6 +462,65 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
           megaMenu: {
             ...current.navigation?.megaMenu,
             featureCards: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updateMegaMenuBrand(index, patch) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featuredBrands: (current.navigation?.megaMenu?.featuredBrands || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addMegaMenuBrand() {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featuredBrands: [...(current.navigation?.megaMenu?.featuredBrands || []), newMegaMenuBrand()],
+        },
+      },
+    }));
+  }
+
+  function removeMegaMenuBrand(index) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        megaMenu: {
+          ...current.navigation?.megaMenu,
+          featuredBrands: (current.navigation?.megaMenu?.featuredBrands || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveMegaMenuBrand(index, direction) {
+    setCms((current) => {
+      const items = [...(current.navigation?.megaMenu?.featuredBrands || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        navigation: {
+          ...current.navigation,
+          megaMenu: {
+            ...current.navigation?.megaMenu,
+            featuredBrands: reordered,
           },
         },
       };
@@ -824,6 +893,60 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               ))}
               {!(cms.navigation?.megaMenu?.featureCards || []).length ? (
                 <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No mega menu feature cards yet.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Mega Menu Featured Brands</p>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={addMegaMenuBrand}
+                className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60"
+              >
+                Add Brand
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.navigation?.megaMenu?.featuredBrands || []).map((item, index) => (
+                <div key={`${item.label}-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Brand {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveMegaMenuBrand(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Up
+                      </button>
+                      <button type="button" disabled={readOnly || index === (cms.navigation?.megaMenu?.featuredBrands || []).length - 1} onClick={() => moveMegaMenuBrand(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                        Down
+                      </button>
+                      <button type="button" disabled={readOnly} onClick={() => removeMegaMenuBrand(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.4fr_1.2fr_120px]">
+                    <Field label="Label">
+                      <input value={item.label || ""} disabled={readOnly} onChange={(event) => updateMegaMenuBrand(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Link">
+                      <input value={item.href || ""} disabled={readOnly} onChange={(event) => updateMegaMenuBrand(index, { href: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Logo URL or text">
+                      <input value={item.logo || ""} disabled={readOnly} onChange={(event) => updateMegaMenuBrand(index, { logo: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateMegaMenuBrand(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateMegaMenuBrand(index, { enabled: value })} />
+                  </div>
+                </div>
+              ))}
+              {!(cms.navigation?.megaMenu?.featuredBrands || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No mega menu featured brands yet.</p>
               ) : null}
             </div>
           </div>
