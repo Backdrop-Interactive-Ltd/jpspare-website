@@ -159,6 +159,16 @@ function newPromo() {
   };
 }
 
+function newNavItem() {
+  return {
+    label: "New Link",
+    href: "/",
+    enabled: true,
+    hasMenu: false,
+    sortOrder: 999,
+  };
+}
+
 export default function HomepageCmsClient({ initialCms, options, canManage }) {
   const [cms, setCms] = useState(() => clone(initialCms));
   const [saving, setSaving] = useState(false);
@@ -224,6 +234,53 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
         banners: current.promoBanners.banners.map((banner, itemIndex) => (itemIndex === index ? { ...banner, ...patch } : banner)),
       },
     }));
+  }
+
+  function updateNavItem(index, patch) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        main: (current.navigation?.main || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+      },
+    }));
+  }
+
+  function addNavItem() {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        main: [...(current.navigation?.main || []), newNavItem()],
+      },
+    }));
+  }
+
+  function removeNavItem(index) {
+    setCms((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        main: (current.navigation?.main || []).filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  }
+
+  function moveNavItem(index, direction) {
+    setCms((current) => {
+      const items = [...(current.navigation?.main || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        navigation: {
+          ...current.navigation,
+          main: reordered,
+        },
+      };
+    });
   }
 
   async function saveCms(label = "Homepage CMS") {
@@ -333,6 +390,76 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
             <Toggle label="Sticky search header" checked={cms.header.stickySearchHeader !== false} disabled={readOnly} onChange={(value) => setNested("header", "stickySearchHeader", value)} />
             <Toggle label="Sticky category header" checked={cms.header.stickyCategoryHeader === true} disabled={readOnly} onChange={(value) => setNested("header", "stickyCategoryHeader", value)} />
           </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Navigation"
+        title="Main Navigation"
+        description="Manage the header navigation data saved in CMS. Storefront rendering will be connected in a later task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("Main Navigation")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Navigation"}
+          </button>
+        }
+      >
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-[#667085]">
+            Edit label, link, visibility, menu flag, and display order for main header nav items.
+          </p>
+          <button
+            type="button"
+            disabled={readOnly}
+            onClick={addNavItem}
+            className="h-11 rounded-xl border border-red-200 bg-red-50 px-5 text-sm font-black text-[#ef3338] disabled:opacity-60"
+          >
+            Add Nav Item
+          </button>
+        </div>
+        <div className="space-y-4">
+          {(cms.navigation?.main || []).map((item, index) => (
+            <div key={`${item.label}-${index}`} className="rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-black text-[#111827]">Nav Item {index + 1}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" disabled={readOnly || index === 0} onClick={() => moveNavItem(index, -1)} className="h-9 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                    Up
+                  </button>
+                  <button type="button" disabled={readOnly || index === (cms.navigation?.main || []).length - 1} onClick={() => moveNavItem(index, 1)} className="h-9 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">
+                    Down
+                  </button>
+                  <button type="button" disabled={readOnly} onClick={() => removeNavItem(index)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-[1.1fr_1.6fr_140px]">
+                <Field label="Label">
+                  <input value={item.label || ""} disabled={readOnly} onChange={(event) => updateNavItem(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Link">
+                  <input value={item.href || ""} disabled={readOnly} onChange={(event) => updateNavItem(index, { href: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Sort order">
+                  <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateNavItem(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Toggle label="Enabled" checked={item.enabled !== false} disabled={readOnly} onChange={(value) => updateNavItem(index, { enabled: value })} />
+                <Toggle label="Has mega menu" checked={item.hasMenu === true} disabled={readOnly} onChange={(value) => updateNavItem(index, { hasMenu: value })} />
+              </div>
+            </div>
+          ))}
+          {!(cms.navigation?.main || []).length ? (
+            <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-[#f8fafc] p-5 text-sm font-bold text-[#667085]">
+              No navigation items yet. Add one to start configuring the header menu.
+            </p>
+          ) : null}
         </div>
       </SectionCard>
 
