@@ -208,6 +208,35 @@ function newMegaMenuCategoryRailItem() {
   };
 }
 
+function newAboutStat() {
+  return {
+    value: "New",
+    label: "New stat",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newAboutMilestone() {
+  return {
+    number: "2026",
+    title: "New milestone",
+    body: "",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
+function newAboutValue() {
+  return {
+    title: "New value",
+    body: "",
+    icon: "shield",
+    enabled: true,
+    sortOrder: 999,
+  };
+}
+
 function FooterLinksEditor({ title, items, readOnly, onAdd, onUpdate, onRemove, onMove }) {
   const links = Array.isArray(items) ? items : [];
 
@@ -643,6 +672,211 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     });
   }
 
+  function updateAboutSection(section, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          [section]: {
+            ...current.sitePages?.about?.[section],
+            ...patch,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateAboutStat(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          stats: (current.sitePages?.about?.stats || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addAboutStat() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          stats: [...(current.sitePages?.about?.stats || []), newAboutStat()],
+        },
+      },
+    }));
+  }
+
+  function removeAboutStat(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          stats: (current.sitePages?.about?.stats || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveAboutStat(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.about?.stats || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          about: {
+            ...current.sitePages?.about,
+            stats: reordered,
+          },
+        },
+      };
+    });
+  }
+
+  function updateAboutMilestone(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          story: {
+            ...current.sitePages?.about?.story,
+            milestones: (current.sitePages?.about?.story?.milestones || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+          },
+        },
+      },
+    }));
+  }
+
+  function addAboutMilestone() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          story: {
+            ...current.sitePages?.about?.story,
+            milestones: [...(current.sitePages?.about?.story?.milestones || []), newAboutMilestone()],
+          },
+        },
+      },
+    }));
+  }
+
+  function removeAboutMilestone(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          story: {
+            ...current.sitePages?.about?.story,
+            milestones: (current.sitePages?.about?.story?.milestones || []).filter((_, itemIndex) => itemIndex !== index),
+          },
+        },
+      },
+    }));
+  }
+
+  function moveAboutMilestone(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.about?.story?.milestones || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          about: {
+            ...current.sitePages?.about,
+            story: {
+              ...current.sitePages?.about?.story,
+              milestones: reordered,
+            },
+          },
+        },
+      };
+    });
+  }
+
+  function updateAboutValue(index, patch) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          values: (current.sitePages?.about?.values || []).map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+        },
+      },
+    }));
+  }
+
+  function addAboutValue() {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          values: [...(current.sitePages?.about?.values || []), newAboutValue()],
+        },
+      },
+    }));
+  }
+
+  function removeAboutValue(index) {
+    setCms((current) => ({
+      ...current,
+      sitePages: {
+        ...current.sitePages,
+        about: {
+          ...current.sitePages?.about,
+          values: (current.sitePages?.about?.values || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
+  function moveAboutValue(index, direction) {
+    setCms((current) => {
+      const items = [...(current.sitePages?.about?.values || [])];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= items.length) return current;
+      [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+      const reordered = items.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 }));
+      return {
+        ...current,
+        sitePages: {
+          ...current.sitePages,
+          about: {
+            ...current.sitePages?.about,
+            values: reordered,
+          },
+        },
+      };
+    });
+  }
+
   async function saveCms(label = "Homepage CMS") {
     if (readOnly) return;
     setSaving(true);
@@ -1070,6 +1304,176 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               ))}
               {!(cms.navigation?.megaMenu?.categoryRail || []).length ? (
                 <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No mega menu category rail items yet.</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Static Pages"
+        title="About Page CMS"
+        description="Edit the saved About page content foundation. Public /about rendering is not wired in this task."
+        action={
+          <button
+            type="button"
+            onClick={() => saveCms("About Page CMS")}
+            disabled={saving || readOnly}
+            className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save About Page"}
+          </button>
+        }
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Hero</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Field label="SEO Title">
+                <input value={cms.sitePages?.about?.seo?.metaTitle || ""} disabled={readOnly} onChange={(event) => updateAboutSection("seo", { metaTitle: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="SEO Description">
+                <input value={cms.sitePages?.about?.seo?.metaDescription || ""} disabled={readOnly} onChange={(event) => updateAboutSection("seo", { metaDescription: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Hero Title">
+                <input value={cms.sitePages?.about?.hero?.title || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { title: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Hero Subtitle">
+                <input value={cms.sitePages?.about?.hero?.eyebrow || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { eyebrow: event.target.value })} className={inputClass(readOnly)} />
+              </Field>
+              <Field label="Hero Description">
+                <textarea value={cms.sitePages?.about?.hero?.description || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { description: event.target.value })} className={textareaClass(readOnly)} />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Primary CTA text">
+                  <input value={cms.sitePages?.about?.hero?.primaryCtaText || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { primaryCtaText: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Primary CTA link">
+                  <input value={cms.sitePages?.about?.hero?.primaryCtaLink || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { primaryCtaLink: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Secondary CTA text">
+                  <input value={cms.sitePages?.about?.hero?.secondaryCtaText || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { secondaryCtaText: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Secondary CTA link">
+                  <input value={cms.sitePages?.about?.hero?.secondaryCtaLink || ""} disabled={readOnly} onChange={(event) => updateAboutSection("hero", { secondaryCtaLink: event.target.value })} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Stats</p>
+              <button type="button" disabled={readOnly} onClick={addAboutStat} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Stat
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.about?.stats || []).map((item, index) => (
+                <div key={`about-stat-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Stat {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveAboutStat(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.about?.stats || []).length - 1} onClick={() => moveAboutStat(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removeAboutStat(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.4fr_120px]">
+                    <Field label="Value">
+                      <input value={item.value || ""} disabled={readOnly} onChange={(event) => updateAboutStat(index, { value: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Label">
+                      <input value={item.label || ""} disabled={readOnly} onChange={(event) => updateAboutStat(index, { label: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateAboutStat(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              {!(cms.sitePages?.about?.stats || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No About page stats yet.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Story Milestones</p>
+              <button type="button" disabled={readOnly} onClick={addAboutMilestone} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Milestone
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.about?.story?.milestones || []).map((item, index) => (
+                <div key={`about-milestone-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Milestone {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveAboutMilestone(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.about?.story?.milestones || []).length - 1} onClick={() => moveAboutMilestone(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removeAboutMilestone(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[130px_1fr_1.6fr_120px]">
+                    <Field label="Year">
+                      <input value={item.number || item.year || ""} disabled={readOnly} onChange={(event) => updateAboutMilestone(index, { number: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Title">
+                      <input value={item.title || ""} disabled={readOnly} onChange={(event) => updateAboutMilestone(index, { title: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Description">
+                      <input value={item.body || item.description || ""} disabled={readOnly} onChange={(event) => updateAboutMilestone(index, { body: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateAboutMilestone(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              {!(cms.sitePages?.about?.story?.milestones || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No About page milestones yet.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Values</p>
+              <button type="button" disabled={readOnly} onClick={addAboutValue} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-60">
+                Add Value
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(cms.sitePages?.about?.values || []).map((item, index) => (
+                <div key={`about-value-${index}`} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black text-[#667085]">Value {index + 1}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={readOnly || index === 0} onClick={() => moveAboutValue(index, -1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Up</button>
+                      <button type="button" disabled={readOnly || index === (cms.sitePages?.about?.values || []).length - 1} onClick={() => moveAboutValue(index, 1)} className="h-8 rounded-lg border border-[#d0d5dd] px-3 text-xs font-black disabled:opacity-50">Down</button>
+                      <button type="button" disabled={readOnly} onClick={() => removeAboutValue(index)} className="h-8 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-black text-[#ef3338] disabled:opacity-50">Delete</button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.7fr_140px_120px]">
+                    <Field label="Title">
+                      <input value={item.title || ""} disabled={readOnly} onChange={(event) => updateAboutValue(index, { title: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Description">
+                      <input value={item.body || item.description || ""} disabled={readOnly} onChange={(event) => updateAboutValue(index, { body: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Icon">
+                      <input value={item.icon || ""} disabled={readOnly} onChange={(event) => updateAboutValue(index, { icon: event.target.value })} className={inputClass(readOnly)} />
+                    </Field>
+                    <Field label="Sort order">
+                      <input type="number" value={item.sortOrder ?? (index + 1) * 10} disabled={readOnly} onChange={(event) => updateAboutValue(index, { sortOrder: Number(event.target.value) })} className={inputClass(readOnly)} />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              {!(cms.sitePages?.about?.values || []).length ? (
+                <p className="rounded-xl border border-dashed border-[#d0d5dd] bg-white p-4 text-sm font-bold text-[#667085]">No About page values yet.</p>
               ) : null}
             </div>
           </div>
