@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import CategoryBrandRecommendations from "../CategoryBrandRecommendations";
 import AccessoryRecommendationScroller from "../AccessoryRecommendationScroller";
 import PartsQuoteModalLink from "../PartsQuoteModalLink";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 import {
   navItems,
   carAccessorySubcategories,
@@ -591,8 +592,45 @@ function BrowseMenuIcon() {
   );
 }
 
+function normalizeCmsNavItems(items) {
+  if (!Array.isArray(items) || !items.length) return null;
+
+  const normalized = items
+    .map((item, index) => ({
+      label: String(item?.label || "").trim(),
+      href: String(item?.href || "").trim(),
+      enabled: item?.enabled !== false,
+      sortOrder: Number.isFinite(Number(item?.sortOrder)) ? Number(item.sortOrder) : (index + 1) * 10,
+      hasMenu: item?.hasMenu === true,
+    }))
+    .filter((item) => item.label && item.href && item.enabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return normalized.length ? normalized : null;
+}
+
 export function MainNavBar({ showTrackOrder = true, menuCategories }) {
-  const categoryNavItems = navItems.map((item) => {
+  const [cmsNavItems, setCmsNavItems] = useState(null);
+  const sourceNavItems = cmsNavItems || navItems;
+
+  useEffect(() => {
+    let mounted = true;
+
+    getHomepageClientData()
+      .then((payload) => {
+        if (!mounted) return;
+        setCmsNavItems(normalizeCmsNavItems(payload?.cms?.navigation?.main));
+      })
+      .catch(() => {
+        if (mounted) setCmsNavItems(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const categoryNavItems = sourceNavItems.map((item) => {
     const category = menuCategorySlugs.includes(slugify(item.label)) ? getMenuCategory(menuCategories, slugify(item.label)) : null;
     return category ? { ...item, label: category.name.toUpperCase(), href: collectionHref(category.slug) } : item;
   });
