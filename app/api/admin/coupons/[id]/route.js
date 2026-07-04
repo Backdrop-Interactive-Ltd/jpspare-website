@@ -78,6 +78,22 @@ function serializeCoupon(coupon) {
   };
 }
 
+function serializeRedemption(redemption) {
+  if (!redemption) return null;
+  return {
+    id: redemption.id,
+    orderId: redemption.orderId,
+    customerId: redemption.customerId,
+    customerName: redemption.customer?.name || null,
+    email: redemption.email || redemption.customer?.email || null,
+    phone: redemption.phone || redemption.customer?.phone || null,
+    code: redemption.code,
+    discountAmount: redemption.discountAmount?.toString?.() ?? redemption.discountAmount,
+    status: redemption.status,
+    redeemedAt: redemption.redeemedAt?.toISOString?.() ?? redemption.redeemedAt,
+  };
+}
+
 function uniqueCodeError(error) {
   return error?.code === "P2002" ? "A coupon with this code already exists." : null;
 }
@@ -91,8 +107,30 @@ export async function GET(_request, context) {
     include: { _count: { select: { orders: true, redemptions: true } } },
   });
   if (!item) return apiError("Coupon not found.", 404);
+  const [analytics, latestRedemptions] = await Promise.all([
+    prisma.couponRedemption.aggregate({
+      where: { couponId: item.id },
+      _count: { _all: true },
+      _sum: { discountAmount: true },
+    }),
+    prisma.couponRedemption.findMany({
+      where: { couponId: item.id },
+      include: { customer: { select: { id: true, name: true, email: true, phone: true } } },
+      orderBy: { redeemedAt: "desc" },
+      take: 10,
+    }),
+  ]);
 
-  return json({ item: serializeCoupon(item) });
+  return json({
+    item: {
+      ...serializeCoupon(item),
+      analytics: {
+        totalRedemptions: analytics._count?._all || 0,
+        totalDiscountGiven: analytics._sum?.discountAmount?.toString?.() ?? analytics._sum?.discountAmount ?? "0",
+        latestRedemptions: latestRedemptions.map(serializeRedemption),
+      },
+    },
+  });
 }
 
 async function updateCoupon(request, context) {

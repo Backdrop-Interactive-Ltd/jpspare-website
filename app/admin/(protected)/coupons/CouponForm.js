@@ -57,6 +57,19 @@ function inputClass(readOnly) {
   }`;
 }
 
+function formatMoney(value) {
+  if (value === null || value === undefined || value === "") return "৳0";
+  return `৳${Number(value).toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 function Toggle({ label, checked, onChange, disabled }) {
   return (
     <button
@@ -81,6 +94,7 @@ export default function CouponForm({ mode, coupon, canManage }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const readOnly = !canManage;
+  const analytics = form.analytics || { totalRedemptions: form._count?.redemptions || 0, totalDiscountGiven: 0, latestRedemptions: [] };
 
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -220,8 +234,68 @@ export default function CouponForm({ mode, coupon, canManage }) {
             </div>
             <p className="mt-4 text-xs font-semibold leading-5 text-[#98a2b3]">Usage count is managed by checkout/redemption logic and is read-only here.</p>
           </section>
+
+          {mode === "edit" ? (
+            <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="text-lg font-black text-[#111827]">Redemption Analytics</h3>
+              <div className="mt-4 grid gap-3 text-sm font-bold text-[#667085]">
+                <p>
+                  Total redemptions: <span className="font-black text-[#111827]">{analytics.totalRedemptions || 0}</span>
+                </p>
+                <p>
+                  Total discount given: <span className="font-black text-[#111827]">{formatMoney(analytics.totalDiscountGiven)}</span>
+                </p>
+              </div>
+            </section>
+          ) : null}
         </aside>
       </div>
+
+      {mode === "edit" ? (
+        <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
+          <div className="border-b border-[#eef0f3] p-5 sm:p-6">
+            <h3 className="text-lg font-black text-[#111827]">Latest Redemptions</h3>
+            <p className="mt-1 text-sm font-semibold text-[#667085]">Read-only view of the latest 10 coupon redemptions.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[820px] w-full text-left">
+              <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
+                <tr>
+                  <th className="px-5 py-4">Order</th>
+                  <th className="px-5 py-4">Customer / Email</th>
+                  <th className="px-5 py-4">Redeemed At</th>
+                  <th className="px-5 py-4">Discount</th>
+                  <th className="px-5 py-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#eef0f3]">
+                {(analytics.latestRedemptions || []).map((redemption) => (
+                  <tr key={redemption.id}>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{redemption.orderId || "—"}</td>
+                    <td className="px-5 py-4">
+                      <p className="text-sm font-black text-[#111827]">{redemption.customerName || "Guest customer"}</p>
+                      <p className="mt-1 text-xs font-bold text-[#667085]">{redemption.email || redemption.phone || "—"}</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDate(redemption.redeemedAt)}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{formatMoney(redemption.discountAmount)}</td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#ef3338] ring-1 ring-red-100">{redemption.status || "—"}</span>
+                    </td>
+                  </tr>
+                ))}
+                {!(analytics.latestRedemptions || []).length ? (
+                  <tr>
+                    <td colSpan="5" className="px-5 py-12 text-center">
+                      <p className="font-black text-[#111827]">No redemptions yet</p>
+                      <p className="mt-1 text-sm font-semibold text-[#667085]">Redemption history will appear after checkout uses this coupon.</p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
     </form>
   );
 }

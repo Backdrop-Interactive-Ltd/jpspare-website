@@ -77,6 +77,13 @@ function serializeCoupon(coupon) {
   };
 }
 
+function serializeAnalytics(item) {
+  return {
+    redemptionCount: item?._count?._all || 0,
+    revenueImpact: item?._sum?.discountAmount?.toString?.() ?? item?._sum?.discountAmount ?? "0",
+  };
+}
+
 function uniqueCodeError(error) {
   return error?.code === "P2002" ? "A coupon with this code already exists." : null;
 }
@@ -117,9 +124,22 @@ export async function GET(request) {
     }),
     prisma.coupon.count({ where }),
   ]);
+  const couponIds = itemsRaw.map((coupon) => coupon.id);
+  const analyticsRows = couponIds.length
+    ? await prisma.couponRedemption.groupBy({
+        by: ["couponId"],
+        where: { couponId: { in: couponIds } },
+        _count: { _all: true },
+        _sum: { discountAmount: true },
+      })
+    : [];
+  const analyticsByCouponId = new Map(analyticsRows.map((item) => [item.couponId, serializeAnalytics(item)]));
 
   return json({
-    items: itemsRaw.map(serializeCoupon),
+    items: itemsRaw.map((item) => ({
+      ...serializeCoupon(item),
+      analytics: analyticsByCouponId.get(item.id) || { redemptionCount: 0, revenueImpact: "0" },
+    })),
     pagination: { page, limit, total, totalPages: Math.max(Math.ceil(total / limit), 1) },
   });
 }
@@ -144,4 +164,3 @@ export async function POST(request) {
     throw error;
   }
 }
-

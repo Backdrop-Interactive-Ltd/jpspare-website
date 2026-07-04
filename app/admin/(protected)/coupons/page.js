@@ -40,6 +40,11 @@ function formatMoney(value) {
   return `৳${Number(value).toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
 }
 
+function getRemainingUses(coupon) {
+  if (coupon.usageLimit === null || coupon.usageLimit === undefined) return "Unlimited";
+  return Math.max(0, Number(coupon.usageLimit || 0) - Number(coupon.usedCount || 0)).toLocaleString("en-BD");
+}
+
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-GB");
@@ -96,6 +101,24 @@ export default async function AdminCouponsPage({ searchParams }) {
     }),
     prisma.coupon.count({ where }),
   ]);
+  const couponIds = coupons.map((coupon) => coupon.id);
+  const redemptionAggregates = couponIds.length
+    ? await prisma.couponRedemption.groupBy({
+        by: ["couponId"],
+        where: { couponId: { in: couponIds } },
+        _count: { _all: true },
+        _sum: { discountAmount: true },
+      })
+    : [];
+  const analyticsByCouponId = new Map(
+    redemptionAggregates.map((item) => [
+      item.couponId,
+      {
+        redemptionCount: item._count?._all || 0,
+        revenueImpact: Number(item._sum?.discountAmount || 0),
+      },
+    ])
+  );
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -106,7 +129,7 @@ export default async function AdminCouponsPage({ searchParams }) {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Marketing CMS</p>
             <h1 className="mt-1 text-3xl font-black text-[#111827]">Coupons</h1>
-            <p className="mt-2 text-sm font-semibold text-[#667085]">Manage coupon codes before storefront apply/checkout integration.</p>
+            <p className="mt-2 text-sm font-semibold text-[#667085]">Manage coupon codes and monitor redemption performance.</p>
           </div>
           {canManage ? (
             <Link href="/admin/coupons/new" className="inline-flex h-11 items-center rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)]">
@@ -132,13 +155,16 @@ export default async function AdminCouponsPage({ searchParams }) {
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-[1100px] w-full text-left">
+          <table className="min-w-[1280px] w-full text-left">
             <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
               <tr>
                 <th className="px-5 py-4">Code</th>
                 <th className="px-5 py-4">Discount</th>
                 <th className="px-5 py-4">Min Order</th>
-                <th className="px-5 py-4">Usage</th>
+                <th className="px-5 py-4">Used Count</th>
+                <th className="px-5 py-4">Remaining Uses</th>
+                <th className="px-5 py-4">Revenue Impact</th>
+                <th className="px-5 py-4">Redemptions</th>
                 <th className="px-5 py-4">Window</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4 text-right">Action</th>
@@ -147,6 +173,7 @@ export default async function AdminCouponsPage({ searchParams }) {
             <tbody className="divide-y divide-[#eef0f3]">
               {coupons.map((coupon) => {
                 const state = couponState(coupon);
+                const analytics = analyticsByCouponId.get(coupon.id) || { redemptionCount: 0, revenueImpact: 0 };
                 return (
                   <tr key={coupon.id} className="transition hover:bg-red-50/40">
                     <td className="px-5 py-4">
@@ -163,7 +190,12 @@ export default async function AdminCouponsPage({ searchParams }) {
                     <td className="px-5 py-4 text-sm font-bold text-[#667085]">
                       <span className="font-black text-[#111827]">{coupon.usedCount}</span>
                       {coupon.usageLimit ? ` / ${coupon.usageLimit}` : " / unlimited"}
-                      <span className="mt-1 block text-xs">Orders {coupon._count?.orders || 0} • Redemptions {coupon._count?.redemptions || 0}</span>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{getRemainingUses(coupon)}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{formatMoney(analytics.revenueImpact)}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">
+                      <span className="font-black text-[#111827]">{analytics.redemptionCount}</span>
+                      <span className="mt-1 block text-xs">Orders {coupon._count?.orders || 0}</span>
                     </td>
                     <td className="px-5 py-4 text-sm font-bold text-[#667085]">
                       <span className="block">Start: {formatDate(coupon.startsAt)}</span>
@@ -182,7 +214,7 @@ export default async function AdminCouponsPage({ searchParams }) {
               })}
               {!coupons.length ? (
                 <tr>
-                  <td colSpan="7" className="px-5 py-16 text-center">
+                  <td colSpan="10" className="px-5 py-16 text-center">
                     <p className="text-lg font-black text-[#111827]">No coupons found</p>
                     <p className="mt-2 text-sm font-semibold text-[#667085]">Create your first coupon or change filters.</p>
                   </td>
