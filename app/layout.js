@@ -2,6 +2,7 @@ import "./globals.css";
 import PublicChrome from "./PublicChrome";
 import CompareFloatingPanel from "./CompareFloatingPanel";
 import { Inter } from "next/font/google";
+import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
 
 const topDealFont = Inter({
   subsets: ["latin"],
@@ -10,10 +11,81 @@ const topDealFont = Inter({
   variable: "--font-top-deal",
 });
 
-export const metadata = {
-  title: "JPSPARE | Premium Auto Parts & Accessories",
-  description: "Shop demo premium auto parts and accessories for Japanese vehicles.",
+const fallbackSeoManager = defaultHomepageCms.seoManager;
+const fallbackMetadata = {
+  siteName: "JPSPARE",
+  titleTemplate: "%s | JPSPARE",
+  defaultTitle: "JPSPARE | Premium Auto Parts & Accessories",
+  defaultDescription: "Shop demo premium auto parts and accessories for Japanese vehicles.",
+  defaultOgImage: "/jpspare-logo-wide-clean.png",
+  canonicalBaseUrl: fallbackSeoManager.global.canonicalBaseUrl,
 };
+
+function cleanText(value, fallback = "") {
+  const clean = String(value ?? "").trim();
+  return clean || fallback;
+}
+
+function safeUrl(value, fallback) {
+  try {
+    return new URL(cleanText(value, fallback));
+  } catch {
+    return new URL(fallback);
+  }
+}
+
+function safeImage(value, baseUrl, fallback) {
+  const image = cleanText(value, fallback);
+  try {
+    return new URL(image, baseUrl).toString();
+  } catch {
+    return new URL(fallback, baseUrl).toString();
+  }
+}
+
+async function getSeoManager() {
+  try {
+    const cms = await getHomepageCms();
+    return cms?.seoManager || fallbackSeoManager;
+  } catch {
+    return fallbackSeoManager;
+  }
+}
+
+export async function generateMetadata() {
+  const seoManager = await getSeoManager();
+  const global = seoManager.global || fallbackSeoManager.global;
+  const organization = seoManager.organization || fallbackSeoManager.organization;
+  const socialProfiles = seoManager.socialProfiles || fallbackSeoManager.socialProfiles;
+  const siteName = cleanText(global.siteName || organization.name, fallbackMetadata.siteName);
+  const defaultTitle = cleanText(global.defaultTitle, fallbackMetadata.defaultTitle);
+  const defaultDescription = cleanText(global.defaultDescription, fallbackMetadata.defaultDescription);
+  const titleTemplate = cleanText(global.titleTemplate, fallbackMetadata.titleTemplate);
+  const metadataBase = safeUrl(global.canonicalBaseUrl || organization.url, fallbackMetadata.canonicalBaseUrl);
+  const defaultOgImage = safeImage(global.defaultOgImage, metadataBase, fallbackMetadata.defaultOgImage);
+  const twitterHandle = cleanText(global.twitterHandle, socialProfiles.twitter || "");
+
+  return {
+    metadataBase,
+    title: {
+      default: defaultTitle,
+      template: titleTemplate,
+    },
+    description: defaultDescription,
+    openGraph: {
+      title: defaultTitle,
+      description: defaultDescription,
+      siteName,
+      images: [defaultOgImage],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      creator: twitterHandle,
+      images: [defaultOgImage],
+    },
+  };
+}
 
 export default function RootLayout({ children }) {
   return (
