@@ -3,11 +3,6 @@ import { MainNavBar } from "../../homepage/site-header";
 import { prisma } from "../../../lib/db";
 import { buildBreadcrumbSchema, buildProductSchema, jsonLdScript } from "@/lib/seo/structured-data";
 
-export const metadata = {
-  title: "Product Details | JPSPARE",
-  description: "Demo product details page for JPSPARE auto parts ecommerce.",
-};
-
 async function getProductSchemaData(slug) {
   try {
     return await prisma.product.findFirst({
@@ -19,6 +14,8 @@ async function getProductSchemaData(slug) {
         shortDescription: true,
         description: true,
         fullDescription: true,
+        seoTitle: true,
+        seoDescription: true,
         price: true,
         discountPrice: true,
         stockStatus: true,
@@ -41,6 +38,18 @@ function titleFromSlug(slug) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const product = await getProductSchemaData(slug);
+  const title = product?.seoTitle || product?.title || titleFromSlug(slug) || "Product Details";
+  const description = product?.seoDescription || product?.shortDescription || product?.description || "Authentic auto parts and accessories from JPSPARE.";
+
+  return {
+    title: `${title} | JPSPARE`,
+    description,
+  };
 }
 
 export default async function ProductPage({ params }) {
