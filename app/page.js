@@ -10,6 +10,7 @@ import { premiumBrands, categoryShowcase, heroCategorySlider } from "./homepage/
 import { Icon, slugify } from "./homepage/homepage-ui-helpers";
 import { articles as staticArticles } from "./blog/articles";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
+import { prisma } from "../lib/db";
 
 const fallbackHomepageSeo = {
   title: "JPSPARE | Premium Auto Parts & Accessories",
@@ -338,7 +339,6 @@ function mapBlogPostToArticle(post) {
 
 async function getHomepageFeaturedArticles() {
   try {
-    const { prisma } = await eval('import("../lib/db")');
     const posts = await prisma.blogPost.findMany({
       where: { status: "PUBLISHED", featured: true },
       select: {
@@ -361,6 +361,121 @@ async function getHomepageFeaturedArticles() {
   } catch {
     return staticArticles.slice(0, 4);
   }
+}
+
+function campaignTypeLabel(type) {
+  return String(type || "CUSTOM")
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function mapCampaignToHomepageCard(campaign) {
+  return {
+    name: campaign.name,
+    slug: campaign.slug,
+    type: campaignTypeLabel(campaign.type),
+    image: campaign.bannerImage,
+    title: campaign.seoTitle || campaign.name,
+    description: campaign.seoDescription || "Limited-time JPSPARE campaign on premium automotive parts and accessories.",
+    startsAt: campaign.startsAt,
+    endsAt: campaign.endsAt,
+  };
+}
+
+async function getHomepageCampaignPicks() {
+  const now = new Date();
+
+  try {
+    const campaigns = await prisma.promotionCampaign.findMany({
+      where: {
+        status: "ACTIVE",
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+          { OR: [{ landingPageEnabled: true }, { bannerImage: { not: null } }] },
+        ],
+      },
+      select: {
+        name: true,
+        slug: true,
+        type: true,
+        bannerImage: true,
+        seoTitle: true,
+        seoDescription: true,
+        startsAt: true,
+        endsAt: true,
+      },
+      orderBy: [{ priority: "desc" }, { startsAt: "desc" }, { createdAt: "desc" }],
+      take: 4,
+    });
+
+    return campaigns.map(mapCampaignToHomepageCard);
+  } catch (error) {
+    console.error("[Homepage Campaigns] Failed to load campaigns", {
+      message: error?.message,
+      code: error?.code,
+    });
+    return [];
+  }
+}
+
+function CampaignPicksSection({ campaigns }) {
+  if (!campaigns.length) return null;
+
+  return (
+    <section className="bg-transparent py-6 max-sm:py-4">
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          CURRENT CAMPAIGNS
+        </div>
+        <Link
+          href="/offers"
+          className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+        >
+          View all
+        </Link>
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)]">
+        <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
+          {campaigns.map((campaign) => (
+            <Link
+              key={campaign.slug}
+              href="/offers"
+              className="group overflow-hidden rounded-[8px] border border-[#e5eaf1] bg-white shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[#f2c7c9] hover:shadow-[0_20px_42px_rgba(239,51,56,0.10)]"
+            >
+              <span className="relative block h-[190px] overflow-hidden bg-[#111827]">
+                {campaign.image ? (
+                  <span
+                    className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
+                    style={{ backgroundImage: `url(${campaign.image})` }}
+                  />
+                ) : (
+                  <span className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(239,51,56,0.35),transparent_32%),linear-gradient(135deg,#111827,#0b1220)]" />
+                )}
+                <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-black/0" />
+                <span className="absolute left-4 top-4 rounded-[6px] bg-[#ef3338] px-3 py-1.5 text-[10px] font-black uppercase text-white shadow-[0_10px_22px_rgba(239,51,56,0.25)]">
+                  {campaign.type}
+                </span>
+              </span>
+              <span className="block p-5">
+                <span className="line-clamp-2 block text-[18px] font-black leading-tight text-[#111827] transition group-hover:text-[#ef3338]">
+                  {campaign.title}
+                </span>
+                <span className="mt-3 line-clamp-2 block text-[13px] font-medium leading-6 text-[#667085]">
+                  {campaign.description}
+                </span>
+                <span className="mt-5 inline-flex items-center gap-2 text-[12px] font-black text-[#111827] transition group-hover:text-[#ef3338]">
+                  View Offer <Icon name="arrow" className="size-3 transition-transform group-hover:translate-x-1" />
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function FeaturedArticlesSection({ articles }) {
@@ -420,6 +535,7 @@ function FeaturedArticlesSection({ articles }) {
 
 export default async function Home() {
   const featuredArticles = await getHomepageFeaturedArticles();
+  const campaignPicks = await getHomepageCampaignPicks();
 
   return (
     <main className="min-h-screen bg-[#f2f3f5] text-[#111827]">
@@ -440,6 +556,7 @@ export default async function Home() {
       <PremiumAuthenticVideoSection />
       <BestSellingAutoParts />
       <PremiumBrandsSection />
+      <CampaignPicksSection campaigns={campaignPicks} />
       <FeaturedArticlesSection articles={featuredArticles} />
       <CustomerReviews />
       <PartsInquirySection />
