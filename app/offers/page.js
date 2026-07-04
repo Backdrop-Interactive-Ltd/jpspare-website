@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "../../lib/db";
 
 export const metadata = {
   title: "Exclusive Deals & Offers | JPSPARE",
@@ -42,7 +43,117 @@ const benefits = [
   },
 ];
 
-export default function OffersPage() {
+function campaignTypeLabel(type) {
+  return String(type || "CUSTOM")
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function mapCampaignToOffer(campaign) {
+  return {
+    title: campaign.name,
+    slug: campaign.slug,
+    type: campaignTypeLabel(campaign.type),
+    image: campaign.bannerImage,
+    heading: campaign.seoTitle || campaign.name,
+    description: campaign.seoDescription || "Limited-time JPSPARE campaign on premium automotive parts and accessories.",
+  };
+}
+
+async function getActiveCampaignOffers() {
+  const now = new Date();
+
+  try {
+    const campaigns = await prisma.promotionCampaign.findMany({
+      where: {
+        status: "ACTIVE",
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+        ],
+      },
+      orderBy: [{ priority: "desc" }, { startsAt: "desc" }, { createdAt: "desc" }],
+      take: 20,
+      select: {
+        name: true,
+        slug: true,
+        type: true,
+        bannerImage: true,
+        seoTitle: true,
+        seoDescription: true,
+      },
+    });
+
+    return campaigns.map(mapCampaignToOffer);
+  } catch (error) {
+    console.error("[Offers Page] Failed to load campaigns", {
+      message: error?.message,
+      code: error?.code,
+    });
+    return [];
+  }
+}
+
+function StaticOffersFallback() {
+  return (
+    <div className="mx-auto mt-16 max-w-[1216px] rounded-[14px] bg-[#fff3ee] px-6 py-16 text-center shadow-[0_22px_55px_rgba(15,23,42,0.04)] sm:px-10 lg:py-20">
+      <div className="mx-auto grid size-20 place-items-center rounded-full bg-[#ffe0e2] text-[#e51f28]">
+        <Icon name="gift" className="size-10" />
+      </div>
+      <h2 className="mt-7 text-[24px] font-black text-[#111827]">Amazing Deals Coming Soon!</h2>
+      <p className="mx-auto mt-5 max-w-[720px] text-[17px] leading-7 text-[#4b5563]">
+        We're preparing exclusive discounts and special offers on our premium Japanese automotive parts. Check back soon for incredible savings on top-quality components.
+      </p>
+      <div className="mt-8 flex justify-center gap-4 max-sm:flex-col">
+        <Link href="/products" className="inline-flex h-[54px] items-center justify-center gap-3 rounded-[8px] bg-[#ef3338] px-8 text-[16px] font-bold text-white shadow-[0_16px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d91f25]">
+          Browse All Products
+          <Icon name="arrow" className="size-5" />
+        </Link>
+        <Link href="/collection" className="inline-flex h-[54px] items-center justify-center gap-3 rounded-[8px] border border-[#ef3338] bg-white px-8 text-[16px] font-bold text-[#ef3338] transition hover:-translate-y-0.5 hover:bg-[#fff1f1]">
+          Shop by Category
+          <Icon name="star" className="size-5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function CampaignOffers({ offers }) {
+  return (
+    <div className="mx-auto mt-16 grid max-w-[1216px] gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {offers.map((offer) => (
+        <article key={offer.slug} className="overflow-hidden rounded-[14px] border border-[#fee2e2] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.06)]">
+          {offer.image ? (
+            <div className="aspect-[16/9] overflow-hidden bg-[#fff1f2]">
+              <img src={offer.image} alt={offer.title} className="h-full w-full object-cover" />
+            </div>
+          ) : (
+            <div className="grid aspect-[16/9] place-items-center bg-[#fff1f2] text-[#ef3338]">
+              <Icon name="gift" className="size-12" />
+            </div>
+          )}
+          <div className="p-6">
+            <div className="inline-flex items-center rounded-full bg-[#fff1f1] px-3 py-1 text-[12px] font-black uppercase tracking-[0.06em] text-[#c81e25]">
+              {offer.type}
+            </div>
+            <h2 className="mt-4 text-[22px] font-black leading-tight text-[#111827]">{offer.heading}</h2>
+            <p className="mt-3 text-[15px] leading-7 text-[#4b5563]">{offer.description}</p>
+            <Link href="/offers" className="mt-6 inline-flex h-[46px] items-center justify-center gap-2 rounded-[8px] bg-[#ef3338] px-5 text-[15px] font-bold text-white shadow-[0_14px_24px_rgba(239,51,56,0.2)] transition hover:-translate-y-0.5 hover:bg-[#d91f25]">
+              View Offer
+              <Icon name="arrow" className="size-4" />
+            </Link>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export default async function OffersPage() {
+  const campaignOffers = await getActiveCampaignOffers();
+
   return (
     <main className="bg-white">
       <section className="mx-auto w-full max-w-[1635px] px-4 py-20 sm:px-6 lg:px-10 lg:py-24">
@@ -59,25 +170,7 @@ export default function OffersPage() {
           </p>
         </div>
 
-        <div className="mx-auto mt-16 max-w-[1216px] rounded-[14px] bg-[#fff3ee] px-6 py-16 text-center shadow-[0_22px_55px_rgba(15,23,42,0.04)] sm:px-10 lg:py-20">
-          <div className="mx-auto grid size-20 place-items-center rounded-full bg-[#ffe0e2] text-[#e51f28]">
-            <Icon name="gift" className="size-10" />
-          </div>
-          <h2 className="mt-7 text-[24px] font-black text-[#111827]">Amazing Deals Coming Soon!</h2>
-          <p className="mx-auto mt-5 max-w-[720px] text-[17px] leading-7 text-[#4b5563]">
-            We're preparing exclusive discounts and special offers on our premium Japanese automotive parts. Check back soon for incredible savings on top-quality components.
-          </p>
-          <div className="mt-8 flex justify-center gap-4 max-sm:flex-col">
-            <Link href="/products" className="inline-flex h-[54px] items-center justify-center gap-3 rounded-[8px] bg-[#ef3338] px-8 text-[16px] font-bold text-white shadow-[0_16px_30px_rgba(239,51,56,0.22)] transition hover:-translate-y-0.5 hover:bg-[#d91f25]">
-              Browse All Products
-              <Icon name="arrow" className="size-5" />
-            </Link>
-            <Link href="/collection" className="inline-flex h-[54px] items-center justify-center gap-3 rounded-[8px] border border-[#ef3338] bg-white px-8 text-[16px] font-bold text-[#ef3338] transition hover:-translate-y-0.5 hover:bg-[#fff1f1]">
-              Shop by Category
-              <Icon name="star" className="size-5" />
-            </Link>
-          </div>
-        </div>
+        {campaignOffers.length ? <CampaignOffers offers={campaignOffers} /> : <StaticOffersFallback />}
 
         <div className="mx-auto mt-16 grid max-w-[1216px] gap-10 md:grid-cols-3">
           {benefits.map((benefit) => (
