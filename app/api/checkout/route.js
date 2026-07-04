@@ -6,6 +6,7 @@ import { getOrCreateActiveCart } from "../../../lib/commerce/cart";
 import { reserveOrderStock, validateAvailableStock } from "../../../lib/commerce/inventory";
 import { createOrderNumber, normalizePaymentMethod, orderTotalFromCart, serializeOrder } from "../../../lib/commerce/orders";
 import { FUTURE_GATEWAY_METHODS, initiateSslCommerzPayment, isPaymentMethodEnabled, paymentGatewayForMethod, paymentMethodLabel } from "../../../lib/commerce/payments";
+import { clearStoredCartCoupon, resolveStoredCartCouponValidation } from "../../../lib/coupons/cart-coupon";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -109,7 +110,13 @@ export async function POST(request) {
       );
     }
 
-    const totals = orderTotalFromCart(cart);
+    const couponValidation = await resolveStoredCartCouponValidation(cart, { clearInvalid: false });
+    if (couponValidation && !couponValidation.valid) {
+      await clearStoredCartCoupon();
+      return validationResponse(couponValidation.message || "Applied coupon is no longer valid.", { coupon: couponValidation.code }, 409);
+    }
+
+    const totals = orderTotalFromCart(cart, couponValidation);
     const billingAddress = cleanAddress(body.billingAddress);
     const shippingAddress = cleanAddress(body.shippingAddress || body.billingAddress);
     const fieldErrors = validateAddress(billingAddress);
@@ -141,6 +148,7 @@ export async function POST(request) {
           orderNumber,
           ...(customerId ? { customer: { connect: { id: customerId } } } : {}),
           ...(cart?.id ? { cart: { connect: { id: cart.id } } } : {}),
+          ...(couponValidation?.valid ? { coupon: { connect: { id: couponValidation.couponId } } } : {}),
           status: "PENDING",
           paymentStatus: paymentMethod === "CASH_ON_DELIVERY" ? "UNPAID" : "PENDING",
           paymentGateway,
@@ -149,6 +157,15 @@ export async function POST(request) {
             gateway: paymentGateway,
             checkoutSource: "WEB",
             selectedAt: new Date().toISOString(),
+            coupon: couponValidation?.valid
+              ? {
+                  id: couponValidation.couponId,
+                  code: couponValidation.code,
+                  discountType: couponValidation.discountType,
+                  discountValue: couponValidation.discountValue,
+                  discountAmount: couponValidation.discountAmount,
+                }
+              : null,
           },
           subtotal: totals.subtotal,
           discountTotal: totals.discountTotal,
@@ -191,9 +208,35 @@ export async function POST(request) {
               syncStatus: "LOCAL",
             },
           },
+          ...(couponValidation?.valid
+            ? {
+                couponRedemption: {
+                  create: {
+                    coupon: { connect: { id: couponValidation.couponId } },
+                    ...(customerId ? { customer: { connect: { id: customerId } } } : {}),
+                    email: customer?.email || billingAddress.email || null,
+                    phone: customer?.phone || billingAddress.phone || null,
+                    code: couponValidation.code,
+                    discountType: couponValidation.discountType,
+                    discountValue: couponValidation.discountValue,
+                    discountAmount: couponValidation.discountAmount,
+                    subtotal: couponValidation.subtotal,
+                    totalAfterDiscount: couponValidation.totalAfterDiscount,
+                    status: "REDEEMED",
+                  },
+                },
+              }
+            : {}),
         },
         include: { customer: true, items: true, payments: true },
       });
+
+      if (couponValidation?.valid) {
+        await tx.coupon.update({
+          where: { id: couponValidation.couponId },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
 
       await reserveOrderStock(tx, items, created, {
         reason: `Reserved during checkout for order ${created.orderNumber}`,
@@ -207,6 +250,8 @@ export async function POST(request) {
 
       return created;
     });
+
+    await clearStoredCartCoupon();
 
     let redirectUrl = `/checkout/success/${order.orderNumber}`;
     let paymentSession = null;
