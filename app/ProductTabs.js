@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getHomepageFeaturedProductsClientData } from "@/lib/homepage/featured-products-client-cache";
+import { getActiveCampaignBadges } from "@/lib/campaigns/get-active-badges";
 import CartDrawer from "./CartDrawer";
 import { addProductToCart, addProductToWishlist } from "./commerce-client";
 import { formatPriceDisplay, parsePriceValue } from "./price-format";
@@ -292,6 +293,7 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
   const productSelectionKey = getProductKey(product);
   const [wishlistSelected, setWishlistSelected] = useState(false);
   const [compareSelected, setCompareSelected] = useState(false);
+  const [campaignBadges, setCampaignBadges] = useState([]);
   const regularPriceMeta = getRegularPriceMeta(product);
   const productBrand = getProductBrand(product);
   const showFreeDelivery = Boolean(product.freeDelivery || product.freeDeliveryEligible || (Number.isInteger(cardIndex) && cardIndex % 6 === 1));
@@ -316,6 +318,22 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
       window.removeEventListener("storage", syncProductSelection);
     };
   }, [productSelectionKey]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    getActiveCampaignBadges(product)
+      .then((badges) => {
+        if (mounted) setCampaignBadges(Array.isArray(badges) ? badges : []);
+      })
+      .catch(() => {
+        if (mounted) setCampaignBadges([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [product]);
 
   const handleCompareSelect = (event) => {
     event.preventDefault();
@@ -349,6 +367,11 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
               Free Delivery
             </span>
           ) : null}
+          {campaignBadges.map((badge) => (
+            <span key={badge} className={compact ? "rounded-[5px] bg-[#ef3338] px-2.5 py-1 text-[10.5px] font-black uppercase leading-none text-white shadow-[0_4px_10px_rgba(239,51,56,0.16)]" : "rounded-[5px] bg-[#ef3338] px-3 py-1.5 text-[11.5px] font-black uppercase leading-none text-white shadow-[0_5px_12px_rgba(239,51,56,0.16)]"}>
+              {badge}
+            </span>
+          ))}
         </div>
         <a
           href="/compare"
