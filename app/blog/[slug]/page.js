@@ -1,9 +1,74 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { prisma } from "../../../lib/db";
 import { Header } from "../../page";
 import { articles, getArticleBySlug } from "../articles";
 import { ArticleEngagementActions, ArticleEngagementSummary } from "./ArticleEngagement";
 import ArticleUtilityActions from "./ArticleUtilityActions";
+
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function estimateReadTime(content) {
+  const words = String(content || "").trim().split(/\s+/).filter(Boolean).length;
+  return `${Math.max(Math.ceil(words / 180), 1)} min read`;
+}
+
+function sectionsFromContent(content) {
+  const clean = String(content || "").trim();
+  if (!clean) return [];
+
+  return clean
+    .split(/\n{2,}/)
+    .map((paragraph, index) => [`Section ${index + 1}`, paragraph.trim()])
+    .filter(([, body]) => body);
+}
+
+function mapBlogPostToArticle(post) {
+  const category = post.category?.name || "General";
+  return {
+    title: post.title,
+    slug: post.slug,
+    category,
+    date: formatDate(post.publishedAt || post.createdAt),
+    read: estimateReadTime(post.content),
+    author: post.authorName || "JPSPARE Experts",
+    excerpt: post.excerpt || "",
+    image: post.featuredImage || "/jpspare-logo.png",
+    position: "center",
+    tag: post.tags?.[0] || category,
+    views: "New",
+    saves: 0,
+    likes: 0,
+    downloads: 0,
+    summary: post.excerpt || "",
+    sections: sectionsFromContent(post.content),
+    seoTitle: post.seoTitle,
+    seoDescription: post.seoDescription,
+  };
+}
+
+async function getDatabaseArticle(slug) {
+  try {
+    const post = await prisma.blogPost.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: { category: { select: { name: true, slug: true } } },
+    });
+    return post ? mapBlogPostToArticle(post) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getArticle(slug) {
+  return (await getDatabaseArticle(slug)) || getArticleBySlug(slug);
+}
 
 function Icon({ name, className = "size-4" }) {
   const paths = {
@@ -31,7 +96,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticle(slug);
 
   if (!article) {
     return {
@@ -40,14 +105,14 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: `${article.title} | JPSPARE Blog`,
-    description: article.excerpt,
+    title: article.seoTitle || `${article.title} | JPSPARE Blog`,
+    description: article.seoDescription || article.excerpt,
   };
 }
 
 export default async function BlogArticlePage({ params }) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticle(slug);
 
   if (!article) notFound();
 
