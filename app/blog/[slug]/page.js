@@ -5,6 +5,7 @@ import { Header } from "../../homepage/site-header";
 import { articles, getArticleBySlug } from "../articles";
 import { ArticleEngagementActions, ArticleEngagementSummary } from "./ArticleEngagement";
 import ArticleUtilityActions from "./ArticleUtilityActions";
+import { buildBlogPostingSchema, buildBreadcrumbSchema, jsonLdScript } from "@/lib/seo/structured-data";
 
 function formatDate(value) {
   if (!value) return "";
@@ -51,6 +52,9 @@ function mapBlogPostToArticle(post) {
     sections: sectionsFromContent(post.content),
     seoTitle: post.seoTitle,
     seoDescription: post.seoDescription,
+    featuredImage: post.featuredImage,
+    publishedAt: post.publishedAt || post.createdAt,
+    updatedAt: post.updatedAt,
   };
 }
 
@@ -117,10 +121,18 @@ export default async function BlogArticlePage({ params }) {
   if (!article) notFound();
 
   const relatedArticles = articles.filter((item) => item.slug !== article.slug);
+  const blogPostingSchema = buildBlogPostingSchema(article, { url: `/blog/${article.slug}` });
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" },
+    { name: article.title, url: `/blog/${article.slug}` },
+  ]);
 
   return (
     <>
       <Header />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(blogPostingSchema)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbSchema)} />
       <main className="min-h-screen bg-[#f4f6f8] pb-16 text-[#111827]">
         <section className="relative overflow-hidden bg-[#111827] px-4 py-16 text-white sm:px-6 lg:px-10">
           <div

@@ -3,6 +3,7 @@ import PublicChrome from "./PublicChrome";
 import CompareFloatingPanel from "./CompareFloatingPanel";
 import { Inter } from "next/font/google";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
+import { buildOrganizationSchema, buildWebsiteSchema, jsonLdScript } from "@/lib/seo/structured-data";
 
 const topDealFont = Inter({
   subsets: ["latin"],
@@ -87,10 +88,16 @@ export async function generateMetadata() {
   };
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const seoManager = await getSeoManager();
+  const organizationSchema = buildOrganizationSchema(seoManager.organization || fallbackSeoManager.organization);
+  const websiteSchema = buildWebsiteSchema(seoManager.website || fallbackSeoManager.website);
+
   return (
     <html lang="en" className={`h-full antialiased ${topDealFont.variable}`}>
       <body className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(organizationSchema)} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(websiteSchema)} />
         <script
           dangerouslySetInnerHTML={{
             __html: `
