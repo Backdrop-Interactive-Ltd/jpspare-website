@@ -1,6 +1,6 @@
 import VideoGallery from "../VideoGallery";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 
 export const metadata = {
   title: "Video Gallery | JPSPARE",

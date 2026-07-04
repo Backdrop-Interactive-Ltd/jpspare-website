@@ -1,5 +1,5 @@
 import SignInPageClient from "./SignInPageClient";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 
 export const metadata = {
   title: "Sign In | JPSPARE",

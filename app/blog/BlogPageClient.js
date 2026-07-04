@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 import { articles as staticArticles } from "./articles";
 
 const INITIAL_ARTICLE_CARDS = 12;

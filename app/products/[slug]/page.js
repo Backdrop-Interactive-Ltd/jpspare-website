@@ -1,5 +1,5 @@
 import ProductDetailClient from "./ProductDetailClient";
-import { MainNavBar } from "../../page";
+import { MainNavBar } from "../../homepage/site-header";
 
 export const metadata = {
   title: "Product Details | JPSPARE",

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "../../lib/db";
 import { frontendCategoryBlueprint } from "../../lib/catalogBlueprint";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 
 export const dynamic = "force-dynamic";
 

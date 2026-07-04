@@ -1,5 +1,5 @@
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 import CarAccessoriesClient from "./CarAccessoriesClient";
 
 export const metadata = {

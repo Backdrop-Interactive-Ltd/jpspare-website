@@ -1,6 +1,6 @@
 import TopDealBar from "../TopDealBar";
 import PartQuoteRequestSection from "../PartQuoteRequestSection";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 
 export const metadata = {
   title: "Parts Quote | JPSPARE",

@@ -1,5 +1,5 @@
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 import ProductsPageClient from "./ProductsPageClient";
 
 export const metadata = {

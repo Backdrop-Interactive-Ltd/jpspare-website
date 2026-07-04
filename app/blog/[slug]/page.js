@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../lib/db";
-import { Header } from "../../page";
+import { Header } from "../../homepage/site-header";
 import { articles, getArticleBySlug } from "../articles";
 import { ArticleEngagementActions, ArticleEngagementSummary } from "./ArticleEngagement";
 import ArticleUtilityActions from "./ArticleUtilityActions";

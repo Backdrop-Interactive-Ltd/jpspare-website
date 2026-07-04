@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 
 const dealCards = [
   ["Eid Utshob Deal", "Get amazing discount on Eid Utshob Deal!", "13 May 2026 - 27 May 2026", "Online", "from-blue-800 via-blue-600 to-orange-500", "80,000"],

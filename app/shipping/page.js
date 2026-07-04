@@ -1,6 +1,6 @@
 import Link from "next/link";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
 
 const fallbackShipping = defaultHomepageCms.sitePages.shipping;

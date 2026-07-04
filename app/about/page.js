@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import TopDealBar from "../TopDealBar";
-import { Header } from "../page";
+import { Header } from "../homepage/site-header";
 import { getHomepageCms } from "@/lib/homepage/cms";
 
 const fallbackMetadata = {
