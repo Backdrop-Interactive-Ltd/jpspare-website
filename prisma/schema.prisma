@@ -107,6 +107,13 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum CouponRedemptionStatus {
+  APPLIED
+  REDEEMED
+  CANCELLED
+  REFUNDED
+}
+
 enum StockStatus {
   IN_STOCK
   LOW_STOCK
@@ -554,25 +561,26 @@ model BlogPost {
 }
 
 model Customer {
-  id           String            @id @default(cuid())
-  email        String?           @unique
-  passwordHash String?
-  firstName    String?
-  lastName     String?
-  phone        String?           @unique
-  status       CustomerStatus    @default(ACTIVE)
-  lastLoginAt  DateTime?
-  addresses    CustomerAddress[]
-  vehicles     CustomerVehicle[]
-  carts        Cart[]
-  wishlist     WishlistItem[]
-  orders       Order[]
-  externalId   String?
-  source       String            @default("LOCAL")
-  syncStatus   SyncStatus        @default(LOCAL)
-  lastSyncedAt DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id                String             @id @default(cuid())
+  email             String?            @unique
+  passwordHash      String?
+  firstName         String?
+  lastName          String?
+  phone             String?            @unique
+  status            CustomerStatus     @default(ACTIVE)
+  lastLoginAt       DateTime?
+  addresses         CustomerAddress[]
+  vehicles          CustomerVehicle[]
+  carts             Cart[]
+  wishlist          WishlistItem[]
+  orders            Order[]
+  couponRedemptions CouponRedemption[]
+  externalId        String?
+  source            String             @default("LOCAL")
+  syncStatus        SyncStatus         @default(LOCAL)
+  lastSyncedAt      DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([status])
   @@index([externalId])
@@ -780,25 +788,26 @@ model WishlistItem {
 }
 
 model Coupon {
-  id            String     @id @default(cuid())
-  code          String     @unique
+  id            String             @id @default(cuid())
+  code          String             @unique
   description   String?
-  discountType  String     @default("FIXED")
-  discountValue Decimal    @db.Decimal(12, 2)
-  minOrderValue Decimal?   @db.Decimal(12, 2)
-  maxDiscount   Decimal?   @db.Decimal(12, 2)
+  discountType  String             @default("FIXED")
+  discountValue Decimal            @db.Decimal(12, 2)
+  minOrderValue Decimal?           @db.Decimal(12, 2)
+  maxDiscount   Decimal?           @db.Decimal(12, 2)
   startsAt      DateTime?
   endsAt        DateTime?
   usageLimit    Int?
-  usedCount     Int        @default(0)
-  isActive      Boolean    @default(true)
+  usedCount     Int                @default(0)
+  isActive      Boolean            @default(true)
   orders        Order[]
+  redemptions   CouponRedemption[]
   externalId    String?
-  source        String     @default("LOCAL")
-  syncStatus    SyncStatus @default(LOCAL)
+  source        String             @default("LOCAL")
+  syncStatus    SyncStatus         @default(LOCAL)
   lastSyncedAt  DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([isActive])
   @@index([externalId])
@@ -814,6 +823,7 @@ model Order {
   cart               Cart?               @relation(fields: [cartId], references: [id], onDelete: SetNull)
   couponId           String?
   coupon             Coupon?             @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponRedemption   CouponRedemption?
   items              OrderItem[]
   payments           Payment[]
   inventoryMovements InventoryMovement[]
@@ -858,6 +868,34 @@ model Order {
   @@index([externalOrderId])
   @@index([externalId])
   @@index([source, syncStatus])
+}
+
+model CouponRedemption {
+  id                 String                 @id @default(cuid())
+  couponId           String
+  coupon             Coupon                 @relation(fields: [couponId], references: [id])
+  orderId            String?                @unique
+  order              Order?                 @relation(fields: [orderId], references: [id])
+  customerId         String?
+  customer           Customer?              @relation(fields: [customerId], references: [id])
+  email              String?
+  phone              String?
+  code               String
+  discountType       String
+  discountValue      Decimal                @db.Decimal(12, 2)
+  discountAmount     Decimal                @db.Decimal(12, 2)
+  subtotal           Decimal                @db.Decimal(12, 2)
+  totalAfterDiscount Decimal                @db.Decimal(12, 2)
+  status             CouponRedemptionStatus @default(APPLIED)
+  redeemedAt         DateTime               @default(now())
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([couponId])
+  @@index([customerId])
+  @@index([code])
+  @@index([status])
+  @@index([redeemedAt])
 }
 
 model OrderItem {
