@@ -16,6 +16,7 @@ import { MainNavBar } from "./homepage/homepage-mega-menu";
 export { MainNavBar } from "./homepage/homepage-mega-menu";
 import { vehicleBrands, premiumBrands, categoryShowcase, heroCategorySlider } from "./homepage/homepage-data";
 import { Icon, slugify } from "./homepage/homepage-ui-helpers";
+import { articles as staticArticles } from "./blog/articles";
 
 
 function LogoMark({ logo }) {
@@ -308,7 +309,114 @@ function PremiumBrandsSection() {
   );
 }
 
-export default function Home() {
+function formatArticleDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function mapBlogPostToArticle(post) {
+  const category = post.category?.name || "General";
+  return {
+    title: post.title,
+    slug: post.slug,
+    category,
+    date: formatArticleDate(post.publishedAt || post.createdAt),
+    author: post.authorName || "JPSPARE Experts",
+    excerpt: post.excerpt || "",
+    image: post.featuredImage || "/jpspare-logo.png",
+    tag: post.tags?.[0] || category,
+  };
+}
+
+async function getHomepageFeaturedArticles() {
+  try {
+    const { prisma } = await eval('import("../lib/db")');
+    const posts = await prisma.blogPost.findMany({
+      where: { status: "PUBLISHED", featured: true },
+      select: {
+        title: true,
+        slug: true,
+        excerpt: true,
+        featuredImage: true,
+        authorName: true,
+        publishedAt: true,
+        createdAt: true,
+        tags: true,
+        category: { select: { name: true, slug: true } },
+      },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: 4,
+    });
+
+    if (!posts.length) return staticArticles.slice(0, 4);
+    return posts.map(mapBlogPostToArticle);
+  } catch {
+    return staticArticles.slice(0, 4);
+  }
+}
+
+function FeaturedArticlesSection({ articles }) {
+  return (
+    <section className="bg-transparent py-6 max-sm:py-4">
+      <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
+        <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
+          FEATURED ARTICLES
+        </div>
+        <Link
+          href="/blog"
+          className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
+        >
+          View all
+        </Link>
+      </div>
+      <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)]">
+        <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
+          {articles.map((article) => (
+            <Link
+              key={article.slug}
+              href={`/blog/${article.slug}`}
+              className="group overflow-hidden rounded-[8px] border border-[#e5eaf1] bg-white shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[#f2c7c9] hover:shadow-[0_20px_42px_rgba(239,51,56,0.10)]"
+            >
+              <span className="relative block h-[190px] overflow-hidden bg-[#111827]">
+                <span
+                  className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
+                  style={{ backgroundImage: `url(${article.image})` }}
+                />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/5" />
+                <span className="absolute left-4 top-4 rounded-[6px] bg-[#ef3338] px-3 py-1.5 text-[10px] font-black uppercase text-white shadow-[0_10px_22px_rgba(239,51,56,0.25)]">
+                  {article.category}
+                </span>
+              </span>
+              <span className="block p-5">
+                <span className="flex flex-wrap items-center gap-3 text-[11px] font-black uppercase tracking-[0.06em] text-[#98a2b3]">
+                  <span>{article.date}</span>
+                  <span>{article.author}</span>
+                </span>
+                <span className="mt-3 line-clamp-2 block text-[18px] font-black leading-tight text-[#111827] transition group-hover:text-[#ef3338]">
+                  {article.title}
+                </span>
+                <span className="mt-3 line-clamp-2 block text-[13px] font-medium leading-6 text-[#667085]">
+                  {article.excerpt}
+                </span>
+                <span className="mt-5 inline-flex items-center gap-2 text-[12px] font-black text-[#111827] transition group-hover:text-[#ef3338]">
+                  Continue Reading <Icon name="arrow" className="size-3 transition-transform group-hover:translate-x-1" />
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default async function Home() {
+  const featuredArticles = await getHomepageFeaturedArticles();
+
   return (
     <main className="min-h-screen bg-[#f2f3f5] text-[#111827]">
       <CompareHashRedirect />
@@ -328,6 +436,7 @@ export default function Home() {
       <PremiumAuthenticVideoSection />
       <BestSellingAutoParts />
       <PremiumBrandsSection />
+      <FeaturedArticlesSection articles={featuredArticles} />
       <CustomerReviews />
       <PartsInquirySection />
       <section id="parts" className="sr-only">
