@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Header } from "../page";
-import { articles } from "./articles";
+import { articles as staticArticles } from "./articles";
 
 const INITIAL_ARTICLE_CARDS = 12;
 const MAX_ARTICLE_CARDS = 24;
@@ -64,7 +64,7 @@ const exploreTopics = [
   },
 ];
 
-function getTopicArticleCount(topic) {
+function getTopicArticleCount(topic, articles) {
   const count = articles.filter((article) => {
     const haystack = `${article.title} ${article.excerpt} ${article.tag} ${article.category}`.toLowerCase();
     return topic.terms.some((term) => haystack.includes(term));
@@ -173,7 +173,7 @@ function EditorialSpotlightBanner({ article }) {
   );
 }
 
-function ExploreTopicsSection() {
+function ExploreTopicsSection({ articles }) {
   return (
     <section className="w-full px-4 pb-10 pt-2 sm:px-6 lg:px-10">
       <div className="mx-auto w-full max-w-[1635px]">
@@ -192,7 +192,7 @@ function ExploreTopicsSection() {
               className={`group relative flex min-h-[340px] flex-col overflow-hidden rounded-[8px] border-2 border-transparent bg-white p-8 text-left shadow-[0_18px_42px_rgba(15,23,42,0.04)] outline-none transition duration-300 hover:-translate-y-1 ${topic.border} ${topic.shadow} focus-visible:ring-2 focus-visible:ring-[#ef3338] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f6f8] max-sm:min-h-[300px]`}
             >
               <span className={`absolute right-7 top-7 grid size-8 place-items-center rounded-full ${topic.badge} text-[11px] font-black text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)] transition duration-300 group-hover:scale-110`}>
-                {getTopicArticleCount(topic)}
+                {getTopicArticleCount(topic, articles)}
               </span>
               <span className={`inline-flex size-16 items-center justify-center rounded-[14px] ${topic.badge} text-white shadow-[0_16px_32px_rgba(15,23,42,0.08)] transition duration-300 group-hover:scale-[1.04]`}>
                 <Icon name={topic.icon} className="size-8" />
@@ -210,7 +210,8 @@ function ExploreTopicsSection() {
   );
 }
 
-export default function BlogPageClient() {
+export default function BlogPageClient({ initialArticles }) {
+  const articles = Array.isArray(initialArticles) && initialArticles.length ? initialArticles : staticArticles;
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ARTICLE_CARDS);
 
@@ -328,7 +329,7 @@ export default function BlogPageClient() {
           )}
         </section>
 
-        <ExploreTopicsSection />
+        <ExploreTopicsSection articles={articles} />
       </main>
     </>
   );
