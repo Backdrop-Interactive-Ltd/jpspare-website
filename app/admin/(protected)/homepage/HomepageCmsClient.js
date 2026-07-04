@@ -1069,6 +1069,62 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
     }));
   }
 
+  function setSeoManagerGroup(group, field, value) {
+    setCms((current) => ({
+      ...current,
+      seoManager: {
+        ...current.seoManager,
+        [group]: {
+          ...current.seoManager?.[group],
+          [field]: value,
+        },
+      },
+    }));
+  }
+
+  function updateSeoManagerSameAs(index, value) {
+    setCms((current) => {
+      const sameAs = [...(current.seoManager?.organization?.sameAs || [])];
+      sameAs[index] = value;
+      return {
+        ...current,
+        seoManager: {
+          ...current.seoManager,
+          organization: {
+            ...current.seoManager?.organization,
+            sameAs,
+          },
+        },
+      };
+    });
+  }
+
+  function addSeoManagerSameAs() {
+    setCms((current) => ({
+      ...current,
+      seoManager: {
+        ...current.seoManager,
+        organization: {
+          ...current.seoManager?.organization,
+          sameAs: [...(current.seoManager?.organization?.sameAs || []), ""],
+        },
+      },
+    }));
+  }
+
+  function removeSeoManagerSameAs(index) {
+    setCms((current) => ({
+      ...current,
+      seoManager: {
+        ...current.seoManager,
+        organization: {
+          ...current.seoManager?.organization,
+          sameAs: (current.seoManager?.organization?.sameAs || []).filter((_, itemIndex) => itemIndex !== index),
+        },
+      },
+    }));
+  }
+
   function updateSlide(index, patch) {
     setCms((current) => ({
       ...current,
@@ -3751,6 +3807,142 @@ export default function HomepageCmsClient({ initialCms, options, canManage }) {
               <input value={cms.seo.keywords || ""} disabled={readOnly} onChange={(event) => setNested("seo", "keywords", event.target.value)} className={inputClass(readOnly)} />
             </Field>
             <ImageField label="OG image" value={cms.seo.ogImage} folder="general" readOnly={readOnly} onSelect={(url) => setNested("seo", "ogImage", url)} />
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          eyebrow="SEO Manager"
+          title="Global SEO Settings"
+          description="Manage global defaults for metadata, robots, sitemap, schema, and social profile data. Storefront metadata wiring will happen separately."
+          action={
+            <button
+              type="button"
+              onClick={() => saveCms("SEO Manager")}
+              disabled={saving || readOnly}
+              className="h-11 rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] transition hover:bg-[#d71920] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save SEO Manager"}
+            </button>
+          }
+        >
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Global SEO</p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <Field label="Site Name">
+                  <input value={cms.seoManager?.global?.siteName || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "siteName", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Title Template">
+                  <input value={cms.seoManager?.global?.titleTemplate || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "titleTemplate", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Default Title">
+                  <input value={cms.seoManager?.global?.defaultTitle || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "defaultTitle", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Default OG Image">
+                  <input value={cms.seoManager?.global?.defaultOgImage || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "defaultOgImage", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Canonical Base URL">
+                  <input value={cms.seoManager?.global?.canonicalBaseUrl || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "canonicalBaseUrl", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Twitter Handle">
+                  <input value={cms.seoManager?.global?.twitterHandle || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "twitterHandle", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Default Description">
+                  <textarea value={cms.seoManager?.global?.defaultDescription || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("global", "defaultDescription", event.target.value)} className={textareaClass(readOnly)} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Robots</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Toggle label="index" checked={cms.seoManager?.robots?.index !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("robots", "index", value)} />
+                <Toggle label="follow" checked={cms.seoManager?.robots?.follow !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("robots", "follow", value)} />
+                <Toggle label="googleBotIndex" checked={cms.seoManager?.robots?.googleBotIndex !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("robots", "googleBotIndex", value)} />
+                <Toggle label="googleBotFollow" checked={cms.seoManager?.robots?.googleBotFollow !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("robots", "googleBotFollow", value)} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Sitemap</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Toggle label="enabled" checked={cms.seoManager?.sitemap?.enabled !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "enabled", value)} />
+                <Toggle label="includeProducts" checked={cms.seoManager?.sitemap?.includeProducts !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "includeProducts", value)} />
+                <Toggle label="includeCategories" checked={cms.seoManager?.sitemap?.includeCategories !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "includeCategories", value)} />
+                <Toggle label="includeBrands" checked={cms.seoManager?.sitemap?.includeBrands !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "includeBrands", value)} />
+                <Toggle label="includeBlogPosts" checked={cms.seoManager?.sitemap?.includeBlogPosts !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "includeBlogPosts", value)} />
+                <Toggle label="includeStaticPages" checked={cms.seoManager?.sitemap?.includeStaticPages !== false} disabled={readOnly} onChange={(value) => setSeoManagerGroup("sitemap", "includeStaticPages", value)} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Organization Schema</p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <Field label="Name">
+                  <input value={cms.seoManager?.organization?.name || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "name", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="URL">
+                  <input value={cms.seoManager?.organization?.url || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "url", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Logo">
+                  <input value={cms.seoManager?.organization?.logo || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "logo", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Phone">
+                  <input value={cms.seoManager?.organization?.phone || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "phone", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Email">
+                  <input value={cms.seoManager?.organization?.email || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "email", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Address">
+                  <input value={cms.seoManager?.organization?.address || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("organization", "address", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+              <div className="mt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black text-[#344054]">sameAs links</p>
+                  <button type="button" disabled={readOnly} onClick={addSeoManagerSameAs} className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-black text-[#ef3338] disabled:cursor-not-allowed disabled:opacity-60">
+                    Add Link
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {(cms.seoManager?.organization?.sameAs || []).map((url, index) => (
+                    <div key={`seo-same-as-${index}`} className="flex gap-2">
+                      <input value={url || ""} disabled={readOnly} onChange={(event) => updateSeoManagerSameAs(index, event.target.value)} className={inputClass(readOnly)} />
+                      <button type="button" disabled={readOnly} onClick={() => removeSeoManagerSameAs(index)} className="h-12 rounded-xl border border-red-200 px-4 text-xs font-black text-[#ef3338] disabled:cursor-not-allowed disabled:opacity-60">
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  {!(cms.seoManager?.organization?.sameAs || []).length ? <p className="text-sm font-semibold text-[#98a2b3]">No organization profile links yet.</p> : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Website Schema</p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <Field label="Name">
+                  <input value={cms.seoManager?.website?.name || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("website", "name", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="URL">
+                  <input value={cms.seoManager?.website?.url || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("website", "url", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+                <Field label="Search URL">
+                  <input value={cms.seoManager?.website?.searchUrl || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("website", "searchUrl", event.target.value)} className={inputClass(readOnly)} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#eef0f3] bg-[#fafbfc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ef3338]">Social Profiles</p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                {["facebook", "instagram", "youtube", "tiktok", "linkedin"].map((field) => (
+                  <Field key={field} label={field.charAt(0).toUpperCase() + field.slice(1)}>
+                    <input value={cms.seoManager?.socialProfiles?.[field] || ""} disabled={readOnly} onChange={(event) => setSeoManagerGroup("socialProfiles", field, event.target.value)} className={inputClass(readOnly)} />
+                  </Field>
+                ))}
+              </div>
+            </div>
           </div>
         </SectionCard>
 
