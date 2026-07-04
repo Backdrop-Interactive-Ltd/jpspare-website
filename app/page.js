@@ -9,7 +9,73 @@ import { Header } from "./homepage/site-header";
 import { premiumBrands, categoryShowcase, heroCategorySlider } from "./homepage/homepage-data";
 import { Icon, slugify } from "./homepage/homepage-ui-helpers";
 import { articles as staticArticles } from "./blog/articles";
+import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
 
+const fallbackHomepageSeo = {
+  title: "JPSPARE | Premium Auto Parts & Accessories",
+  description: "Shop demo premium auto parts and accessories for Japanese vehicles.",
+  ogImage: "/jpspare-logo-wide-clean.png",
+  canonicalBaseUrl: defaultHomepageCms.seoManager.global.canonicalBaseUrl,
+};
+
+function cleanSeoText(value, fallback = "") {
+  const clean = String(value ?? "").trim();
+  return clean || fallback;
+}
+
+function safeSeoUrl(value, fallback) {
+  try {
+    return new URL(cleanSeoText(value, fallback)).toString();
+  } catch {
+    return new URL(fallback).toString();
+  }
+}
+
+function safeSeoImage(value, baseUrl, fallback) {
+  const image = cleanSeoText(value, fallback);
+  try {
+    return new URL(image, baseUrl).toString();
+  } catch {
+    return new URL(fallback, baseUrl).toString();
+  }
+}
+
+async function getHomepageSeoManager() {
+  try {
+    const cms = await getHomepageCms();
+    return cms?.seoManager || defaultHomepageCms.seoManager;
+  } catch {
+    return defaultHomepageCms.seoManager;
+  }
+}
+
+export async function generateMetadata() {
+  const seoManager = await getHomepageSeoManager();
+  const global = seoManager?.global || {};
+  const homepage = seoManager?.homepage || {};
+  const canonicalBaseUrl = safeSeoUrl(global.canonicalBaseUrl, fallbackHomepageSeo.canonicalBaseUrl);
+  const title = cleanSeoText(homepage.title, cleanSeoText(global.defaultTitle, fallbackHomepageSeo.title));
+  const description = cleanSeoText(homepage.description, cleanSeoText(global.defaultDescription, fallbackHomepageSeo.description));
+  const image = safeSeoImage(homepage.ogImage, canonicalBaseUrl, cleanSeoText(global.defaultOgImage, fallbackHomepageSeo.ogImage));
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalBaseUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      images: [image],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [image],
+    },
+  };
+}
 
 function Hero() {
   const image3Slides = [
