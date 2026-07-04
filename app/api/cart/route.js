@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveCart, getOrCreateActiveCart, recalculateCart, resolveCartProduct, serializeCart } from "../../../lib/commerce/cart";
+import { clearStoredCartCoupon, serializeCartWithCoupon } from "../../../lib/coupons/cart-coupon";
 import { prisma } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const cart = await getActiveCart();
-  return NextResponse.json({ cart: serializeCart(cart) });
+  return NextResponse.json({ cart: await serializeCartWithCoupon(cart) });
 }
 
 export async function POST(request) {
@@ -46,7 +47,7 @@ export async function POST(request) {
   }
 
   const updated = await recalculateCart(cart.id);
-  return NextResponse.json({ cart: serializeCart(updated) });
+  return NextResponse.json({ cart: await serializeCartWithCoupon(updated) });
 }
 
 export async function DELETE() {
@@ -57,7 +58,7 @@ export async function DELETE() {
   }
 
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+  await clearStoredCartCoupon();
   const updated = await recalculateCart(cart.id);
-  return NextResponse.json({ cart: serializeCart(updated) });
+  return NextResponse.json({ cart: await serializeCartWithCoupon(updated) });
 }
-
