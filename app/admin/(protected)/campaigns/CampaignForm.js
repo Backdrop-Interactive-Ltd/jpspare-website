@@ -105,6 +105,143 @@ function parseJsonField(value, fieldLabel) {
   }
 }
 
+function label(value) {
+  return String(value || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDateTime(value) {
+  if (!value) return "Not scheduled";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not scheduled";
+  return date.toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function prettyJson(value) {
+  if (!String(value || "").trim()) return "Not configured";
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function campaignAnalytics(campaign) {
+  const now = new Date();
+  const startsAt = campaign.startsAt ? new Date(campaign.startsAt) : null;
+  const endsAt = campaign.endsAt ? new Date(campaign.endsAt) : null;
+  const isCurrentlyActive =
+    campaign.status === "ACTIVE" &&
+    (!startsAt || startsAt <= now) &&
+    (!endsAt || endsAt >= now);
+  const durationInDays = startsAt && endsAt ? Math.max(1, Math.ceil((endsAt.getTime() - startsAt.getTime()) / 86400000)) : null;
+  const timeRemaining = endsAt ? Math.ceil((endsAt.getTime() - now.getTime()) / 86400000) : null;
+
+  return {
+    isCurrentlyActive,
+    durationInDays,
+    timeRemaining,
+    homepageEnabled: Boolean(campaign.landingPageEnabled || campaign.bannerImage),
+  };
+}
+
+function formatRemainingDays(value) {
+  if (value === null) return "Open ended";
+  if (value < 0) return "Ended";
+  if (value === 0) return "Ends today";
+  return `${value} day${value === 1 ? "" : "s"} remaining`;
+}
+
+function TimelineDot({ active, label: itemLabel }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className={`grid size-8 place-items-center rounded-full text-xs font-black ${active ? "bg-[#ef3338] text-white" : "bg-[#f2f4f7] text-[#98a2b3]"}`}>
+        •
+      </span>
+      <span className={`text-sm font-black ${active ? "text-[#111827]" : "text-[#98a2b3]"}`}>{itemLabel}</span>
+    </div>
+  );
+}
+
+function CampaignReadOnlySummary({ campaign }) {
+  const analytics = campaignAnalytics(campaign);
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Campaign Summary</p>
+            <h3 className="mt-1 text-2xl font-black text-[#111827]">{campaign.name}</h3>
+            <p className="mt-2 text-sm font-bold text-[#667085]">{campaign.slug}</p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${analytics.isCurrentlyActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+            {analytics.isCurrentlyActive ? "Live now" : "Not live"}
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["Type", label(campaign.type)],
+            ["Priority", campaign.priority ?? 0],
+            ["Start date", formatDateTime(campaign.startsAt)],
+            ["End date", formatDateTime(campaign.endsAt)],
+            ["Duration", analytics.durationInDays ? `${analytics.durationInDays} days` : "Open"],
+            ["Time remaining", formatRemainingDays(analytics.timeRemaining)],
+            ["Homepage Enabled", analytics.homepageEnabled ? "Enabled" : "Off"],
+            ["Landing Page", campaign.landingPageEnabled ? "Enabled" : "Off"],
+          ].map(([itemLabel, value]) => (
+            <div key={itemLabel} className="rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">{itemLabel}</p>
+              <p className="mt-2 text-sm font-black text-[#111827]">{value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+        <h3 className="text-lg font-black text-[#111827]">Status Timeline</h3>
+        <div className="mt-5 grid gap-4 md:grid-cols-4">
+          <TimelineDot label="Draft" active={campaign.status === "DRAFT"} />
+          <TimelineDot label="Scheduled" active={campaign.status === "SCHEDULED"} />
+          <TimelineDot label="Active" active={campaign.status === "ACTIVE"} />
+          <TimelineDot label="Ended" active={campaign.status === "ENDED" || campaign.status === "ARCHIVED"} />
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">SEO Preview</h3>
+          <dl className="mt-5 space-y-4">
+            <div>
+              <dt className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">SEO title</dt>
+              <dd className="mt-1 text-sm font-bold text-[#111827]">{campaign.seoTitle || "Not configured"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">SEO description</dt>
+              <dd className="mt-1 text-sm font-semibold leading-6 text-[#667085]">{campaign.seoDescription || "Not configured"}</dd>
+            </div>
+          </dl>
+        </div>
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">Rule Data</h3>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">rulesJson</p>
+              <pre className="mt-2 max-h-56 overflow-auto rounded-2xl bg-[#111827] p-4 text-xs font-semibold leading-5 text-white">{prettyJson(campaign.rulesJson)}</pre>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">actionsJson</p>
+              <pre className="mt-2 max-h-56 overflow-auto rounded-2xl bg-[#111827] p-4 text-xs font-semibold leading-5 text-white">{prettyJson(campaign.actionsJson)}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function CampaignForm({ mode, campaign, canManage }) {
   const router = useRouter();
   const [form, setForm] = useState(() => normalizeCampaign(campaign));
@@ -177,6 +314,8 @@ export default function CampaignForm({ mode, campaign, canManage }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {mode === "edit" ? <CampaignReadOnlySummary campaign={form} /> : null}
+
       <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

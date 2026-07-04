@@ -37,6 +37,32 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString("en-GB");
 }
 
+function campaignAnalytics(campaign) {
+  const now = new Date();
+  const startsAt = campaign.startsAt ? new Date(campaign.startsAt) : null;
+  const endsAt = campaign.endsAt ? new Date(campaign.endsAt) : null;
+  const isCurrentlyActive =
+    campaign.status === "ACTIVE" &&
+    (!startsAt || startsAt <= now) &&
+    (!endsAt || endsAt >= now);
+  const durationInDays = startsAt && endsAt ? Math.max(1, Math.ceil((endsAt.getTime() - startsAt.getTime()) / 86400000)) : null;
+  const timeRemaining = endsAt ? Math.ceil((endsAt.getTime() - now.getTime()) / 86400000) : null;
+
+  return {
+    isCurrentlyActive,
+    durationInDays,
+    timeRemaining,
+    homepageEnabled: Boolean(campaign.landingPageEnabled || campaign.bannerImage),
+  };
+}
+
+function formatDaysRemaining(value) {
+  if (value === null) return "Open ended";
+  if (value < 0) return "Ended";
+  if (value === 0) return "Ends today";
+  return `${value} day${value === 1 ? "" : "s"}`;
+}
+
 export default async function AdminCampaignsPage({ searchParams }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
@@ -123,45 +149,57 @@ export default async function AdminCampaignsPage({ searchParams }) {
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-[1180px] w-full text-left">
+          <table className="min-w-[1420px] w-full text-left">
             <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
               <tr>
                 <th className="px-5 py-4">Campaign</th>
                 <th className="px-5 py-4">Type</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Priority</th>
-                <th className="px-5 py-4">Window</th>
+                <th className="px-5 py-4">Active Window</th>
+                <th className="px-5 py-4">Days Remaining</th>
+                <th className="px-5 py-4">Homepage</th>
                 <th className="px-5 py-4">Landing</th>
                 <th className="px-5 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eef0f3]">
-              {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="transition hover:bg-red-50/40">
-                  <td className="px-5 py-4">
-                    <Link href={`/admin/campaigns/${campaign.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{campaign.name}</Link>
-                    <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{campaign.slug}</p>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-black text-[#111827]">{label(campaign.type)}</td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(campaign.status)}`}>{label(campaign.status)}</span>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-black text-[#111827]">{campaign.priority}</td>
-                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">
-                    <span className="block">Start: {formatDate(campaign.startsAt)}</span>
-                    <span className="mt-1 block">End: {formatDate(campaign.endsAt)}</span>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{campaign.landingPageEnabled ? "Enabled" : "Off"}</td>
-                  <td className="px-5 py-4 text-right">
-                    <Link href={`/admin/campaigns/${campaign.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
-                      {canManage ? "Edit" : "View"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {campaigns.map((campaign) => {
+                const analytics = campaignAnalytics(campaign);
+
+                return (
+                  <tr key={campaign.id} className="transition hover:bg-red-50/40">
+                    <td className="px-5 py-4">
+                      <Link href={`/admin/campaigns/${campaign.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{campaign.name}</Link>
+                      <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{campaign.slug}</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{label(campaign.type)}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(campaign.status)}`}>{label(campaign.status)}</span>
+                      <span className={`mt-2 block text-xs font-black ${analytics.isCurrentlyActive ? "text-emerald-600" : "text-[#98a2b3]"}`}>
+                        {analytics.isCurrentlyActive ? "Live now" : "Not live"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{campaign.priority}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">
+                      <span className="block">Start: {formatDate(campaign.startsAt)}</span>
+                      <span className="mt-1 block">End: {formatDate(campaign.endsAt)}</span>
+                      <span className="mt-1 block text-xs text-[#98a2b3]">Duration: {analytics.durationInDays ? `${analytics.durationInDays} days` : "Open"}</span>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{formatDaysRemaining(analytics.timeRemaining)}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{analytics.homepageEnabled ? "Enabled" : "Off"}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{campaign.landingPageEnabled ? "Enabled" : "Off"}</td>
+                    <td className="px-5 py-4 text-right">
+                      <Link href={`/admin/campaigns/${campaign.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                        {canManage ? "Edit" : "View"}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
               {!campaigns.length ? (
                 <tr>
-                  <td colSpan="7" className="px-5 py-16 text-center">
+                  <td colSpan="9" className="px-5 py-16 text-center">
                     <p className="text-lg font-black text-[#111827]">No campaigns found</p>
                     <p className="mt-2 text-sm font-semibold text-[#667085]">Create your first campaign or change filters.</p>
                   </td>
