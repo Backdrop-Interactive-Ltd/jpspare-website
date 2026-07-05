@@ -105,8 +105,10 @@ export default async function AccountReferralsPage() {
           <SummaryCard label="Pending" value={formatNumber(dashboard.stats.pending)} />
           <SummaryCard label="Qualified" value={formatNumber(dashboard.stats.qualified)} />
           <SummaryCard label="Rewarded" value={formatNumber(dashboard.stats.rewarded)} />
-          <SummaryCard label="Rewards" value={formatNumber(dashboard.stats.totalRewards)} helper="Issued records" />
-          <SummaryCard label="Reward Points" value={formatNumber(dashboard.stats.totalRewardPoints)} />
+          <SummaryCard label="Rewards Earned" value={formatNumber(dashboard.stats.totalRewardsEarned)} helper="Issued records" />
+          <SummaryCard label="Reward Points" value={formatNumber(dashboard.stats.totalRewardPointsReceived)} />
+          <SummaryCard label="Conversion" value={`${formatNumber(dashboard.stats.conversionRate)}%`} helper="Qualified + rewarded" />
+          <SummaryCard label="Avg Reward" value={formatNumber(dashboard.stats.averageRewardPerSuccessfulReferral)} helper="Per successful referral" />
         </section>
 
         <div className="mt-10 overflow-hidden rounded-[12px] border border-[#dfe5ec] bg-white shadow-sm">

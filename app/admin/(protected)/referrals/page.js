@@ -169,9 +169,27 @@ export default async function AdminReferralsPage({ searchParams }) {
     }),
   ]);
   const topReferrers = await getTopReferrers(where);
+  const [rewardCount, referrerGroups, latestActivity] = await prisma.$transaction([
+    prisma.referralReward.count({
+      where: {
+        relationship: { is: where },
+      },
+    }),
+    prisma.referralRelationship.groupBy({
+      by: ["referrerCustomerId"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.referralRelationship.aggregate({
+      where,
+      _max: { updatedAt: true, createdAt: true },
+    }),
+  ]);
   const qualified = statusCount(statusCounts, "QUALIFIED");
   const rewarded = statusCount(statusCounts, "REWARDED");
   const conversionRate = total ? Math.round(((qualified + rewarded) / total) * 100) : 0;
+  const averageRewardsPerReferrer = referrerGroups.length ? rewardCount / referrerGroups.length : 0;
+  const latestReferralActivity = latestActivity._max?.updatedAt || latestActivity._max?.createdAt || null;
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   return (
@@ -189,6 +207,8 @@ export default async function AdminReferralsPage({ searchParams }) {
         <SummaryCard label="Rewarded" value={formatNumber(rewarded)} />
         <SummaryCard label="Cancelled" value={formatNumber(statusCount(statusCounts, "CANCELLED"))} />
         <SummaryCard label="Conversion" value={`${conversionRate}%`} helper="Qualified + rewarded" />
+        <SummaryCard label="Avg Rewards / Referrer" value={averageRewardsPerReferrer.toFixed(1)} />
+        <SummaryCard label="Latest Activity" value={formatDate(latestReferralActivity)} />
       </section>
 
       <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">

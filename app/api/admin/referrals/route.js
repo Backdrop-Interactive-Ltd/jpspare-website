@@ -167,10 +167,28 @@ export async function GET(request) {
     }),
   ]);
   const topReferrers = await getTopReferrers(where);
+  const [rewardCount, referrerGroups, latestActivity] = await prisma.$transaction([
+    prisma.referralReward.count({
+      where: {
+        relationship: { is: where },
+      },
+    }),
+    prisma.referralRelationship.groupBy({
+      by: ["referrerCustomerId"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.referralRelationship.aggregate({
+      where,
+      _max: { updatedAt: true, createdAt: true },
+    }),
+  ]);
 
   const qualified = statusCount(statusCounts, "QUALIFIED");
   const rewarded = statusCount(statusCounts, "REWARDED");
   const converted = qualified + rewarded;
+  const averageRewardsPerReferrer = referrerGroups.length ? rewardCount / referrerGroups.length : 0;
+  const latestReferralActivity = latestActivity._max?.updatedAt || latestActivity._max?.createdAt || null;
 
   return json({
     items: items.map(serializeRelationship),
@@ -182,6 +200,8 @@ export async function GET(request) {
       cancelled: statusCount(statusCounts, "CANCELLED"),
       rejected: statusCount(statusCounts, "REJECTED"),
       conversionRate: total ? Math.round((converted / total) * 100) : 0,
+      averageRewardsPerReferrer,
+      latestReferralActivity: latestReferralActivity?.toISOString?.() || latestReferralActivity,
       topReferrers,
     },
     pagination: {
