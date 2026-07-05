@@ -38,6 +38,24 @@ function statusClass(status) {
   return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
+function metricCard(label, value, tone = "default") {
+  const toneClass =
+    tone === "success"
+      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+      : tone === "danger"
+        ? "border-red-100 bg-red-50 text-[#ef3338]"
+        : tone === "warning"
+          ? "border-amber-100 bg-amber-50 text-amber-700"
+          : "border-[#eef0f3] bg-[#f8fafc] text-[#111827]";
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
+      <p className="text-xs font-black uppercase tracking-[0.12em] opacity-70">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
+}
+
 export default async function AdminEmailDeliveryLogsPage({ searchParams }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
@@ -77,6 +95,24 @@ export default async function AdminEmailDeliveryLogsPage({ searchParams }) {
     }),
     prisma.emailDeliveryLog.count({ where }),
   ]);
+  const [statusRows, providerRows] = await Promise.all([
+    prisma.emailDeliveryLog.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.emailDeliveryLog.groupBy({
+      by: ["provider"],
+      where,
+      _count: { _all: true },
+    }),
+  ]);
+  const countsByStatus = Object.fromEntries(statusRows.map((row) => [row.status, row._count._all]));
+  const totalSent = countsByStatus.SENT || 0;
+  const totalFailed = countsByStatus.FAILED || 0;
+  const pendingCount = countsByStatus.PENDING || 0;
+  const totalAttempts = totalSent + totalFailed + pendingCount;
+  const successPercentage = totalAttempts ? Math.round((totalSent / totalAttempts) * 100) : 0;
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   return (
@@ -86,6 +122,24 @@ export default async function AdminEmailDeliveryLogsPage({ searchParams }) {
           <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Messaging Audit</p>
           <h1 className="mt-1 text-3xl font-black text-[#111827]">Email Delivery Logs</h1>
           <p className="mt-2 text-sm font-semibold text-[#667085]">Read-only audit trail for future transactional and marketing emails.</p>
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        {metricCard("Total sent", totalSent, "success")}
+        {metricCard("Total failed", totalFailed, "danger")}
+        {metricCard("Pending", pendingCount, "warning")}
+        {metricCard("Success percentage", `${successPercentage}%`)}
+        <div className="rounded-2xl border border-[#eef0f3] bg-white p-4">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">Provider Breakdown</p>
+          <div className="mt-3 space-y-2">
+            {providerRows.length ? providerRows.map((row) => (
+              <div key={row.provider || "not-recorded"} className="flex items-center justify-between gap-3 text-sm font-bold">
+                <span className="truncate text-[#344054]">{row.provider || "Not recorded"}</span>
+                <span className="font-black text-[#111827]">{row._count._all}</span>
+              </div>
+            )) : <p className="text-sm font-bold text-[#667085]">No provider data yet.</p>}
+          </div>
         </div>
       </section>
 

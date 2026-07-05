@@ -53,9 +53,36 @@ export async function GET(request) {
     }),
     prisma.emailDeliveryLog.count({ where }),
   ]);
+  const [statusRows, providerRows] = await Promise.all([
+    prisma.emailDeliveryLog.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.emailDeliveryLog.groupBy({
+      by: ["provider"],
+      where,
+      _count: { _all: true },
+    }),
+  ]);
+  const countsByStatus = Object.fromEntries(statusRows.map((row) => [row.status, row._count._all]));
+  const sent = countsByStatus.SENT || 0;
+  const failed = countsByStatus.FAILED || 0;
+  const pending = countsByStatus.PENDING || 0;
+  const attempts = sent + failed + pending;
 
   return json({
     items: items.map(serializeLog),
+    analytics: {
+      totalSent: sent,
+      totalFailed: failed,
+      pendingCount: pending,
+      successPercentage: attempts ? Math.round((sent / attempts) * 100) : 0,
+      providerBreakdown: providerRows.map((row) => ({
+        provider: row.provider || "Not recorded",
+        count: row._count._all,
+      })),
+    },
     pagination: { page, limit, total, totalPages: Math.max(Math.ceil(total / limit), 1) },
   });
 }

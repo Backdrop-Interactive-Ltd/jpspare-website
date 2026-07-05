@@ -35,6 +35,11 @@ function categoryClass(category) {
   return "bg-red-50 text-[#ef3338] ring-red-100";
 }
 
+function successRate(total, failures) {
+  if (!total) return "0%";
+  return `${Math.round(((total - failures) / total) * 100)}%`;
+}
+
 export default async function AdminEmailTemplatesPage({ searchParams }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
@@ -85,6 +90,29 @@ export default async function AdminEmailTemplatesPage({ searchParams }) {
     }),
     prisma.emailTemplate.count({ where }),
   ]);
+  const templateIds = templates.map((template) => template.id);
+  const [sendRows, failureRows, lastSentRows] = templateIds.length
+    ? await Promise.all([
+        prisma.emailDeliveryLog.groupBy({
+          by: ["templateId"],
+          where: { templateId: { in: templateIds } },
+          _count: { _all: true },
+        }),
+        prisma.emailDeliveryLog.groupBy({
+          by: ["templateId"],
+          where: { templateId: { in: templateIds }, status: "FAILED" },
+          _count: { _all: true },
+        }),
+        prisma.emailDeliveryLog.groupBy({
+          by: ["templateId"],
+          where: { templateId: { in: templateIds }, status: "SENT" },
+          _max: { sentAt: true },
+        }),
+      ])
+    : [[], [], []];
+  const sendsByTemplate = new Map(sendRows.map((row) => [row.templateId, row._count._all]));
+  const failuresByTemplate = new Map(failureRows.map((row) => [row.templateId, row._count._all]));
+  const lastSentByTemplate = new Map(lastSentRows.map((row) => [row.templateId, row._max.sentAt]));
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   return (
@@ -122,46 +150,59 @@ export default async function AdminEmailTemplatesPage({ searchParams }) {
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-[1180px] w-full text-left">
+          <table className="min-w-[1500px] w-full text-left">
             <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
               <tr>
                 <th className="px-5 py-4">Template</th>
                 <th className="px-5 py-4">Category</th>
                 <th className="px-5 py-4">Subject</th>
                 <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Total Sends</th>
+                <th className="px-5 py-4">Failures</th>
+                <th className="px-5 py-4">Success Rate</th>
+                <th className="px-5 py-4">Last Sent</th>
                 <th className="px-5 py-4">Updated</th>
                 <th className="px-5 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eef0f3]">
-              {templates.map((template) => (
-                <tr key={template.id} className="transition hover:bg-red-50/40">
-                  <td className="px-5 py-4">
-                    <Link href={`/admin/email-templates/${template.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{template.name}</Link>
-                    <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{template.slug}</p>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${categoryClass(template.category)}`}>{label(template.category)}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <p className="max-w-md truncate text-sm font-bold text-[#344054]">{template.subject}</p>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${template.isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
-                      {template.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDate(template.updatedAt)}</td>
-                  <td className="px-5 py-4 text-right">
-                    <Link href={`/admin/email-templates/${template.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
-                      {canManage ? "Edit" : "View"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {templates.map((template) => {
+                const totalSends = sendsByTemplate.get(template.id) || 0;
+                const totalFailures = failuresByTemplate.get(template.id) || 0;
+
+                return (
+                  <tr key={template.id} className="transition hover:bg-red-50/40">
+                    <td className="px-5 py-4">
+                      <Link href={`/admin/email-templates/${template.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{template.name}</Link>
+                      <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{template.slug}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${categoryClass(template.category)}`}>{label(template.category)}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="max-w-md truncate text-sm font-bold text-[#344054]">{template.subject}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${template.isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+                        {template.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{totalSends}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#b42318]">{totalFailures}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{successRate(totalSends, totalFailures)}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDate(lastSentByTemplate.get(template.id))}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDate(template.updatedAt)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <Link href={`/admin/email-templates/${template.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                        {canManage ? "Edit" : "View"}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
               {!templates.length ? (
                 <tr>
-                  <td colSpan="6" className="px-5 py-16 text-center">
+                  <td colSpan="10" className="px-5 py-16 text-center">
                     <p className="text-lg font-black text-[#111827]">No email templates found</p>
                     <p className="mt-2 text-sm font-semibold text-[#667085]">Create the first template or change filters.</p>
                   </td>

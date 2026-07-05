@@ -60,6 +60,119 @@ function Notice({ status }) {
   );
 }
 
+function label(value) {
+  return String(value || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDateTime(value) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Never";
+  return date.toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function statusClass(status) {
+  if (status === "SENT") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (status === "FAILED") return "bg-red-50 text-[#ef3338] ring-red-100";
+  return "bg-amber-50 text-amber-700 ring-amber-200";
+}
+
+function categoryClass(category) {
+  if (category === "MARKETING" || category === "NEWSLETTER") return "bg-purple-50 text-purple-700 ring-purple-200";
+  if (category === "AUTH") return "bg-blue-50 text-blue-700 ring-blue-200";
+  if (category === "ORDER" || category === "SHIPPING") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (category === "SUPPORT") return "bg-amber-50 text-amber-700 ring-amber-200";
+  return "bg-red-50 text-[#ef3338] ring-red-100";
+}
+
+function TemplateAnalyticsPanel({ template, countsByStatus, latestLogs, variablesDetected }) {
+  const successCount = countsByStatus.SENT || 0;
+  const failureCount = countsByStatus.FAILED || 0;
+  const pendingCount = countsByStatus.PENDING || 0;
+  const lastLog = latestLogs[0] || null;
+
+  return (
+    <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Delivery Analytics</p>
+          <h3 className="mt-1 text-2xl font-black text-[#111827]">Template Performance</h3>
+          <p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">Read-only delivery activity for this template.</p>
+        </div>
+        <span className={`rounded-full px-4 py-2 text-xs font-black ring-1 ${categoryClass(template.category)}`}>{label(template.category)}</span>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Success count", successCount],
+          ["Failure count", failureCount],
+          ["Pending count", pendingCount],
+          ["Last delivery", lastLog ? label(lastLog.status) : "None"],
+        ].map(([itemLabel, value]) => (
+          <div key={itemLabel} className="rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">{itemLabel}</p>
+            <p className="mt-2 text-lg font-black text-[#111827]">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-[#eef0f3] bg-white p-4">
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">Variables Detected</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {variablesDetected.length ? variablesDetected.map((variable) => (
+            <span key={variable} className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#ef3338] ring-1 ring-red-100">{variable}</span>
+          )) : <span className="text-sm font-bold text-[#667085]">No variables detected.</span>}
+        </div>
+      </div>
+
+      <div className="mt-6 overflow-hidden rounded-3xl border border-[#eef0f3]">
+        <div className="border-b border-[#eef0f3] bg-[#f8fafc] px-5 py-4">
+          <h4 className="text-lg font-black text-[#111827]">Latest 10 Delivery Logs</h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-[980px] w-full text-left">
+            <thead className="bg-white text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
+              <tr>
+                <th className="px-5 py-4">Recipient</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Provider</th>
+                <th className="px-5 py-4">Sent At</th>
+                <th className="px-5 py-4">Error</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#eef0f3]">
+              {latestLogs.map((log) => (
+                <tr key={log.id}>
+                  <td className="px-5 py-4 text-sm font-black text-[#111827]">{log.recipientEmail}</td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(log.status)}`}>{label(log.status)}</span>
+                  </td>
+                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{log.provider || "Not recorded"}</td>
+                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDateTime(log.sentAt)}</td>
+                  <td className="px-5 py-4">
+                    <p className="max-w-xs truncate text-sm font-bold text-[#b42318]">{log.errorMessage || "None"}</p>
+                  </td>
+                </tr>
+              ))}
+              {!latestLogs.length ? (
+                <tr>
+                  <td colSpan="5" className="px-5 py-12 text-center">
+                    <p className="text-base font-black text-[#111827]">No delivery logs yet</p>
+                    <p className="mt-2 text-sm font-semibold text-[#667085]">Logs will appear after this template is sent.</p>
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PreviewPanel({ template, variablesRaw, previewError, rendered, variablesDetected, canManage, testStatus, action }) {
   return (
     <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
@@ -69,7 +182,7 @@ function PreviewPanel({ template, variablesRaw, previewError, rendered, variable
           <h3 className="mt-1 text-2xl font-black text-[#111827]">Rendered Email</h3>
           <p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">Preview and send a single test email. This does not create logs or wire transactional hooks.</p>
         </div>
-        <span className="rounded-full bg-[#111827] px-4 py-2 text-xs font-black text-white">{template.category}</span>
+        <span className={`rounded-full px-4 py-2 text-xs font-black ring-1 ${categoryClass(template.category)}`}>{label(template.category)}</span>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -159,6 +272,19 @@ export default async function EditEmailTemplatePage({ params, searchParams }) {
 
   const rendered = renderEmailTemplate(template, previewError ? {} : variables);
   const variablesDetected = extractEmailTemplateVariables(template);
+  const [statusCounts, latestLogs] = await Promise.all([
+    prisma.emailDeliveryLog.groupBy({
+      by: ["status"],
+      where: { templateId: template.id },
+      _count: { _all: true },
+    }),
+    prisma.emailDeliveryLog.findMany({
+      where: { templateId: template.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  const countsByStatus = Object.fromEntries(statusCounts.map((row) => [row.status, row._count._all]));
 
   async function sendTestEmail(formData) {
     "use server";
@@ -211,6 +337,7 @@ export default async function EditEmailTemplatePage({ params, searchParams }) {
   return (
     <div className="space-y-6">
       <EmailTemplateForm mode="edit" template={serializeTemplate(template)} canManage={canManage} />
+      <TemplateAnalyticsPanel template={template} countsByStatus={countsByStatus} latestLogs={latestLogs} variablesDetected={variablesDetected} />
       <PreviewPanel
         template={template}
         variablesRaw={variablesRaw}
