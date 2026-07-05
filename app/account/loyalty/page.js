@@ -49,46 +49,60 @@ function SummaryCard({ label, value, helper }) {
 }
 
 async function getWallet(customerId) {
-  const account = await prisma.loyaltyAccount.findUnique({
-    where: { customerId },
-    select: {
-      pointsBalance: true,
-      lifetimeEarned: true,
-      lifetimeRedeemed: true,
-      tier: true,
-      ledger: {
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        select: {
-          id: true,
-          type: true,
-          points: true,
-          balanceAfter: true,
-          description: true,
-          expiresAt: true,
-          createdAt: true,
-          order: {
-            select: {
-              id: true,
-              orderNumber: true,
+  const [account, earnedSummary] = await prisma.$transaction([
+    prisma.loyaltyAccount.findUnique({
+      where: { customerId },
+      select: {
+        pointsBalance: true,
+        lifetimeEarned: true,
+        lifetimeRedeemed: true,
+        tier: true,
+        ledger: {
+          orderBy: { createdAt: "desc" },
+          take: 50,
+          select: {
+            id: true,
+            type: true,
+            points: true,
+            balanceAfter: true,
+            description: true,
+            expiresAt: true,
+            createdAt: true,
+            order: {
+              select: {
+                id: true,
+                orderNumber: true,
+              },
             },
           },
         },
+        _count: { select: { ledger: true } },
       },
-      _count: { select: { ledger: true } },
-    },
-  });
+    }),
+    prisma.loyaltyLedger.aggregate({
+      where: {
+        customerId,
+        type: "EARN_ORDER",
+      },
+      _count: { _all: true },
+      _sum: { points: true },
+    }),
+  ]);
 
   const ledger = account?.ledger || [];
+  const earnedTransactions = earnedSummary._count?._all || ledger.filter((entry) => entry.points > 0).length;
+  const totalEarnedFromOrders = earnedSummary._sum?.points || 0;
 
   return {
     account,
     ledger,
     analytics: {
       totalTransactions: account?._count?.ledger || 0,
-      earnedTransactions: ledger.filter((entry) => entry.points > 0).length,
+      earnedTransactions,
       redeemedTransactions: ledger.filter((entry) => entry.points < 0).length,
       cashValue: account?.pointsBalance || 0,
+      netLifetimeValue: (account?.lifetimeEarned || 0) - (account?.lifetimeRedeemed || 0),
+      averagePointsEarnedPerOrder: earnedTransactions ? Math.round(totalEarnedFromOrders / earnedTransactions) : 0,
     },
   };
 }
@@ -131,10 +145,12 @@ export default async function AccountLoyaltyPage() {
               <SummaryCard label="Lifetime Redeemed" value={formatNumber(account.lifetimeRedeemed)} />
             </section>
 
-            <section className="mt-6 grid gap-4 md:grid-cols-3">
+            <section className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
               <SummaryCard label="Transactions" value={formatNumber(analytics.totalTransactions)} />
               <SummaryCard label="Earned Entries" value={formatNumber(analytics.earnedTransactions)} />
               <SummaryCard label="Redeemed Entries" value={formatNumber(analytics.redeemedTransactions)} />
+              <SummaryCard label="Net Lifetime Value" value={`৳${formatNumber(analytics.netLifetimeValue)}`} />
+              <SummaryCard label="Avg Earned / Order" value={formatNumber(analytics.averagePointsEarnedPerOrder)} />
             </section>
 
             <div className="mt-10 overflow-hidden rounded-[12px] border border-[#dfe5ec] bg-white shadow-sm">

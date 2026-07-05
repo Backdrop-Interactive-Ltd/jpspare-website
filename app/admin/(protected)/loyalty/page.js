@@ -60,11 +60,12 @@ function tierClass(tier) {
   return "bg-red-50 text-[#ef3338] ring-red-100";
 }
 
-function SummaryCard({ label, value }) {
+function SummaryCard({ label, value, helper }) {
   return (
     <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#667085]">{label}</p>
       <p className="mt-3 text-3xl font-black text-[#111827]">{value}</p>
+      {helper ? <p className="mt-2 text-sm font-semibold text-[#667085]">{helper}</p> : null}
     </div>
   );
 }
@@ -95,7 +96,7 @@ export default async function LoyaltyAdminPage({ searchParams }) {
 
   const where = buildWhere(query, tier);
 
-  const [accounts, total, summary, tiers] = await prisma.$transaction([
+  const [accounts, total, summary, latestActivity, tiers] = await prisma.$transaction([
     prisma.loyaltyAccount.findMany({
       where,
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
@@ -129,6 +130,13 @@ export default async function LoyaltyAdminPage({ searchParams }) {
         lifetimeRedeemed: true,
       },
     }),
+    prisma.loyaltyLedger.findFirst({
+      where: {
+        account: { is: where },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
     prisma.loyaltyAccount.findMany({
       where: { tier: { not: null } },
       distinct: ["tier"],
@@ -138,6 +146,7 @@ export default async function LoyaltyAdminPage({ searchParams }) {
   ]);
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const averagePoints = summary._count?._all ? Math.round((summary._sum?.pointsBalance || 0) / summary._count._all) : 0;
 
   return (
     <div className="space-y-6">
@@ -149,11 +158,13 @@ export default async function LoyaltyAdminPage({ searchParams }) {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <SummaryCard label="Total Accounts" value={formatNumber(summary._count?._all)} />
         <SummaryCard label="Active Points" value={formatNumber(summary._sum?.pointsBalance)} />
         <SummaryCard label="Lifetime Earned" value={formatNumber(summary._sum?.lifetimeEarned)} />
         <SummaryCard label="Lifetime Redeemed" value={formatNumber(summary._sum?.lifetimeRedeemed)} />
+        <SummaryCard label="Average Points" value={formatNumber(averagePoints)} helper="Per customer" />
+        <SummaryCard label="Latest Activity" value={latestActivity?.createdAt ? formatDate(latestActivity.createdAt) : "No activity"} />
       </section>
 
       <form className="grid gap-3 rounded-3xl border border-[#e5e7eb] bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_auto]">
