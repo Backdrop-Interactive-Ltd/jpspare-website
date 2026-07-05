@@ -1,5 +1,6 @@
 import { apiError, json, prisma, requireAdminApi } from "../_utils";
 import { INVENTORY_READ_ROLES } from "../../../../lib/commerce/inventory";
+import { buildInventoryIntelligenceAnalytics } from "../../../../lib/inventory-intelligence/analytics";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -81,6 +82,9 @@ export async function GET() {
       topDeadStock,
       recentReorders,
       recentDeadStock,
+      analyticsRows,
+      forecastRows,
+      suppliers,
     ] = await Promise.all([
       prisma.product.count(),
       prisma.product.findMany({
@@ -142,11 +146,43 @@ export async function GET() {
         orderBy: [{ calculatedAt: "desc" }],
         take: 8,
       }),
+      prisma.inventoryAnalytics.findMany({
+        select: {
+          salesLast90Days: true,
+          velocityScore: true,
+        },
+      }),
+      prisma.demandForecast.findMany({
+        select: {
+          confidenceScore: true,
+        },
+      }),
+      prisma.supplier.findMany({
+        include: {
+          purchases: {
+            select: {
+              createdAt: true,
+              orderedAt: true,
+              receivedAt: true,
+              total: true,
+              subtotal: true,
+              status: true,
+            },
+          },
+        },
+      }),
     ]);
 
     const totalStockValue = stockProducts.reduce((sum, product) => {
       return sum + toNumber(product.price) * (product.stockQuantity || 0);
     }, 0);
+    const derived = buildInventoryIntelligenceAnalytics({
+      stockProducts,
+      analyticsRows,
+      deadStockRows: recentDeadStock,
+      forecastRows,
+      suppliers,
+    });
 
     return json({
       overview: {
@@ -163,6 +199,10 @@ export async function GET() {
           count: row._count._all,
         })),
         averageVelocityScore: velocityAggregate._avg.velocityScore || 0,
+        inventoryTurnoverRatio: derived.analytics.inventoryTurnoverRatio,
+        averageDaysWithoutSale: derived.analytics.averageDaysWithoutSale,
+        fastMovingProductCount: derived.analytics.fastMovingProductCount,
+        slowMovingProductCount: derived.analytics.slowMovingProductCount,
         topLowStockProducts: topLowStock.map((item) => ({
           id: item.id,
           productId: item.productId,
@@ -178,6 +218,7 @@ export async function GET() {
         })),
         topDeadStockProducts: topDeadStock.map(serializeDeadStock),
       },
+      distributions: derived.distributions,
       recentReorders: recentReorders.map(serializeReorder),
       recentDeadStock: recentDeadStock.map(serializeDeadStock),
     });

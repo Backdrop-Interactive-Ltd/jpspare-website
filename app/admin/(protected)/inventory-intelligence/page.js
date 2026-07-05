@@ -3,6 +3,7 @@ import { requireAdminPage } from "../../../../lib/auth/admin";
 import { hasRole } from "../../../../lib/auth/rbac";
 import { INVENTORY_READ_ROLES } from "../../../../lib/commerce/inventory";
 import { prisma } from "../../../../lib/db";
+import { buildInventoryIntelligenceAnalytics } from "../../../../lib/inventory-intelligence/analytics";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -85,6 +86,9 @@ export default async function AdminInventoryIntelligencePage() {
     topDeadStock,
     recentReorders,
     recentDeadStock,
+    analyticsRows,
+    forecastRows,
+    suppliers,
   ] = await Promise.all([
     prisma.product.count(),
     prisma.product.findMany({ select: { price: true, stockQuantity: true } }),
@@ -115,12 +119,46 @@ export default async function AdminInventoryIntelligencePage() {
       orderBy: [{ calculatedAt: "desc" }],
       take: 8,
     }),
+    prisma.inventoryAnalytics.findMany({
+      select: {
+        salesLast90Days: true,
+        velocityScore: true,
+      },
+    }),
+    prisma.demandForecast.findMany({
+      select: {
+        confidenceScore: true,
+      },
+    }),
+    prisma.supplier.findMany({
+      include: {
+        purchases: {
+          select: {
+            createdAt: true,
+            orderedAt: true,
+            receivedAt: true,
+            total: true,
+            subtotal: true,
+            status: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const totalStockValue = stockProducts.reduce((sum, product) => {
     return sum + toNumber(product.price) * (product.stockQuantity || 0);
   }, 0);
   const averageVelocityScore = velocityAggregate._avg.velocityScore || 0;
+  const derived = buildInventoryIntelligenceAnalytics({
+    stockProducts,
+    analyticsRows,
+    deadStockRows: recentDeadStock,
+    forecastRows,
+    suppliers,
+  });
+  const supplierTierEntries = Object.entries(derived.distributions.supplierTierDistribution);
+  const forecastConfidenceEntries = Object.entries(derived.distributions.forecastConfidenceDistribution);
 
   return (
     <div className="space-y-6">
@@ -164,6 +202,12 @@ export default async function AdminInventoryIntelligencePage() {
             <p className="text-xs font-black uppercase tracking-[0.12em] opacity-70">Average velocity score</p>
             <p className="mt-2 text-2xl font-black">{averageVelocityScore.toFixed(2)}</p>
           </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {metricCard("Turnover ratio", derived.analytics.inventoryTurnoverRatio.toFixed(2), "info")}
+            {metricCard("Avg days no sale", Math.round(derived.analytics.averageDaysWithoutSale), "warning")}
+            {metricCard("Fast moving", derived.analytics.fastMovingProductCount, "success")}
+            {metricCard("Slow moving", derived.analytics.slowMovingProductCount, "danger")}
+          </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -205,6 +249,38 @@ export default async function AdminInventoryIntelligencePage() {
                 <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-[#f8fafc] p-5 text-sm font-bold text-[#667085]">No dead-stock snapshots yet.</p>
               )}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#98a2b3]">Distribution</p>
+          <h2 className="mt-1 text-xl font-black text-[#111827]">Supplier Tiers</h2>
+          <div className="mt-4 space-y-3">
+            {supplierTierEntries.length ? supplierTierEntries.map(([tier, count]) => (
+              <div key={tier} className="flex items-center justify-between rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+                <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${badgeClass(tier)}`}>{tier}</span>
+                <span className="text-lg font-black text-[#111827]">{count}</span>
+              </div>
+            )) : (
+              <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-[#f8fafc] p-5 text-sm font-bold text-[#667085]">No supplier performance data yet.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#98a2b3]">Distribution</p>
+          <h2 className="mt-1 text-xl font-black text-[#111827]">Forecast Confidence</h2>
+          <div className="mt-4 space-y-3">
+            {forecastConfidenceEntries.length ? forecastConfidenceEntries.map(([confidence, count]) => (
+              <div key={confidence} className="flex items-center justify-between rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+                <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${badgeClass(confidence)}`}>{confidence}</span>
+                <span className="text-lg font-black text-[#111827]">{count}</span>
+              </div>
+            )) : (
+              <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-[#f8fafc] p-5 text-sm font-bold text-[#667085]">No demand forecast confidence data yet.</p>
+            )}
           </div>
         </div>
       </section>
