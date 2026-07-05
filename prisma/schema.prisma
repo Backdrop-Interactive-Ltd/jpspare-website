@@ -67,6 +67,16 @@ enum OtpTemplatePurpose {
   OTP_LOGIN
 }
 
+enum EmailTemplateCategory {
+  TRANSACTIONAL
+  MARKETING
+  AUTH
+  ORDER
+  SHIPPING
+  SUPPORT
+  NEWSLETTER
+}
+
 enum AddressType {
   BILLING
   SHIPPING
@@ -682,6 +692,23 @@ model OtpTemplate {
 
   @@index([channel])
   @@index([channel, purpose])
+  @@index([isActive])
+}
+
+model EmailTemplate {
+  id            String                @id @default(cuid())
+  name          String
+  slug          String                @unique
+  category      EmailTemplateCategory @default(TRANSACTIONAL)
+  subject       String
+  htmlBody      String
+  textBody      String?
+  variablesJson Json?
+  isActive      Boolean               @default(true)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([category])
   @@index([isActive])
 }
 
