@@ -77,6 +77,12 @@ enum EmailTemplateCategory {
   NEWSLETTER
 }
 
+enum EmailDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum AddressType {
   BILLING
   SHIPPING
@@ -707,9 +713,29 @@ model EmailTemplate {
   isActive      Boolean               @default(true)
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
+  deliveryLogs  EmailDeliveryLog[]
 
   @@index([category])
   @@index([isActive])
+}
+
+model EmailDeliveryLog {
+  id                String              @id @default(cuid())
+  templateId        String?
+  template          EmailTemplate?      @relation(fields: [templateId], references: [id])
+  recipientEmail    String
+  subject           String
+  status            EmailDeliveryStatus @default(PENDING)
+  provider          String?
+  providerMessageId String?
+  errorMessage      String?
+  sentAt            DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([status])
+  @@index([recipientEmail])
+  @@index([sentAt])
 }
 
 model CustomerAddress {
