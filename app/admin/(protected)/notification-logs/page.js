@@ -111,7 +111,7 @@ export default async function AdminNotificationLogsPage({ searchParams }) {
     }),
     prisma.notificationLog.count({ where }),
   ]);
-  const [statusRows, channelRows] = await Promise.all([
+  const [statusRows, channelRows, providerRows] = await Promise.all([
     prisma.notificationLog.groupBy({
       by: ["status"],
       where,
@@ -119,6 +119,11 @@ export default async function AdminNotificationLogsPage({ searchParams }) {
     }),
     prisma.notificationLog.groupBy({
       by: ["channel"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.notificationLog.groupBy({
+      by: ["provider"],
       where,
       _count: { _all: true },
     }),
@@ -152,17 +157,32 @@ export default async function AdminNotificationLogsPage({ searchParams }) {
       </section>
 
       <section className="rounded-3xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">Channel Breakdown</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {notificationChannels.map((item) => {
-            const row = channelRows.find((entry) => entry.channel === item);
-            return (
-              <div key={item} className="flex items-center justify-between gap-3 rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
-                <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${channelClass(item)}`}>{label(item)}</span>
-                <span className="text-lg font-black text-[#111827]">{row?._count?._all || 0}</span>
-              </div>
-            );
-          })}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">Channel Breakdown</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {notificationChannels.map((item) => {
+                const row = channelRows.find((entry) => entry.channel === item);
+                return (
+                  <div key={item} className="flex items-center justify-between gap-3 rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+                    <span className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${channelClass(item)}`}>{label(item)}</span>
+                    <span className="text-lg font-black text-[#111827]">{row?._count?._all || 0}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">Provider Breakdown</p>
+            <div className="mt-3 space-y-2">
+              {providerRows.length ? providerRows.map((row) => (
+                <div key={row.provider || "not-recorded"} className="flex items-center justify-between gap-3 rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4 text-sm font-bold">
+                  <span className="truncate text-[#344054]">{row.provider || "Not recorded"}</span>
+                  <span className="font-black text-[#111827]">{row._count._all}</span>
+                </div>
+              )) : <p className="rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4 text-sm font-bold text-[#667085]">No provider data yet.</p>}
+            </div>
+          </div>
         </div>
       </section>
 

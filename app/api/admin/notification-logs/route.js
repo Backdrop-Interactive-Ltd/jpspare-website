@@ -58,7 +58,7 @@ export async function GET(request) {
     }),
     prisma.notificationLog.count({ where }),
   ]);
-  const [statusRows, channelRows] = await Promise.all([
+  const [statusRows, channelRows, providerRows] = await Promise.all([
     prisma.notificationLog.groupBy({
       by: ["status"],
       where,
@@ -66,6 +66,11 @@ export async function GET(request) {
     }),
     prisma.notificationLog.groupBy({
       by: ["channel"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.notificationLog.groupBy({
+      by: ["provider"],
       where,
       _count: { _all: true },
     }),
@@ -88,6 +93,10 @@ export async function GET(request) {
       successRate: attempts ? Math.round(((sent + read) / attempts) * 100) : 0,
       channelBreakdown: channelRows.map((row) => ({
         channel: row.channel,
+        count: row._count._all,
+      })),
+      providerBreakdown: providerRows.map((row) => ({
+        provider: row.provider || "Not recorded",
         count: row._count._all,
       })),
     },
