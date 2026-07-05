@@ -3,6 +3,7 @@ import { CATALOG_MANAGE_ROLES, CATALOG_READ_ROLES } from "../../../../lib/admin/
 import { requireAdminPage } from "../../../../lib/auth/admin";
 import { hasRole } from "../../../../lib/auth/rbac";
 import { prisma } from "../../../../lib/db";
+import { getCustomerSegmentListAnalytics } from "../../../../lib/customer-segments/analytics";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -78,6 +79,7 @@ export default async function AdminCustomerSegmentsPage({ searchParams }) {
     }),
     prisma.customerSegment.count({ where }),
   ]);
+  const analytics = await getCustomerSegmentListAnalytics(segments);
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -112,39 +114,49 @@ export default async function AdminCustomerSegmentsPage({ searchParams }) {
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full text-left">
+          <table className="min-w-[1240px] w-full text-left">
             <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
               <tr>
                 <th className="px-5 py-4">Segment</th>
                 <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Matched</th>
+                <th className="px-5 py-4">Rules</th>
+                <th className="px-5 py-4">Campaigns</th>
                 <th className="px-5 py-4">Last Evaluated</th>
                 <th className="px-5 py-4">Created</th>
                 <th className="px-5 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eef0f3]">
-              {segments.map((segment) => (
-                <tr key={segment.id} className="transition hover:bg-red-50/40">
-                  <td className="px-5 py-4">
-                    <Link href={`/admin/customer-segments/${segment.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{segment.name}</Link>
-                    <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{segment.slug}</p>
-                    {segment.description ? <p className="mt-1 max-w-lg truncate text-xs font-semibold text-[#98a2b3]">{segment.description}</p> : null}
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(segment.isActive)}`}>{segment.isActive ? "Active" : "Inactive"}</span>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDateTime(segment.lastEvaluatedAt)}</td>
-                  <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDateTime(segment.createdAt)}</td>
-                  <td className="px-5 py-4 text-right">
-                    <Link href={`/admin/customer-segments/${segment.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
-                      {canManage ? "Edit" : "View"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {segments.map((segment) => {
+                const rowAnalytics = analytics.get(segment.id) || {};
+
+                return (
+                  <tr key={segment.id} className="transition hover:bg-red-50/40">
+                    <td className="px-5 py-4">
+                      <Link href={`/admin/customer-segments/${segment.id}`} className="font-black text-[#111827] hover:text-[#ef3338]">{segment.name}</Link>
+                      <p className="mt-1 max-w-sm truncate text-xs font-bold text-[#667085]">{segment.slug}</p>
+                      {segment.description ? <p className="mt-1 max-w-lg truncate text-xs font-semibold text-[#98a2b3]">{segment.description}</p> : null}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(segment.isActive)}`}>{segment.isActive ? "Active" : "Inactive"}</span>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{rowAnalytics.matchedCustomers ?? 0}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{rowAnalytics.rulesCount ?? 0}</td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{rowAnalytics.targetedCampaigns ?? 0}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDateTime(segment.lastEvaluatedAt)}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#667085]">{formatDateTime(segment.createdAt)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <Link href={`/admin/customer-segments/${segment.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                        {canManage ? "Edit" : "View"}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
               {!segments.length ? (
                 <tr>
-                  <td colSpan="5" className="px-5 py-16 text-center">
+                  <td colSpan="8" className="px-5 py-16 text-center">
                     <p className="text-lg font-black text-[#111827]">No customer segments found</p>
                     <p className="mt-2 text-sm font-semibold text-[#667085]">Create your first saved audience or change filters.</p>
                   </td>

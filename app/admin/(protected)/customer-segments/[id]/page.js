@@ -3,6 +3,7 @@ import { CATALOG_MANAGE_ROLES } from "../../../../../lib/admin/catalogPayload";
 import { requireAdminPage } from "../../../../../lib/auth/admin";
 import { hasRole } from "../../../../../lib/auth/rbac";
 import { prisma } from "../../../../../lib/db";
+import { getCustomerSegmentDetailAnalytics } from "../../../../../lib/customer-segments/analytics";
 import CustomerSegmentForm from "../CustomerSegmentForm";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function EditCustomerSegmentPage({ params }) {
 
   const segment = await prisma.customerSegment.findUnique({ where: { id } });
   if (!segment) notFound();
+  const analytics = await getCustomerSegmentDetailAnalytics(segment);
 
-  return <CustomerSegmentForm mode="edit" segment={serializeSegment(segment)} canManage={canManage} />;
+  return <CustomerSegmentForm mode="edit" segment={serializeSegment(segment)} analytics={analytics} canManage={canManage} />;
 }

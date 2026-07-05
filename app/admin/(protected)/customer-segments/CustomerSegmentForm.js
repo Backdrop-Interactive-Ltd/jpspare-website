@@ -132,7 +132,116 @@ function SegmentReadOnlySummary({ segment }) {
   );
 }
 
-export default function CustomerSegmentForm({ mode, segment, canManage }) {
+function percentLabel(value) {
+  return `${Number(value || 0)}%`;
+}
+
+function deliveryLabel(log) {
+  if (log.type === "EMAIL") return log.subject || log.recipientEmail || "Email delivery";
+  return `${log.channel || "Notification"} to ${log.recipient || "recipient"}`;
+}
+
+function SegmentAnalytics({ analytics }) {
+  if (!analytics) return null;
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Segment Analytics</p>
+            <h3 className="mt-1 text-xl font-black text-[#111827]">Current Audience Snapshot</h3>
+            <p className="mt-2 text-sm font-semibold text-[#667085]">Read-only metrics are calculated from the saved rules and existing delivery logs.</p>
+          </div>
+          <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-black text-[#667085] ring-1 ring-[#e5e7eb]">
+            Last send: {formatDateTime(analytics.lastSendAt)}
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["Matched customers", analytics.matchedCustomers ?? 0],
+            ["Rules count", analytics.rulesCount ?? 0],
+            ["Targeted campaigns", analytics.targetedCampaigns ?? 0],
+            ["Latest sends", analytics.latestSends?.length ?? 0],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">{label}</p>
+              <p className="mt-2 text-lg font-black text-[#111827]">{value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">Email Sends</h3>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {[
+              ["Total", analytics.email?.total ?? 0],
+              ["Sent", analytics.email?.sent ?? 0],
+              ["Failed", analytics.email?.failed ?? 0],
+              ["Success", percentLabel(analytics.email?.successRate)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-[#f8fafc] p-4">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">{label}</p>
+                <p className="mt-2 text-sm font-black text-[#111827]">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">Notification Sends</h3>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {[
+              ["Total", analytics.notification?.total ?? 0],
+              ["Sent", analytics.notification?.sent ?? 0],
+              ["Failed", analytics.notification?.failed ?? 0],
+              ["Success", percentLabel(analytics.notification?.successRate)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-[#f8fafc] p-4">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#98a2b3]">{label}</p>
+                <p className="mt-2 text-sm font-black text-[#111827]">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">Campaigns Using This Segment</h3>
+          <div className="mt-5 space-y-3">
+            {analytics.campaigns?.length ? analytics.campaigns.map((campaign) => (
+              <div key={campaign.id} className="rounded-2xl border border-[#eef0f3] p-4">
+                <p className="text-sm font-black text-[#111827]">{campaign.name}</p>
+                <p className="mt-1 text-xs font-bold text-[#667085]">{campaign.slug} • {campaign.status}</p>
+              </div>
+            )) : <p className="text-sm font-bold text-[#667085]">No campaigns currently target this segment.</p>}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black text-[#111827]">Latest 10 Sends</h3>
+          <div className="mt-5 space-y-3">
+            {analytics.latestSends?.length ? analytics.latestSends.map((log) => (
+              <div key={`${log.type}-${log.id}`} className="rounded-2xl border border-[#eef0f3] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-black text-[#111827]">{deliveryLabel(log)}</p>
+                  <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-black text-[#667085] ring-1 ring-[#e5e7eb]">{log.status}</span>
+                </div>
+                <p className="mt-1 text-xs font-bold text-[#98a2b3]">{formatDateTime(log.createdAt)}</p>
+                {log.errorMessage ? <p className="mt-2 text-xs font-bold text-[#ef3338]">{log.errorMessage}</p> : null}
+              </div>
+            )) : <p className="text-sm font-bold text-[#667085]">No delivery logs found for the current matched audience.</p>}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function CustomerSegmentForm({ mode, segment, analytics, canManage }) {
   const router = useRouter();
   const [form, setForm] = useState(() => normalizeSegment(segment));
   const [saving, setSaving] = useState(false);
@@ -203,6 +312,7 @@ export default function CustomerSegmentForm({ mode, segment, canManage }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {mode === "edit" ? <SegmentReadOnlySummary segment={form} /> : null}
+      {mode === "edit" ? <SegmentAnalytics analytics={analytics} /> : null}
 
       <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
