@@ -12,79 +12,134 @@ The full BMS is not built yet. The future BMS will be developed later from the o
 
 BMS write/sync endpoints are paused for now because the BMS data contract is not finalized. Read-only BMS lookup endpoints and API key authentication already exist, but mutation endpoints should wait until ownership, payload shape, idempotency rules, and conflict handling are approved.
 
-## 2. Ownership Matrix
+## 2. Website CMS Ownership
 
-| Area | Current Owner | Future Owner | Admin Editable Now | BMS Sync Later | Risk Level | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| Products | Website Admin + Database | Both Website Admin and Future BMS | Yes | Yes | High | Website admin can manage storefront product data now. Before BMS write sync, decide which system owns price, stock, SKU, and status changes. |
-| Product media | Website Media Library + Product CMS | Website Admin primarily | Yes | Later | Medium | Product images should stay website-owned unless the future BMS becomes the media/DAM source. |
-| Categories | Website Admin + Database | Both | Yes | Yes | Medium | Website owns menu display, SEO, sorting, and presentation. BMS may sync category identities later. |
-| Brands | Website Admin + Database | Both | Yes | Yes | Medium | Website owns brand presentation, logos, SEO, and featured status. BMS may sync brand identities later. |
-| Homepage content | Homepage CMS + some fallback/static content | Website Admin | Partial/Yes | No | Medium | Homepage banners, featured sections, and SEO should be controlled by Website Admin/CMS. Remaining hardcoded content should move gradually. |
-| Header/footer/menu | Static code + partial settings | Website Admin | Later | No/Later | Medium | Header, footer, mega menu, contact info, social links, and footer links should become CMS-controlled after final UI scope is approved. |
-| Orders | Website checkout + Admin Orders | Both | Yes | Yes | High | Website creates orders. Future BMS should own fulfillment, operational status, dispatch, and deeper order workflow. |
-| Customers/accounts | Website account system + Database | Both | Partial | Yes | High | Website owns login/profile/order history. BMS may own support/service workflow later. Customer auth should be cleaned up before deeper integration. |
-| Inventory | Product stock fields + Inventory view | Future BMS as operational source | Basic view/limited | Yes | High | Website should show availability. Future BMS should own warehouse-level stock, reservations, adjustments, and reconciliation. |
-| Payments | Website checkout/payment records | Both | Partial | Yes | High | Website records payment method/status and gateway responses. Future BMS/payment system should handle reconciliation and reporting. |
-| Static pages | Static code currently | Website Admin | Later | No | Low/Medium | About, Help, Blog, Offers, and legal pages should become CMS-managed where business users need editing. |
-| Settings | Mixed code, SiteSetting, API Settings | Website Admin + Future BMS for business rules | Partial | Later | Medium | Website admin owns contact, SEO, API keys, and display settings. BMS may own tax, delivery, and operational rules later. |
-| API/integration settings | Website Admin API Settings + Database | Website Admin | Yes | Yes | High | Website admin owns API key management. BMS routes must require API key validation and approved contracts. |
-| Suppliers/purchases | Prototype/database code only; hidden from sidebar | Future BMS | No | Later | High | Keep database/code for future reference, but do not expose supplier/purchase UI in website admin now. |
-| Reports/accounting | Not a real website admin module | Future BMS | No | Later | High | Advanced reports, finance, accounting, reconciliation, and procurement reports belong in the future BMS. |
+The website remains the customer-facing storefront, marketing CMS, and lightweight ecommerce admin. It should be optimized for a light-employee, automation-heavy operating model: business users manage public content, marketing, product presentation, customer-facing incentives, and high-level order visibility without owning deep warehouse or finance workflows.
 
-## 3. Website Admin Should Permanently Own
+Website CMS owns:
 
-- Homepage CMS
-- Media Library
-- Website display settings
-- Website SEO and meta content
-- Product storefront presentation
-- Category and brand presentation
-- Header, footer, and menu CMS
-- API key settings
-- General website settings
-- Public content pages that business users need to edit
+- Public storefront pages, layouts, components, and UX.
+- Homepage CMS, static page CMS, blog/news CMS, offers page, FAQ/help/legal pages, and content copy.
+- Header, footer, navigation, mega menu, announcement bar, and website display settings.
+- Website SEO Manager, metadata, sitemap, robots, structured data, and social/OG settings.
+- Media library and public product/category/brand presentation assets.
+- Product storefront presentation: public title, description, images, badges, SEO, featured flags, menu visibility, and display ordering.
+- Category and brand presentation: logos, thumbnails, public descriptions, SEO, menu/featured status.
+- Customer account UX: login/profile, addresses, vehicles, wishlist, cart, order history, notifications inbox, loyalty wallet, referral dashboard.
+- Website checkout, payment initiation, public order creation, and customer-facing order confirmation.
+- Marketing/growth modules: coupons, campaigns, customer segments, email templates, notification templates, loyalty, and referrals.
+- API key settings and read-only integration visibility until BMS write contracts are approved.
 
-## 4. Future BMS Should Own Later
+Current website admin operational features are transitional. Inventory adjustment, suppliers, purchases, order status operation, and fulfillment-like views may exist in the website repository now, but they should not expand into a full operations suite inside the Website CMS.
 
-- Suppliers
-- Purchases
-- Warehouse inventory
-- Procurement workflow
-- Fulfillment workflow
-- Dispatch and delivery operations
-- Advanced reports
-- Accounting and reconciliation
-- Deep customer service workflow
-- Staff operation dashboards
+## 3. Future BMS Ownership
 
-## 5. Shared Between Website and BMS
+The future BMS becomes the operational source of truth for inventory, warehouse, procurement, fulfillment, reconciliation, and staff operations. It should be built separately from the Website CMS after the owner-provided BMS UI and data contract are approved.
 
-- Products
-- Categories
-- Brands
-- Customers
-- Orders
-- Inventory availability
-- Payment status
-- Delivery and fulfillment status
+Future BMS owns:
 
-Shared areas must have a clear direction of truth before write sync is implemented. For example, the website may create an order, while the BMS later owns fulfillment status updates.
+- Warehouse inventory, bin/location stock, stock transfers, reconciliation, cycle counts, and stock corrections.
+- Procurement: suppliers, purchase orders, receiving, supplier invoices, cost history, and lead times.
+- Fulfillment: order picking, packing, dispatch, courier assignment, delivery tracking, failed delivery handling.
+- Returns/RMA/refunds operational workflow.
+- Payment reconciliation, settlement matching, accounting exports, finance reports, and audit trails.
+- Supplier performance, demand planning, inventory intelligence, reorder suggestions, dead stock, and forecasting.
+- Staff dashboards, role-based operational task queues, approvals, productivity metrics, and shift/workload reporting.
+- Customer service operations: support cases, internal notes, call follow-up, escalation queues.
+- Advanced reporting across sales, margin, fulfillment SLA, stock aging, procurement, and finance.
 
-## 6. Do Not Build Now
+## 4. Shared Data Boundaries
 
-- BMS write/sync endpoints
-- Inventory mutation sync from BMS
-- Order status mutation from BMS
-- Payment status mutation from BMS
-- Supplier UI inside website admin
-- Purchase UI inside website admin
-- Advanced warehouse logic inside website admin
-- Accounting or reconciliation inside website admin
-- Random UI redesign without approved owner design
-- Major features without assigning ownership first
+Shared data must have field-level direction of truth before any write sync is implemented.
 
-## 7. UI Redesign Rule
+| Data Area | Website CMS Responsibility | Future BMS Responsibility | Sync Direction Rule |
+| --- | --- | --- | --- |
+| Products | Public presentation, media, SEO, featured/display fields | SKU master, cost, procurement identity, operational status | Field-level ownership required before mutation sync |
+| Categories | Menu, SEO, public ordering, storefront taxonomy | Operational category mapping if needed | BMS may sync identities; website owns display |
+| Brands | Logo, SEO, storefront presentation | Supplier/brand operational mapping if needed | BMS may sync identities; website owns display |
+| Inventory | Read availability, reserve during checkout until BMS takes over | Warehouse stock, reservations, adjustments, reconciliation | BMS should become source of truth |
+| Orders | Customer checkout/order creation and customer order history | Fulfillment status, dispatch, delivery, operational notes | Website creates; BMS fulfills and updates |
+| Customers | Auth, profile, addresses, account UX | Support/service records and operational customer notes | Shared with strict privacy boundaries |
+| Payments | Gateway initiation and payment event capture | Reconciliation, settlement, finance reporting | Website captures; BMS reconciles |
+| Coupons/campaigns/loyalty/referrals | Customer-facing rules and storefront display | Reporting/approval/finance visibility later | Website primary unless BMS reporting needs a read model |
+
+## 5. Required BMS Modules
+
+- BMS Dashboard and staff task center
+- Product/SKU operations master
+- Warehouse/location inventory
+- Stock transfers, adjustments, cycle counts, and reconciliation
+- Supplier management
+- Purchase order and receiving workflow
+- Fulfillment workflow: pick, pack, dispatch, delivery
+- Courier/delivery management
+- Returns, refund, and warranty/RMA workflow
+- Customer service/ticketing and internal notes
+- Payment reconciliation and accounting exports
+- Inventory intelligence: stock health, reorder suggestions, demand forecast, dead stock, ABC analysis
+- Supplier performance and lead-time analytics
+- Reports/BI and audit logs
+- Integration monitor, sync retry queue, and conflict resolution center
+
+## 6. Required Integration APIs
+
+Before any BMS write sync, build the integration layer with logs, idempotency, and conflict handling.
+
+Required APIs and infrastructure:
+
+- Service-to-service authentication with scoped API keys or signed tokens.
+- Integration audit log for every inbound/outbound BMS event.
+- Idempotency key support for all mutation endpoints.
+- Sync status, retry count, error message, and dead-letter handling.
+- Product/category/brand identity sync with explicit field ownership.
+- Inventory availability read API for website storefront.
+- Inventory mutation webhook/API from BMS to website after contract approval.
+- Order-created outbound event from website to BMS.
+- Order fulfillment/status inbound event from BMS to website.
+- Payment reconciliation status inbound event.
+- Customer lookup/update APIs with privacy-safe field controls.
+- Webhooks for order created, payment paid/failed/refunded, stock changed, purchase received, return approved, and delivery status changed.
+- Admin integration monitor for successful, pending, failed, and conflicted sync events.
+
+## 7. Sync Conflict Risks
+
+- Product price, stock, SKU, and status can diverge if Website CMS and BMS both mutate the same fields.
+- Order status can become inconsistent if website admin and BMS fulfillment both update lifecycle states.
+- Inventory can oversell if website reservation and BMS warehouse reservation run independently.
+- Payment status can become unsafe if gateway callbacks, admin edits, and BMS reconciliation all write without precedence rules.
+- Supplier/purchase data inside the website can drift from future BMS procurement if transitional modules keep expanding.
+- Customer profile edits need privacy and merge rules before BMS service notes or support data are synced.
+- Campaign/coupon/loyalty/referral finance impact may need BMS reporting but should not be double-counted.
+- Two-way mutation sync without idempotency can duplicate orders, inventory movements, rewards, or payment updates.
+
+## 8. Recommended Implementation Roadmap
+
+1. Freeze this Website CMS vs BMS ownership contract.
+2. Define field-level source of truth for products, orders, inventory, payments, and customers.
+3. Add integration audit log, idempotency, retry, and conflict models.
+4. Keep existing BMS endpoints read-only until contracts are approved.
+5. Build BMS core shell and staff role model from owner-approved UI.
+6. Build BMS product/SKU and warehouse inventory modules.
+7. Build order fulfillment and dispatch workflow.
+8. Build suppliers, purchasing, and receiving.
+9. Build payment reconciliation and accounting exports.
+10. Build inventory intelligence and operational reporting.
+11. Enable controlled one-way sync first, then tightly scoped two-way sync only where ownership is explicit.
+
+## 9. Do Not Build Now
+
+- Two-way BMS mutation sync.
+- Inventory mutation sync from BMS without integration logs and idempotency.
+- Order status mutation from BMS without lifecycle precedence rules.
+- Payment mutation/reconciliation writes without gateway/admin/BMS precedence.
+- Supplier and purchase expansion inside Website CMS as a long-term operations suite.
+- Advanced warehouse/bin/location logic inside Website CMS.
+- Accounting or settlement reconciliation inside Website CMS.
+- Operational staff task queues inside Website CMS.
+- Any major feature without assigning Website CMS vs BMS ownership first.
+- Random UI redesign without approved owner design.
+
+## 10. UI Redesign Rule
 
 Website UI redesign will follow owner-provided UI screenshots and design references. The website should not be redesigned randomly.
 
@@ -107,21 +162,22 @@ Areas needing backend cleanup before deeper redesign:
 - Checkout edge cases
 - Customer order history
 
-## 8. Recommended Next Work Order
+## 11. Recommended Next Work Order
 
 1. Customer auth/account cleanup
 2. Product data consistency cleanup
-3. Header/footer/menu CMS scope decision
-4. UI redesign from provided design
-5. BMS UI design analysis
+3. Complete Website CMS/customer-facing modules that are already in progress
+4. BMS UI design analysis from owner-approved design
+5. Integration audit/idempotency/conflict foundation
 6. BMS core development
 7. Website-BMS write sync after contract approval
 
-## 9. Developer Rules For Future Codex Tasks
+## 12. Developer Rules For Future Codex Tasks
 
 - Always check this file before BMS, admin, CMS, API, or integration work.
 - Do not add major features without assigning an owner.
 - Do not create write sync endpoints without an approved BMS contract.
+- Do not create two-way mutation sync until integration logs, idempotency, and conflict policy exist.
 - Keep website admin and future BMS responsibilities separated.
 - Keep the website admin lightweight and storefront-focused.
 - Keep suppliers, purchases, advanced warehouse, reports, and accounting out of the website admin unless the roadmap changes.
