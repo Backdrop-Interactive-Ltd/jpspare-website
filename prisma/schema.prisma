@@ -158,6 +158,30 @@ enum CouponRedemptionStatus {
   REFUNDED
 }
 
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  RECEIVED
+  INSPECTING
+  COMPLETED
+  CANCELLED
+}
+
+enum InspectionResult {
+  RESTOCK
+  REPAIR
+  WRITE_OFF
+  RETURN_TO_CUSTOMER
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
 enum LoyaltyTransactionType {
   EARN_ORDER
   REDEEM_ORDER
@@ -291,6 +315,7 @@ model User {
   mediaUploads           Media[]
   apiKeys                ApiKey[]
   stockMoves             InventoryMovement[]
+  returnInspections      ReturnInspection[]
   purchaseCreatedBy      PurchaseOrder[]         @relation("PurchaseCreatedBy")
   purchaseUpdatedBy      PurchaseOrder[]         @relation("PurchaseUpdatedBy")
   purchaseTimelineEvents PurchaseTimelineEvent[]
@@ -446,6 +471,7 @@ model Product {
   warehouseStocks    WarehouseStock[]
   stockTransferItems StockTransferItem[]
   shipmentItems      ShipmentItem[]
+  returnItems        ReturnItem[]
   inventoryAnalytics InventoryAnalytics[]
   reorderSuggestions ReorderSuggestion[]
   demandForecasts    DemandForecast[]
@@ -1008,6 +1034,7 @@ model Customer {
   referralsMade     ReferralRelationship[] @relation("ReferralReferrer")
   referralsReceived ReferralRelationship[] @relation("ReferralReferred")
   referralRewards   ReferralReward[]
+  returnRequests     ReturnRequest[]
   externalId        String?
   source            String             @default("LOCAL")
   syncStatus        SyncStatus         @default(LOCAL)
@@ -1500,6 +1527,7 @@ model Order {
   payments           Payment[]
   inventoryMovements InventoryMovement[]
   shipments          Shipment[]
+  returnRequests     ReturnRequest[]
   loyaltyLedger      LoyaltyLedger[]
   referralRelationships ReferralRelationship[]
   referralRewards    ReferralReward[]
@@ -1544,6 +1572,71 @@ model Order {
   @@index([externalOrderId])
   @@index([externalId])
   @@index([source, syncStatus])
+}
+
+model ReturnRequest {
+  id            String            @id @default(cuid())
+  returnNumber  String            @unique
+  orderId       String
+  order         Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status        ReturnStatus      @default(REQUESTED)
+  reason        String?
+  notes         String?
+  requestedAt   DateTime          @default(now())
+  completedAt   DateTime?
+  items         ReturnItem[]
+  inspection    ReturnInspection?
+  refundCase    RefundCase?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([status])
+}
+
+model ReturnItem {
+  id              String        @id @default(cuid())
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  quantity        Int
+  reason          String?
+  createdAt       DateTime      @default(now())
+
+  @@index([returnRequestId])
+  @@index([productId])
+}
+
+model ReturnInspection {
+  id              String           @id @default(cuid())
+  returnRequestId String           @unique
+  returnRequest   ReturnRequest    @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  result          InspectionResult
+  notes           String?
+  inspectedById   String?
+  inspectedBy     User?            @relation(fields: [inspectedById], references: [id], onDelete: SetNull)
+  inspectedAt     DateTime?
+  createdAt       DateTime         @default(now())
+
+  @@index([inspectedById])
+}
+
+model RefundCase {
+  id              String        @id @default(cuid())
+  returnRequestId String        @unique
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  refundStatus    RefundStatus  @default(PENDING)
+  refundAmount    Decimal       @db.Decimal(12, 2)
+  refundMethod    String?
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([refundStatus])
 }
 
 model CouponRedemption {
