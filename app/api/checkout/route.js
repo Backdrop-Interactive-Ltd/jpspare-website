@@ -8,6 +8,7 @@ import { createOrderNumber, normalizePaymentMethod, orderTotalFromCart, serializ
 import { FUTURE_GATEWAY_METHODS, initiateSslCommerzPayment, isPaymentMethodEnabled, paymentGatewayForMethod, paymentMethodLabel } from "../../../lib/commerce/payments";
 import { clearStoredCartCoupon, resolveStoredCartCouponValidation } from "../../../lib/coupons/cart-coupon";
 import { sendOrderPlacedEmail } from "../../../lib/email/order-emails";
+import { normalizeRedeemPoints, previewLoyaltyRedemption, redeemOrderLoyaltyPoints } from "../../../lib/loyalty/redeem-points";
 import { notifyOrderPlaced } from "../../../lib/notifications/order-notifications";
 
 export const dynamic = "force-dynamic";
@@ -118,7 +119,16 @@ export async function POST(request) {
       return validationResponse(couponValidation.message || "Applied coupon is no longer valid.", { coupon: couponValidation.code }, 409);
     }
 
-    const totals = orderTotalFromCart(cart, couponValidation);
+    const requestedRedeemPoints = normalizeRedeemPoints(body.redeemPoints);
+    const preliminaryTotals = orderTotalFromCart(cart, couponValidation);
+    const loyaltyRedemption = requestedRedeemPoints
+      ? await previewLoyaltyRedemption({
+          customerId: customer.id,
+          requestedPoints: requestedRedeemPoints,
+          payableTotal: preliminaryTotals.total,
+        })
+      : null;
+    const totals = orderTotalFromCart(cart, couponValidation, loyaltyRedemption);
     const billingAddress = cleanAddress(body.billingAddress);
     const shippingAddress = cleanAddress(body.shippingAddress || body.billingAddress);
     const fieldErrors = validateAddress(billingAddress);
@@ -166,6 +176,14 @@ export async function POST(request) {
                   discountType: couponValidation.discountType,
                   discountValue: couponValidation.discountValue,
                   discountAmount: couponValidation.discountAmount,
+                }
+              : null,
+            loyaltyRedemption: loyaltyRedemption?.redeemPoints
+              ? {
+                  requestedPoints: loyaltyRedemption.requestedPoints,
+                  redeemedPoints: loyaltyRedemption.redeemPoints,
+                  discountAmount: loyaltyRedemption.discountAmount,
+                  remainingBalance: loyaltyRedemption.remainingBalance,
                 }
               : null,
           },
@@ -240,6 +258,17 @@ export async function POST(request) {
         });
       }
 
+      if (loyaltyRedemption?.redeemPoints) {
+        await redeemOrderLoyaltyPoints({
+          tx,
+          customerId,
+          orderId: created.id,
+          orderNumber: created.orderNumber,
+          requestedPoints: loyaltyRedemption.redeemPoints,
+          payableTotal: preliminaryTotals.total,
+        });
+      }
+
       await reserveOrderStock(tx, items, created, {
         reason: `Reserved during checkout for order ${created.orderNumber}`,
         source: "WEB",
@@ -286,6 +315,10 @@ export async function POST(request) {
       { status: 201 },
     );
   } catch (error) {
+    if (error?.status) {
+      return validationResponse(error.message || "Unable to apply loyalty redemption.", {}, error.status);
+    }
+
     console.error("Checkout failed", {
       message: error?.message,
       code: error?.code,
