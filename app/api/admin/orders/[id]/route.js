@@ -3,6 +3,7 @@ import { cancelOrderStock, confirmOrderStock } from "../../../../../lib/commerce
 import { ORDER_STATUSES, getOrderWithDetails, serializeOrder } from "../../../../../lib/commerce/orders";
 import { awardOrderLoyaltyPoints } from "../../../../../lib/loyalty/earn-points";
 import { notifyOrderStatusChanged } from "../../../../../lib/notifications/order-notifications";
+import { issueReferralRewardForDeliveredOrder } from "../../../../../lib/referrals/reward-rules";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -183,6 +184,14 @@ export async function PATCH(request, { params }) {
 
       if (data.status === "DELIVERED") {
         await awardOrderLoyaltyPoints(order.id);
+        try {
+          await issueReferralRewardForDeliveredOrder(order.id);
+        } catch (error) {
+          console.error("[ReferralReward] Failed to issue referral reward", {
+            message: error?.message,
+            code: error?.code,
+          });
+        }
       }
     }
 
