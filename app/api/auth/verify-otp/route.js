@@ -4,6 +4,7 @@ import { prisma } from "../../../../lib/db";
 import { setCustomerSession } from "../../../../lib/auth/customer-session";
 import { hashPassword } from "../../../../lib/auth/password";
 import { resetPasswordAttempts } from "../../../../lib/auth/password-attempts";
+import { sendWelcomeEmail } from "../../../../lib/email/auth-emails";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -108,15 +109,17 @@ async function findOrCreateCustomer(channel, identifier) {
       : await prisma.customer.findUnique({ where: { email: identifier } });
 
   if (existingCustomer) {
-    return existingCustomer;
+    return { customer: existingCustomer, isNew: false };
   }
 
-  return prisma.customer.create({
+  const customer = await prisma.customer.create({
     data:
       channel === "PHONE"
         ? { phone: identifier, email: null, passwordHash: null }
         : { email: identifier, phone: null, passwordHash: null },
   });
+
+  return { customer, isNew: true };
 }
 
 export async function POST(request) {
@@ -177,7 +180,7 @@ export async function POST(request) {
       return jsonError("INVALID_OTP", 400);
     }
 
-    const customer = await findOrCreateCustomer(channel, identifier);
+    const { customer, isNew } = await findOrCreateCustomer(channel, identifier);
 
     if (customer.status === "BLOCKED") {
       await prisma.customerOtp.update({
@@ -211,6 +214,9 @@ export async function POST(request) {
     });
 
     await setCustomerSession(refreshedCustomer);
+    if (isNew && refreshedCustomer.email) {
+      await sendWelcomeEmail(refreshedCustomer);
+    }
 
     return NextResponse.json({
       ok: true,
