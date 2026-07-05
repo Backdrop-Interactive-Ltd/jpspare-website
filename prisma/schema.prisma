@@ -83,6 +83,20 @@ enum EmailDeliveryStatus {
   FAILED
 }
 
+enum NotificationChannel {
+  EMAIL
+  SMS
+  IN_APP
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
 enum AddressType {
   BILLING
   SHIPPING
@@ -612,6 +626,7 @@ model Customer {
   wishlist          WishlistItem[]
   orders            Order[]
   couponRedemptions CouponRedemption[]
+  notifications     CustomerNotification[]
   externalId        String?
   source            String             @default("LOCAL")
   syncStatus        SyncStatus         @default(LOCAL)
@@ -736,6 +751,61 @@ model EmailDeliveryLog {
   @@index([status])
   @@index([recipientEmail])
   @@index([sentAt])
+}
+
+model NotificationTemplate {
+  id            String              @id @default(cuid())
+  name          String
+  slug          String              @unique
+  channel       NotificationChannel
+  subject       String?
+  body          String
+  variablesJson Json?
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  logs          NotificationLog[]
+
+  @@index([channel])
+  @@index([isActive])
+}
+
+model NotificationLog {
+  id                String                @id @default(cuid())
+  recipient         String
+  channel           NotificationChannel
+  status            NotificationStatus    @default(PENDING)
+  templateId        String?
+  template          NotificationTemplate? @relation(fields: [templateId], references: [id])
+  provider          String?
+  providerMessageId String?
+  errorMessage      String?
+  sentAt            DateTime?
+  readAt            DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([channel])
+  @@index([status])
+  @@index([recipient])
+  @@index([sentAt])
+}
+
+model CustomerNotification {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  actionUrl  String?
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([customerId])
+  @@index([isRead])
+  @@index([createdAt])
 }
 
 model CustomerAddress {
