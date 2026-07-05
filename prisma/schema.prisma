@@ -225,6 +225,20 @@ enum StockMovementType {
   RETURN_ADJUSTMENT
 }
 
+enum WarehouseStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StockTransferStatus {
+  DRAFT
+  REQUESTED
+  IN_TRANSIT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
 enum SupplierStatus {
   ACTIVE
   INACTIVE
@@ -410,6 +424,8 @@ model Product {
   wishlistItems      WishlistItem[]
   orderItems         OrderItem[]
   inventoryMovements InventoryMovement[]
+  warehouseStocks    WarehouseStock[]
+  stockTransferItems StockTransferItem[]
   inventoryAnalytics InventoryAnalytics[]
   reorderSuggestions ReorderSuggestion[]
   demandForecasts    DemandForecast[]
@@ -466,6 +482,137 @@ model InventoryMovement {
   @@index([externalStockId])
   @@index([source, syncStatus])
   @@index([createdAt])
+}
+
+model Warehouse {
+  id                    String              @id @default(cuid())
+  code                  String              @unique
+  name                  String
+  status                WarehouseStatus     @default(ACTIVE)
+  address               String?
+  contactName           String?
+  contactPhone          String?
+  externalId            String?
+  source                String?
+  syncStatus            SyncStatus?
+  lastSyncedAt          DateTime?
+  locations             WarehouseLocation[]
+  bins                  StockBin[]
+  stocks                WarehouseStock[]
+  outgoingTransfers     StockTransfer[]     @relation("StockTransferFromWarehouse")
+  incomingTransfers     StockTransfer[]     @relation("StockTransferToWarehouse")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([status])
+  @@index([externalId])
+}
+
+model WarehouseLocation {
+  id                String          @id @default(cuid())
+  warehouseId       String
+  warehouse         Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  code              String
+  name              String
+  type              String?
+  zone              String?
+  status            WarehouseStatus @default(ACTIVE)
+  bins              StockBin[]
+  stocks            WarehouseStock[]
+  outgoingTransfers StockTransfer[] @relation("StockTransferFromLocation")
+  incomingTransfers StockTransfer[] @relation("StockTransferToLocation")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([warehouseId])
+  @@index([code])
+  @@index([status])
+}
+
+model StockBin {
+  id                String          @id @default(cuid())
+  warehouseId       String
+  warehouse         Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  locationId        String?
+  location          WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  code              String
+  status            WarehouseStatus @default(ACTIVE)
+  capacityJson      Json?
+  stocks            WarehouseStock[]
+  outgoingTransfers StockTransfer[] @relation("StockTransferFromBin")
+  incomingTransfers StockTransfer[] @relation("StockTransferToBin")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([warehouseId])
+  @@index([locationId])
+  @@index([code])
+  @@index([status])
+}
+
+model WarehouseStock {
+  id          String             @id @default(cuid())
+  productId   String
+  product     Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  locationId  String?
+  location    WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  binId       String?
+  bin         StockBin?          @relation(fields: [binId], references: [id], onDelete: SetNull)
+  onHand      Int                @default(0)
+  reserved    Int                @default(0)
+  available   Int                @default(0)
+  updatedAt   DateTime           @updatedAt
+
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([locationId])
+  @@index([binId])
+}
+
+model StockTransfer {
+  id              String              @id @default(cuid())
+  transferNumber  String              @unique
+  status          StockTransferStatus @default(DRAFT)
+  fromWarehouseId String?
+  fromWarehouse   Warehouse?          @relation("StockTransferFromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: SetNull)
+  toWarehouseId   String?
+  toWarehouse     Warehouse?          @relation("StockTransferToWarehouse", fields: [toWarehouseId], references: [id], onDelete: SetNull)
+  fromLocationId  String?
+  fromLocation    WarehouseLocation?  @relation("StockTransferFromLocation", fields: [fromLocationId], references: [id], onDelete: SetNull)
+  toLocationId    String?
+  toLocation      WarehouseLocation?  @relation("StockTransferToLocation", fields: [toLocationId], references: [id], onDelete: SetNull)
+  fromBinId       String?
+  fromBin         StockBin?           @relation("StockTransferFromBin", fields: [fromBinId], references: [id], onDelete: SetNull)
+  toBinId         String?
+  toBin           StockBin?           @relation("StockTransferToBin", fields: [toBinId], references: [id], onDelete: SetNull)
+  requestedAt     DateTime?
+  shippedAt       DateTime?
+  receivedAt      DateTime?
+  notes           String?
+  items           StockTransferItem[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([status])
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
+}
+
+model StockTransferItem {
+  id               String        @id @default(cuid())
+  transferId       String
+  transfer         StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product       @relation(fields: [productId], references: [id])
+  quantity         Int
+  receivedQuantity Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([transferId])
+  @@index([productId])
 }
 
 model InventoryAnalytics {
