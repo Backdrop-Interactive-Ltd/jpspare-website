@@ -7,6 +7,7 @@ import { reserveOrderStock, validateAvailableStock } from "../../../lib/commerce
 import { createOrderNumber, normalizePaymentMethod, orderTotalFromCart, serializeOrder } from "../../../lib/commerce/orders";
 import { FUTURE_GATEWAY_METHODS, initiateSslCommerzPayment, isPaymentMethodEnabled, paymentGatewayForMethod, paymentMethodLabel } from "../../../lib/commerce/payments";
 import { clearStoredCartCoupon, resolveStoredCartCouponValidation } from "../../../lib/coupons/cart-coupon";
+import { sendOrderPlacedEmail } from "../../../lib/email/order-emails";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -260,6 +261,8 @@ export async function POST(request) {
       paymentSession = await initiateSslCommerzPayment(order, request);
       redirectUrl = paymentSession.redirectUrl;
     }
+
+    await sendOrderPlacedEmail(order);
 
     return NextResponse.json(
       {
