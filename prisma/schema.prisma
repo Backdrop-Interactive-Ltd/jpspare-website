@@ -639,6 +639,22 @@ model Customer {
   @@index([source, syncStatus])
 }
 
+model CustomerSegment {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String?
+  rulesJson       Json?
+  isActive        Boolean   @default(true)
+  lastEvaluatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([lastEvaluatedAt])
+  @@index([createdAt])
+}
+
 model CustomerOtp {
   id          String     @id @default(cuid())
   identifier  String
