@@ -8,6 +8,7 @@ import { createOrderNumber, normalizePaymentMethod, orderTotalFromCart, serializ
 import { FUTURE_GATEWAY_METHODS, initiateSslCommerzPayment, isPaymentMethodEnabled, paymentGatewayForMethod, paymentMethodLabel } from "../../../lib/commerce/payments";
 import { clearStoredCartCoupon, resolveStoredCartCouponValidation } from "../../../lib/coupons/cart-coupon";
 import { sendOrderPlacedEmail } from "../../../lib/email/order-emails";
+import { notifyOrderPlaced } from "../../../lib/notifications/order-notifications";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -263,6 +264,7 @@ export async function POST(request) {
     }
 
     await sendOrderPlacedEmail(order);
+    await notifyOrderPlaced(order);
 
     return NextResponse.json(
       {
