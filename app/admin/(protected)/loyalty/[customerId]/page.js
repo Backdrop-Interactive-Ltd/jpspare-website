@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CATALOG_READ_ROLES } from "../../../../../lib/admin/catalogPayload";
+import { CATALOG_MANAGE_ROLES, CATALOG_READ_ROLES } from "../../../../../lib/admin/catalogPayload";
 import { prisma } from "../../../../../lib/db";
 import { requireAdminPage } from "../../../../../lib/auth/admin";
 import { hasRole } from "../../../../../lib/auth/rbac";
+import AdjustPointsForm from "./AdjustPointsForm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,6 +61,7 @@ export default async function LoyaltyCustomerPage({ params }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
   const canRead = hasRole(user, CATALOG_READ_ROLES);
+  const canManage = hasRole(user, CATALOG_MANAGE_ROLES);
   const { customerId } = await params;
 
   if (!canRead) {
@@ -171,6 +173,14 @@ export default async function LoyaltyCustomerPage({ params }) {
         <SummaryCard label="Lifetime Redeemed" value={formatNumber(account?.lifetimeRedeemed)} />
         <SummaryCard label="Ledger Entries" value={formatNumber(ledger.length)} />
       </section>
+
+      {canManage ? (
+        <AdjustPointsForm customerId={customer.id} />
+      ) : (
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+          <p className="text-sm font-black text-amber-700">Read-only access. Manual point adjustments require a manage role.</p>
+        </section>
+      )}
 
       <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="border-b border-[#eef0f3] p-5">
