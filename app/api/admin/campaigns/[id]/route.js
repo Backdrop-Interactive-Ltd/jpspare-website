@@ -1,5 +1,6 @@
 import { apiError, json, prisma, requireAdminApi } from "../../_utils";
 import { CATALOG_MANAGE_ROLES, CATALOG_READ_ROLES, slugify } from "../../../../../lib/admin/catalogPayload";
+import { resolveCampaignTargetSegments } from "../../../../../lib/campaigns/segment-targeting";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,6 +56,7 @@ function normalizeCampaignPayload(body = {}) {
     landingPageEnabled: Boolean(body.landingPageEnabled),
     seoTitle: cleanString(body.seoTitle),
     seoDescription: cleanString(body.seoDescription),
+    targetSegmentIds: Array.isArray(body.targetSegmentIds) ? body.targetSegmentIds : [],
   };
 }
 
@@ -79,6 +81,22 @@ function serializeCampaign(campaign) {
 
 function uniqueSlugError(error) {
   return error?.code === "P2002" ? "A campaign with this slug already exists." : null;
+}
+
+async function withResolvedTargetSegments(payload) {
+  const targetSegments = await resolveCampaignTargetSegments(payload.targetSegmentIds, prisma);
+  const actions = payload.actionsJson && typeof payload.actionsJson === "object" && !Array.isArray(payload.actionsJson) ? payload.actionsJson : null;
+  const { targetSegmentIds, ...data } = payload;
+
+  if (!actions && !targetSegments.length) return data;
+
+  return {
+    ...data,
+    actionsJson: {
+      ...(actions || {}),
+      targetSegments,
+    },
+  };
 }
 
 export async function GET(_request, context) {
@@ -108,7 +126,7 @@ async function updateCampaign(request, context) {
   try {
     const item = await prisma.promotionCampaign.update({
       where: { id: await id(context) },
-      data: payload,
+      data: await withResolvedTargetSegments(payload),
     });
     return json({ item: serializeCampaign(item) });
   } catch (error) {

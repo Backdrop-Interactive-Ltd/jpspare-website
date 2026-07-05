@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const campaignTypes = ["FLASH_SALE", "EID_CAMPAIGN", "BRAND_CAMPAIGN", "CATEGORY_CAMPAIGN", "FREE_SHIPPING", "BUNDLE_OFFER", "NEW_ARRIVAL", "CLEARANCE", "CUSTOM"];
 const campaignStatuses = ["DRAFT", "SCHEDULED", "ACTIVE", "PAUSED", "ENDED", "ARCHIVED"];
@@ -103,6 +103,21 @@ function parseJsonField(value, fieldLabel) {
   } catch (error) {
     throw new Error(error.message || `${fieldLabel} must be valid JSON.`);
   }
+}
+
+function parseActionsJson(value) {
+  if (!String(value || "").trim()) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function targetSegmentsFromActions(value) {
+  const actions = parseActionsJson(value);
+  return Array.isArray(actions.targetSegments) ? actions.targetSegments.filter((segment) => segment?.id) : [];
 }
 
 function label(value) {
@@ -245,9 +260,40 @@ function CampaignReadOnlySummary({ campaign }) {
 export default function CampaignForm({ mode, campaign, canManage }) {
   const router = useRouter();
   const [form, setForm] = useState(() => normalizeCampaign(campaign));
+  const [segments, setSegments] = useState([]);
+  const [segmentsLoading, setSegmentsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const readOnly = !canManage;
+  const selectedSegmentIds = useMemo(() => targetSegmentsFromActions(form.actionsJson).map((segment) => segment.id), [form.actionsJson]);
+  const selectedSegmentSet = useMemo(() => new Set(selectedSegmentIds), [selectedSegmentIds]);
+  const selectedSegments = useMemo(() => {
+    const byId = new Map(segments.map((segment) => [segment.id, segment]));
+    return selectedSegmentIds.map((id) => byId.get(id) || targetSegmentsFromActions(form.actionsJson).find((segment) => segment.id === id)).filter(Boolean);
+  }, [form.actionsJson, segments, selectedSegmentIds]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSegments() {
+      setSegmentsLoading(true);
+      try {
+        const response = await fetch("/api/admin/customer-segments?active=true&limit=100", { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (mounted && response.ok) setSegments(Array.isArray(data.items) ? data.items : []);
+      } catch {
+        if (mounted) setSegments([]);
+      } finally {
+        if (mounted) setSegmentsLoading(false);
+      }
+    }
+
+    loadSegments();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -257,7 +303,31 @@ export default function CampaignForm({ mode, campaign, canManage }) {
     setForm((current) => ({ ...current, name: value, slug: current.slug ? current.slug : slugify(value) }));
   }
 
+  function setTargetSegments(nextIds) {
+    const currentActions = parseActionsJson(form.actionsJson);
+    const knownSegments = [...segments, ...targetSegmentsFromActions(form.actionsJson)];
+    const byId = new Map(knownSegments.map((segment) => [segment.id, segment]));
+    const targetSegments = nextIds
+      .map((id) => byId.get(id))
+      .filter(Boolean)
+      .map((segment) => ({
+        id: segment.id,
+        slug: segment.slug,
+        name: segment.name,
+      }));
+
+    setField("actionsJson", JSON.stringify({ ...currentActions, targetSegments }, null, 2));
+  }
+
+  function toggleTargetSegment(id) {
+    if (readOnly) return;
+    const nextIds = selectedSegmentSet.has(id) ? selectedSegmentIds.filter((selectedId) => selectedId !== id) : [...selectedSegmentIds, id];
+    setTargetSegments(nextIds);
+  }
+
   function payload() {
+    const actionsJson = parseJsonField(form.actionsJson, "Actions JSON");
+
     return {
       ...form,
       slug: form.slug || slugify(form.name),
@@ -265,7 +335,8 @@ export default function CampaignForm({ mode, campaign, canManage }) {
       startsAt: form.startsAt || null,
       endsAt: form.endsAt || null,
       rulesJson: parseJsonField(form.rulesJson, "Rules JSON"),
-      actionsJson: parseJsonField(form.actionsJson, "Actions JSON"),
+      actionsJson,
+      targetSegmentIds: targetSegmentsFromActions(JSON.stringify(actionsJson || {})).map((segment) => segment.id),
     };
   }
 
@@ -398,6 +469,46 @@ export default function CampaignForm({ mode, campaign, canManage }) {
           <Field label="Actions JSON" hint='Example: {"badge":"Flash Sale","discountLabel":"10% OFF"}'>
             <textarea value={form.actionsJson || ""} onChange={(event) => setField("actionsJson", event.target.value)} disabled={readOnly} className={`${inputClass(readOnly)} h-56 py-3 font-mono leading-6`} />
           </Field>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-black text-[#111827]">Target Customer Segments</h3>
+            <p className="mt-2 text-sm font-semibold text-[#667085]">Stores selected segment snapshots in actionsJson.targetSegments. No customers are matched or messaged here.</p>
+          </div>
+          {selectedSegments.length ? (
+            <div className="flex max-w-xl flex-wrap justify-end gap-2">
+              {selectedSegments.map((segment) => (
+                <span key={segment.id} className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-[#ef3338] ring-1 ring-red-100">
+                  {segment.name}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-5 rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
+          {segmentsLoading ? <p className="text-sm font-bold text-[#667085]">Loading active segments...</p> : null}
+          {!segmentsLoading && !segments.length ? <p className="text-sm font-bold text-[#667085]">No active customer segments found.</p> : null}
+          {segments.length ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {segments.map((segment) => (
+                <button
+                  key={segment.id}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => toggleTargetSegment(segment.id)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    selectedSegmentSet.has(segment.id) ? "border-red-200 bg-white text-[#ef3338] shadow-sm" : "border-[#e5e7eb] bg-white text-[#344054]"
+                  } ${readOnly ? "cursor-not-allowed opacity-70" : "hover:border-red-200 hover:text-[#ef3338]"}`}
+                >
+                  <span className="block text-sm font-black">{segment.name}</span>
+                  <span className="mt-1 block truncate text-xs font-bold text-[#98a2b3]">{segment.slug}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
