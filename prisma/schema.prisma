@@ -410,6 +410,10 @@ model Product {
   wishlistItems      WishlistItem[]
   orderItems         OrderItem[]
   inventoryMovements InventoryMovement[]
+  inventoryAnalytics InventoryAnalytics[]
+  reorderSuggestions ReorderSuggestion[]
+  demandForecasts    DemandForecast[]
+  deadStockSnapshots DeadStockSnapshot[]
   purchaseItems      PurchaseOrderItem[]
   externalId         String?
   source             String                 @default("LOCAL")
@@ -462,6 +466,82 @@ model InventoryMovement {
   @@index([externalStockId])
   @@index([source, syncStatus])
   @@index([createdAt])
+}
+
+model InventoryAnalytics {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id])
+  currentStock      Int      @default(0)
+  reservedStock     Int      @default(0)
+  availableStock    Int      @default(0)
+  lowStockThreshold Int?
+  stockStatus       String?
+  salesLast7Days    Int      @default(0)
+  salesLast30Days   Int      @default(0)
+  salesLast90Days   Int      @default(0)
+  velocityScore     Float?
+  abcClass          String?
+  calculatedAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([productId])
+  @@index([calculatedAt])
+  @@index([abcClass])
+}
+
+model ReorderSuggestion {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id])
+  suggestedQuantity Int
+  reason            String?
+  priority          String   @default("MEDIUM")
+  status            String   @default("OPEN")
+  estimatedDemand   Int?
+  currentStock      Int?
+  leadTimeDays      Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([productId])
+  @@index([status])
+  @@index([priority])
+}
+
+model DemandForecast {
+  id               String   @id @default(cuid())
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id])
+  periodStart      DateTime
+  periodEnd        DateTime
+  forecastQuantity Int
+  actualQuantity   Int?
+  confidenceScore  Float?
+  method           String?
+  createdAt        DateTime @default(now())
+
+  @@index([productId])
+  @@index([periodStart])
+  @@index([periodEnd])
+}
+
+model DeadStockSnapshot {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  stockQuantity   Int
+  daysWithoutSale Int?
+  lastSoldAt      DateTime?
+  estimatedValue  Decimal? @db.Decimal(12, 2)
+  reason          String?
+  status          String   @default("OPEN")
+  calculatedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([productId])
+  @@index([calculatedAt])
+  @@index([status])
 }
 
 model ProductImage {
