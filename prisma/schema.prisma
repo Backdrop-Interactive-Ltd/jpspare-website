@@ -28,6 +28,20 @@ enum ApiKeyStatus {
   REVOKED
 }
 
+enum IntegrationEventStatus {
+  RECEIVED
+  PROCESSING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum IntegrationConflictStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -1371,5 +1385,79 @@ model PurchaseTimelineEvent {
   @@index([purchaseOrderId])
   @@index([type])
   @@index([adminUserId])
+  @@index([createdAt])
+}
+
+model IntegrationEventLog {
+  id             String                 @id @default(cuid())
+  direction      String
+  sourceSystem   String
+  targetSystem   String?
+  eventType      String
+  entityType     String
+  entityId       String?
+  externalId     String?
+  apiKeyId       String?
+  requestId      String?
+  idempotencyKey String?
+  status         IntegrationEventStatus @default(RECEIVED)
+  payloadJson    Json?
+  responseJson   Json?
+  errorMessage   String?
+  attempts       Int                    @default(0)
+  processedAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([direction])
+  @@index([sourceSystem])
+  @@index([eventType])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([externalId])
+  @@index([status])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+}
+
+model IntegrationIdempotencyKey {
+  id          String                 @id @default(cuid())
+  key         String                 @unique
+  sourceSystem String
+  endpoint    String
+  requestHash String?
+  responseJson Json?
+  status      IntegrationEventStatus @default(RECEIVED)
+  expiresAt   DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([sourceSystem])
+  @@index([endpoint])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model IntegrationConflict {
+  id                String                    @id @default(cuid())
+  entityType        String
+  entityId          String?
+  externalId        String?
+  conflictType      String
+  fieldPath         String?
+  localValueJson    Json?
+  incomingValueJson Json?
+  status            IntegrationConflictStatus @default(OPEN)
+  resolutionJson    Json?
+  resolvedById      String?
+  resolvedAt        DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([externalId])
+  @@index([conflictType])
+  @@index([status])
   @@index([createdAt])
 }
