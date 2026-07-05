@@ -153,6 +153,27 @@ enum LoyaltyTransactionType {
   REFUND_REVERSAL
 }
 
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+  CANCELLED
+  REJECTED
+}
+
+enum ReferralRewardType {
+  LOYALTY_POINTS
+  COUPON
+  MANUAL
+}
+
+enum ReferralRewardStatus {
+  PENDING
+  ISSUED
+  CANCELLED
+  FAILED
+}
+
 enum PromotionCampaignType {
   FLASH_SALE
   EID_CAMPAIGN
@@ -638,6 +659,10 @@ model Customer {
   notifications     CustomerNotification[]
   loyaltyAccount    LoyaltyAccount?
   loyaltyLedger     LoyaltyLedger[]
+  referralCodes     ReferralCode[]
+  referralsMade     ReferralRelationship[] @relation("ReferralReferrer")
+  referralsReceived ReferralRelationship[] @relation("ReferralReferred")
+  referralRewards   ReferralReward[]
   externalId        String?
   source            String             @default("LOCAL")
   syncStatus        SyncStatus         @default(LOCAL)
@@ -701,6 +726,74 @@ model LoyaltyLedger {
   @@index([type])
   @@index([createdAt])
   @@index([expiresAt])
+}
+
+model ReferralCode {
+  id            String                 @id @default(cuid())
+  customerId    String
+  customer      Customer               @relation(fields: [customerId], references: [id])
+  code          String                 @unique
+  isActive      Boolean                @default(true)
+  usageLimit    Int?
+  usedCount     Int                    @default(0)
+  relationships ReferralRelationship[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([customerId])
+  @@index([isActive])
+}
+
+model ReferralRelationship {
+  id                 String           @id @default(cuid())
+  referralCodeId     String
+  referralCode       ReferralCode     @relation(fields: [referralCodeId], references: [id])
+  referrerCustomerId String
+  referrerCustomer   Customer         @relation("ReferralReferrer", fields: [referrerCustomerId], references: [id])
+  referredCustomerId String?
+  referredCustomer   Customer?        @relation("ReferralReferred", fields: [referredCustomerId], references: [id])
+  referredEmail      String?
+  referredPhone      String?
+  qualifyingOrderId  String?
+  qualifyingOrder    Order?           @relation(fields: [qualifyingOrderId], references: [id])
+  status             ReferralStatus   @default(PENDING)
+  rewards            ReferralReward[]
+  qualifiedAt        DateTime?
+  rewardedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([referralCodeId])
+  @@index([referrerCustomerId])
+  @@index([referredCustomerId])
+  @@index([qualifyingOrderId])
+  @@index([status])
+}
+
+model ReferralReward {
+  id             String               @id @default(cuid())
+  relationshipId String
+  relationship   ReferralRelationship @relation(fields: [relationshipId], references: [id])
+  customerId     String
+  customer       Customer             @relation(fields: [customerId], references: [id])
+  orderId        String?
+  order          Order?               @relation(fields: [orderId], references: [id])
+  type           ReferralRewardType
+  status         ReferralRewardStatus @default(PENDING)
+  points         Int?
+  couponId       String?
+  coupon         Coupon?              @relation(fields: [couponId], references: [id])
+  value          String?
+  description    String?
+  issuedAt       DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([relationshipId])
+  @@index([customerId])
+  @@index([orderId])
+  @@index([couponId])
+  @@index([status])
 }
 
 model CustomerOtp {
@@ -1010,6 +1103,7 @@ model Coupon {
   isActive      Boolean            @default(true)
   orders        Order[]
   redemptions   CouponRedemption[]
+  referralRewards ReferralReward[]
   externalId    String?
   source        String             @default("LOCAL")
   syncStatus    SyncStatus         @default(LOCAL)
@@ -1061,6 +1155,8 @@ model Order {
   payments           Payment[]
   inventoryMovements InventoryMovement[]
   loyaltyLedger      LoyaltyLedger[]
+  referralRelationships ReferralRelationship[]
+  referralRewards    ReferralReward[]
   status             OrderStatus         @default(PENDING)
   paymentStatus      PaymentStatus       @default(UNPAID)
   paymentMethod      PaymentMethod       @default(CASH_ON_DELIVERY)
