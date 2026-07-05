@@ -467,6 +467,18 @@ model InventoryMovement {
   adminUserId           String?
   adminUser             User?             @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
   warehouseId           String?
+  warehouseRefId        String?
+  warehouse             Warehouse?        @relation(fields: [warehouseRefId], references: [id], onDelete: SetNull)
+  locationId            String?
+  location              WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  binId                 String?
+  bin                   StockBin?         @relation(fields: [binId], references: [id], onDelete: SetNull)
+  warehouseStockId      String?
+  warehouseStock        WarehouseStock?   @relation(fields: [warehouseStockId], references: [id], onDelete: SetNull)
+  stockTransferId       String?
+  stockTransfer         StockTransfer?    @relation(fields: [stockTransferId], references: [id], onDelete: SetNull)
+  stockTransferItemId   String?
+  stockTransferItem     StockTransferItem? @relation(fields: [stockTransferItemId], references: [id], onDelete: SetNull)
   externalStockId       String?
   source                String            @default("LOCAL")
   syncStatus            SyncStatus        @default(LOCAL)
@@ -479,6 +491,12 @@ model InventoryMovement {
   @@index([purchaseOrderId])
   @@index([adminUserId])
   @@index([warehouseId])
+  @@index([warehouseRefId])
+  @@index([locationId])
+  @@index([binId])
+  @@index([warehouseStockId])
+  @@index([stockTransferId])
+  @@index([stockTransferItemId])
   @@index([externalStockId])
   @@index([source, syncStatus])
   @@index([createdAt])
@@ -499,6 +517,7 @@ model Warehouse {
   locations             WarehouseLocation[]
   bins                  StockBin[]
   stocks                WarehouseStock[]
+  inventoryMovements    InventoryMovement[]
   outgoingTransfers     StockTransfer[]     @relation("StockTransferFromWarehouse")
   incomingTransfers     StockTransfer[]     @relation("StockTransferToWarehouse")
   createdAt             DateTime            @default(now())
@@ -519,6 +538,7 @@ model WarehouseLocation {
   status            WarehouseStatus @default(ACTIVE)
   bins              StockBin[]
   stocks            WarehouseStock[]
+  inventoryMovements InventoryMovement[]
   outgoingTransfers StockTransfer[] @relation("StockTransferFromLocation")
   incomingTransfers StockTransfer[] @relation("StockTransferToLocation")
   createdAt         DateTime        @default(now())
@@ -539,6 +559,7 @@ model StockBin {
   status            WarehouseStatus @default(ACTIVE)
   capacityJson      Json?
   stocks            WarehouseStock[]
+  inventoryMovements InventoryMovement[]
   outgoingTransfers StockTransfer[] @relation("StockTransferFromBin")
   incomingTransfers StockTransfer[] @relation("StockTransferToBin")
   createdAt         DateTime        @default(now())
@@ -563,6 +584,7 @@ model WarehouseStock {
   onHand      Int                @default(0)
   reserved    Int                @default(0)
   available   Int                @default(0)
+  inventoryMovements InventoryMovement[]
   updatedAt   DateTime           @updatedAt
 
   @@index([productId])
@@ -592,6 +614,7 @@ model StockTransfer {
   receivedAt      DateTime?
   notes           String?
   items           StockTransferItem[]
+  inventoryMovements InventoryMovement[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -608,6 +631,7 @@ model StockTransferItem {
   product          Product       @relation(fields: [productId], references: [id])
   quantity         Int
   receivedQuantity Int           @default(0)
+  inventoryMovements InventoryMovement[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
