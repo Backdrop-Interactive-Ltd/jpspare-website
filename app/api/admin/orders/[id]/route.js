@@ -1,6 +1,7 @@
 import { prisma, requireAdminApi, apiError, json } from "../../_utils";
 import { cancelOrderStock, confirmOrderStock } from "../../../../../lib/commerce/inventory";
 import { ORDER_STATUSES, getOrderWithDetails, serializeOrder } from "../../../../../lib/commerce/orders";
+import { awardOrderLoyaltyPoints } from "../../../../../lib/loyalty/earn-points";
 import { notifyOrderStatusChanged } from "../../../../../lib/notifications/order-notifications";
 
 export const dynamic = "force-dynamic";
@@ -179,6 +180,10 @@ export async function PATCH(request, { params }) {
         trackingNumber: body.trackingNumber || "",
         courierName: body.courierName || "",
       });
+
+      if (data.status === "DELIVERED") {
+        await awardOrderLoyaltyPoints(order.id);
+      }
     }
 
     return json({ order: serializeOrder(order) });
