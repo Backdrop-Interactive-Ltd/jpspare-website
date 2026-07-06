@@ -65,6 +65,21 @@ function emptyRow(colSpan, message) {
   );
 }
 
+function distributionPanel(title, rows) {
+  return (
+    <div className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+      <h2 className="text-xl font-black text-[#111827]">{title}</h2>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {rows?.length ? rows.map((row) => (
+          <span key={row.value} className="inline-flex rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-black text-[#344054] ring-1 ring-[#e5e7eb]">
+            {label(row.value)} · {row.count}
+          </span>
+        )) : <p className="rounded-2xl border border-dashed border-[#d0d5dd] bg-[#f8fafc] p-5 text-sm font-bold text-[#667085]">No distribution data available.</p>}
+      </div>
+    </div>
+  );
+}
+
 function recommendationCard(item) {
   return (
     <div key={item.id} className="rounded-2xl border border-[#eef0f3] bg-[#f8fafc] p-4">
@@ -161,6 +176,15 @@ export default async function AdminInventoryAiPage({ searchParams }) {
         {metricCard("Stockout Projections", analytics.stockoutProjections || 0, "danger")}
         {metricCard("Supplier Risks", analytics.supplierRisks || 0, "warning")}
         {metricCard("Scanned Products", filters.scannedProducts || 0)}
+        {metricCard("Average Confidence", percent(analytics.averageConfidenceScore || 0), "info")}
+        {metricCard("Requires Approval", analytics.recommendationsRequiringApproval || 0, "warning")}
+        {metricCard("Pure Warnings", analytics.pureWarningCount || 0)}
+        {metricCard("Product Coverage", analytics.productCoverageCount || 0, "info")}
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        {distributionPanel("Severity Distribution", analytics.severityDistribution || [])}
+        {distributionPanel("Recommendation Type Distribution", analytics.recommendationTypeDistribution || [])}
       </section>
 
       <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">

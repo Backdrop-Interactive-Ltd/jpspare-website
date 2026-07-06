@@ -123,7 +123,26 @@ function countBy(recommendations, predicate) {
   return recommendations.filter(predicate).length;
 }
 
+function distributionBy(recommendations, key) {
+  const counts = new Map();
+  for (const item of recommendations) {
+    const value = item[key] || "UNKNOWN";
+    counts.set(value, (counts.get(value) || 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
+
 function buildAnalytics(recommendations) {
+  const totalConfidence = recommendations.reduce((sum, item) => {
+    const score = Number(item.confidenceScore);
+    return sum + (Number.isFinite(score) ? score : 0);
+  }, 0);
+  const productIds = new Set(recommendations.map((item) => item.productId).filter(Boolean));
+  const recommendationsRequiringApproval = countBy(recommendations, (item) => item.requiresApproval);
+  const pureWarningCount = countBy(recommendations, (item) => !item.requiresApproval);
+
   return {
     totalRecommendations: recommendations.length,
     criticalRecommendations: countBy(recommendations, (item) => item.severity === "CRITICAL"),
@@ -132,6 +151,12 @@ function buildAnalytics(recommendations) {
     deadStockWarnings: countBy(recommendations, (item) => item.type === "DEAD_STOCK_WARNING"),
     stockoutProjections: countBy(recommendations, (item) => item.type === "STOCKOUT_PROJECTION"),
     supplierRisks: countBy(recommendations, (item) => item.type === "SUPPLIER_RISK"),
+    averageConfidenceScore: recommendations.length ? totalConfidence / recommendations.length : 0,
+    recommendationsRequiringApproval,
+    pureWarningCount,
+    productCoverageCount: productIds.size,
+    severityDistribution: distributionBy(recommendations, "severity"),
+    recommendationTypeDistribution: distributionBy(recommendations, "type"),
   };
 }
 
