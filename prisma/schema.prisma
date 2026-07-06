@@ -320,27 +320,65 @@ enum PurchaseTimelineType {
   STATUS_CHANGED
 }
 
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  PAUSED
+}
+
+enum AgentTaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AgentActionStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  EXECUTED
+  FAILED
+  CANCELLED
+}
+
+enum AgentApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AgentLogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
 model User {
-  id                     String                  @id @default(cuid())
-  email                  String                  @unique
-  passwordHash           String
-  name                   String?
-  isActive               Boolean                 @default(true)
-  lastLoginAt            DateTime?
-  roles                  RoleAssignment[]
-  mediaUploads           Media[]
-  apiKeys                ApiKey[]
-  stockMoves             InventoryMovement[]
-  returnInspections      ReturnInspection[]
-  purchaseCreatedBy      PurchaseOrder[]         @relation("PurchaseCreatedBy")
-  purchaseUpdatedBy      PurchaseOrder[]         @relation("PurchaseUpdatedBy")
-  purchaseTimelineEvents PurchaseTimelineEvent[]
-  externalId             String?
-  source                 String                  @default("LOCAL")
-  syncStatus             SyncStatus              @default(LOCAL)
-  lastSyncedAt           DateTime?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  id                      String                  @id @default(cuid())
+  email                   String                  @unique
+  passwordHash            String
+  name                    String?
+  isActive                Boolean                 @default(true)
+  lastLoginAt             DateTime?
+  roles                   RoleAssignment[]
+  mediaUploads            Media[]
+  apiKeys                 ApiKey[]
+  stockMoves              InventoryMovement[]
+  returnInspections       ReturnInspection[]
+  purchaseCreatedBy       PurchaseOrder[]         @relation("PurchaseCreatedBy")
+  purchaseUpdatedBy       PurchaseOrder[]         @relation("PurchaseUpdatedBy")
+  purchaseTimelineEvents  PurchaseTimelineEvent[]
+  requestedAgentApprovals AgentApproval[]         @relation("AgentApprovalRequestedBy")
+  approvedAgentApprovals  AgentApproval[]         @relation("AgentApprovalApprovedBy")
+  externalId              String?
+  source                  String                  @default("LOCAL")
+  syncStatus              SyncStatus              @default(LOCAL)
+  lastSyncedAt            DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 
   @@index([externalId])
   @@index([source, syncStatus])
@@ -512,40 +550,40 @@ model Product {
 }
 
 model InventoryMovement {
-  id                    String            @id @default(cuid())
+  id                    String             @id @default(cuid())
   productId             String
-  product               Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product               Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   type                  StockMovementType
   quantity              Int
   previousStock         Int
   newStock              Int
-  previousReservedStock Int               @default(0)
-  newReservedStock      Int               @default(0)
+  previousReservedStock Int                @default(0)
+  newReservedStock      Int                @default(0)
   reason                String?
   orderId               String?
-  order                 Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  order                 Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
   purchaseOrderId       String?
-  purchaseOrder         PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  purchaseOrder         PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
   adminUserId           String?
-  adminUser             User?             @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  adminUser             User?              @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
   warehouseId           String?
   warehouseRefId        String?
-  warehouse             Warehouse?        @relation(fields: [warehouseRefId], references: [id], onDelete: SetNull)
+  warehouse             Warehouse?         @relation(fields: [warehouseRefId], references: [id], onDelete: SetNull)
   locationId            String?
   location              WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   binId                 String?
-  bin                   StockBin?         @relation(fields: [binId], references: [id], onDelete: SetNull)
+  bin                   StockBin?          @relation(fields: [binId], references: [id], onDelete: SetNull)
   warehouseStockId      String?
-  warehouseStock        WarehouseStock?   @relation(fields: [warehouseStockId], references: [id], onDelete: SetNull)
+  warehouseStock        WarehouseStock?    @relation(fields: [warehouseStockId], references: [id], onDelete: SetNull)
   stockTransferId       String?
-  stockTransfer         StockTransfer?    @relation(fields: [stockTransferId], references: [id], onDelete: SetNull)
+  stockTransfer         StockTransfer?     @relation(fields: [stockTransferId], references: [id], onDelete: SetNull)
   stockTransferItemId   String?
   stockTransferItem     StockTransferItem? @relation(fields: [stockTransferItemId], references: [id], onDelete: SetNull)
   externalStockId       String?
-  source                String            @default("LOCAL")
-  syncStatus            SyncStatus        @default(LOCAL)
+  source                String             @default("LOCAL")
+  syncStatus            SyncStatus         @default(LOCAL)
   lastSyncedAt          DateTime?
-  createdAt             DateTime          @default(now())
+  createdAt             DateTime           @default(now())
 
   @@index([productId])
   @@index([type])
@@ -565,47 +603,47 @@ model InventoryMovement {
 }
 
 model Warehouse {
-  id                    String              @id @default(cuid())
-  code                  String              @unique
-  name                  String
-  status                WarehouseStatus     @default(ACTIVE)
-  address               String?
-  contactName           String?
-  contactPhone          String?
-  externalId            String?
-  source                String?
-  syncStatus            SyncStatus?
-  lastSyncedAt          DateTime?
-  locations             WarehouseLocation[]
-  bins                  StockBin[]
-  stocks                WarehouseStock[]
-  inventoryMovements    InventoryMovement[]
-  outgoingTransfers     StockTransfer[]     @relation("StockTransferFromWarehouse")
-  incomingTransfers     StockTransfer[]     @relation("StockTransferToWarehouse")
-  shipments             Shipment[]
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  name               String
+  status             WarehouseStatus     @default(ACTIVE)
+  address            String?
+  contactName        String?
+  contactPhone       String?
+  externalId         String?
+  source             String?
+  syncStatus         SyncStatus?
+  lastSyncedAt       DateTime?
+  locations          WarehouseLocation[]
+  bins               StockBin[]
+  stocks             WarehouseStock[]
+  inventoryMovements InventoryMovement[]
+  outgoingTransfers  StockTransfer[]     @relation("StockTransferFromWarehouse")
+  incomingTransfers  StockTransfer[]     @relation("StockTransferToWarehouse")
+  shipments          Shipment[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([status])
   @@index([externalId])
 }
 
 model WarehouseLocation {
-  id                String          @id @default(cuid())
-  warehouseId       String
-  warehouse         Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  code              String
-  name              String
-  type              String?
-  zone              String?
-  status            WarehouseStatus @default(ACTIVE)
-  bins              StockBin[]
-  stocks            WarehouseStock[]
+  id                 String              @id @default(cuid())
+  warehouseId        String
+  warehouse          Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  code               String
+  name               String
+  type               String?
+  zone               String?
+  status             WarehouseStatus     @default(ACTIVE)
+  bins               StockBin[]
+  stocks             WarehouseStock[]
   inventoryMovements InventoryMovement[]
-  outgoingTransfers StockTransfer[] @relation("StockTransferFromLocation")
-  incomingTransfers StockTransfer[] @relation("StockTransferToLocation")
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  outgoingTransfers  StockTransfer[]     @relation("StockTransferFromLocation")
+  incomingTransfers  StockTransfer[]     @relation("StockTransferToLocation")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([warehouseId])
   @@index([code])
@@ -613,20 +651,20 @@ model WarehouseLocation {
 }
 
 model StockBin {
-  id                String          @id @default(cuid())
-  warehouseId       String
-  warehouse         Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  locationId        String?
-  location          WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  code              String
-  status            WarehouseStatus @default(ACTIVE)
-  capacityJson      Json?
-  stocks            WarehouseStock[]
+  id                 String              @id @default(cuid())
+  warehouseId        String
+  warehouse          Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  locationId         String?
+  location           WarehouseLocation?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  code               String
+  status             WarehouseStatus     @default(ACTIVE)
+  capacityJson       Json?
+  stocks             WarehouseStock[]
   inventoryMovements InventoryMovement[]
-  outgoingTransfers StockTransfer[] @relation("StockTransferFromBin")
-  incomingTransfers StockTransfer[] @relation("StockTransferToBin")
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  outgoingTransfers  StockTransfer[]     @relation("StockTransferFromBin")
+  incomingTransfers  StockTransfer[]     @relation("StockTransferToBin")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([warehouseId])
   @@index([locationId])
@@ -635,20 +673,20 @@ model StockBin {
 }
 
 model WarehouseStock {
-  id          String             @id @default(cuid())
-  productId   String
-  product     Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouseId String
-  warehouse   Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  locationId  String?
-  location    WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  binId       String?
-  bin         StockBin?          @relation(fields: [binId], references: [id], onDelete: SetNull)
-  onHand      Int                @default(0)
-  reserved    Int                @default(0)
-  available   Int                @default(0)
+  id                 String              @id @default(cuid())
+  productId          String
+  product            Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId        String
+  warehouse          Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  locationId         String?
+  location           WarehouseLocation?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  binId              String?
+  bin                StockBin?           @relation(fields: [binId], references: [id], onDelete: SetNull)
+  onHand             Int                 @default(0)
+  reserved           Int                 @default(0)
+  available          Int                 @default(0)
   inventoryMovements InventoryMovement[]
-  updatedAt   DateTime           @updatedAt
+  updatedAt          DateTime            @updatedAt
 
   @@index([productId])
   @@index([warehouseId])
@@ -657,29 +695,29 @@ model WarehouseStock {
 }
 
 model StockTransfer {
-  id              String              @id @default(cuid())
-  transferNumber  String              @unique
-  status          StockTransferStatus @default(DRAFT)
-  fromWarehouseId String?
-  fromWarehouse   Warehouse?          @relation("StockTransferFromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: SetNull)
-  toWarehouseId   String?
-  toWarehouse     Warehouse?          @relation("StockTransferToWarehouse", fields: [toWarehouseId], references: [id], onDelete: SetNull)
-  fromLocationId  String?
-  fromLocation    WarehouseLocation?  @relation("StockTransferFromLocation", fields: [fromLocationId], references: [id], onDelete: SetNull)
-  toLocationId    String?
-  toLocation      WarehouseLocation?  @relation("StockTransferToLocation", fields: [toLocationId], references: [id], onDelete: SetNull)
-  fromBinId       String?
-  fromBin         StockBin?           @relation("StockTransferFromBin", fields: [fromBinId], references: [id], onDelete: SetNull)
-  toBinId         String?
-  toBin           StockBin?           @relation("StockTransferToBin", fields: [toBinId], references: [id], onDelete: SetNull)
-  requestedAt     DateTime?
-  shippedAt       DateTime?
-  receivedAt      DateTime?
-  notes           String?
-  items           StockTransferItem[]
+  id                 String              @id @default(cuid())
+  transferNumber     String              @unique
+  status             StockTransferStatus @default(DRAFT)
+  fromWarehouseId    String?
+  fromWarehouse      Warehouse?          @relation("StockTransferFromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: SetNull)
+  toWarehouseId      String?
+  toWarehouse        Warehouse?          @relation("StockTransferToWarehouse", fields: [toWarehouseId], references: [id], onDelete: SetNull)
+  fromLocationId     String?
+  fromLocation       WarehouseLocation?  @relation("StockTransferFromLocation", fields: [fromLocationId], references: [id], onDelete: SetNull)
+  toLocationId       String?
+  toLocation         WarehouseLocation?  @relation("StockTransferToLocation", fields: [toLocationId], references: [id], onDelete: SetNull)
+  fromBinId          String?
+  fromBin            StockBin?           @relation("StockTransferFromBin", fields: [fromBinId], references: [id], onDelete: SetNull)
+  toBinId            String?
+  toBin              StockBin?           @relation("StockTransferToBin", fields: [toBinId], references: [id], onDelete: SetNull)
+  requestedAt        DateTime?
+  shippedAt          DateTime?
+  receivedAt         DateTime?
+  notes              String?
+  items              StockTransferItem[]
   inventoryMovements InventoryMovement[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([status])
   @@index([fromWarehouseId])
@@ -687,16 +725,16 @@ model StockTransfer {
 }
 
 model StockTransferItem {
-  id               String        @id @default(cuid())
-  transferId       String
-  transfer         StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  productId        String
-  product          Product       @relation(fields: [productId], references: [id])
-  quantity         Int
-  receivedQuantity Int           @default(0)
+  id                 String              @id @default(cuid())
+  transferId         String
+  transfer           StockTransfer       @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  productId          String
+  product            Product             @relation(fields: [productId], references: [id])
+  quantity           Int
+  receivedQuantity   Int                 @default(0)
   inventoryMovements InventoryMovement[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([transferId])
   @@index([productId])
@@ -820,17 +858,17 @@ model DemandForecast {
 }
 
 model DeadStockSnapshot {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   productId       String
-  product         Product  @relation(fields: [productId], references: [id])
+  product         Product   @relation(fields: [productId], references: [id])
   stockQuantity   Int
   daysWithoutSale Int?
   lastSoldAt      DateTime?
-  estimatedValue  Decimal? @db.Decimal(12, 2)
+  estimatedValue  Decimal?  @db.Decimal(12, 2)
   reason          String?
-  status          String   @default("OPEN")
-  calculatedAt    DateTime @default(now())
-  createdAt       DateTime @default(now())
+  status          String    @default("OPEN")
+  calculatedAt    DateTime  @default(now())
+  createdAt       DateTime  @default(now())
 
   @@index([productId])
   @@index([calculatedAt])
@@ -1029,13 +1067,13 @@ model BlogPost {
 }
 
 model Customer {
-  id                String             @id @default(cuid())
-  email             String?            @unique
+  id                String                 @id @default(cuid())
+  email             String?                @unique
   passwordHash      String?
   firstName         String?
   lastName          String?
-  phone             String?            @unique
-  status            CustomerStatus     @default(ACTIVE)
+  phone             String?                @unique
+  status            CustomerStatus         @default(ACTIVE)
   lastLoginAt       DateTime?
   addresses         CustomerAddress[]
   vehicles          CustomerVehicle[]
@@ -1050,13 +1088,13 @@ model Customer {
   referralsMade     ReferralRelationship[] @relation("ReferralReferrer")
   referralsReceived ReferralRelationship[] @relation("ReferralReferred")
   referralRewards   ReferralReward[]
-  returnRequests     ReturnRequest[]
+  returnRequests    ReturnRequest[]
   externalId        String?
-  source            String             @default("LOCAL")
-  syncStatus        SyncStatus         @default(LOCAL)
+  source            String                 @default("LOCAL")
+  syncStatus        SyncStatus             @default(LOCAL)
   lastSyncedAt      DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
   @@index([status])
   @@index([externalId])
@@ -1477,27 +1515,27 @@ model WishlistItem {
 }
 
 model Coupon {
-  id            String             @id @default(cuid())
-  code          String             @unique
-  description   String?
-  discountType  String             @default("FIXED")
-  discountValue Decimal            @db.Decimal(12, 2)
-  minOrderValue Decimal?           @db.Decimal(12, 2)
-  maxDiscount   Decimal?           @db.Decimal(12, 2)
-  startsAt      DateTime?
-  endsAt        DateTime?
-  usageLimit    Int?
-  usedCount     Int                @default(0)
-  isActive      Boolean            @default(true)
-  orders        Order[]
-  redemptions   CouponRedemption[]
+  id              String             @id @default(cuid())
+  code            String             @unique
+  description     String?
+  discountType    String             @default("FIXED")
+  discountValue   Decimal            @db.Decimal(12, 2)
+  minOrderValue   Decimal?           @db.Decimal(12, 2)
+  maxDiscount     Decimal?           @db.Decimal(12, 2)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  usageLimit      Int?
+  usedCount       Int                @default(0)
+  isActive        Boolean            @default(true)
+  orders          Order[]
+  redemptions     CouponRedemption[]
   referralRewards ReferralReward[]
-  externalId    String?
-  source        String             @default("LOCAL")
-  syncStatus    SyncStatus         @default(LOCAL)
-  lastSyncedAt  DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  externalId      String?
+  source          String             @default("LOCAL")
+  syncStatus      SyncStatus         @default(LOCAL)
+  lastSyncedAt    DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   @@index([isActive])
   @@index([externalId])
@@ -1530,55 +1568,55 @@ model PromotionCampaign {
 }
 
 model Order {
-  id                 String              @id @default(cuid())
-  orderNumber        String              @unique
-  customerId         String?
-  customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  cartId             String?             @unique
-  cart               Cart?               @relation(fields: [cartId], references: [id], onDelete: SetNull)
-  couponId           String?
-  coupon             Coupon?             @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  couponRedemption   CouponRedemption?
-  items              OrderItem[]
-  payments           Payment[]
-  settlementLines    SettlementLine[]
-  inventoryMovements InventoryMovement[]
-  shipments          Shipment[]
-  returnRequests     ReturnRequest[]
-  loyaltyLedger      LoyaltyLedger[]
+  id                    String                 @id @default(cuid())
+  orderNumber           String                 @unique
+  customerId            String?
+  customer              Customer?              @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cartId                String?                @unique
+  cart                  Cart?                  @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  couponId              String?
+  coupon                Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponRedemption      CouponRedemption?
+  items                 OrderItem[]
+  payments              Payment[]
+  settlementLines       SettlementLine[]
+  inventoryMovements    InventoryMovement[]
+  shipments             Shipment[]
+  returnRequests        ReturnRequest[]
+  loyaltyLedger         LoyaltyLedger[]
   referralRelationships ReferralRelationship[]
-  referralRewards    ReferralReward[]
-  status             OrderStatus         @default(PENDING)
-  paymentStatus      PaymentStatus       @default(UNPAID)
-  paymentMethod      PaymentMethod       @default(CASH_ON_DELIVERY)
-  paymentGateway     String?
-  transactionId      String?
-  paidAt             DateTime?
-  gatewayResponse    Json?
-  paymentMeta        Json?
-  currency           String              @default("BDT")
-  subtotal           Decimal             @db.Decimal(12, 2)
-  discountTotal      Decimal             @default(0) @db.Decimal(12, 2)
-  deliveryCharge     Decimal             @default(0) @db.Decimal(12, 2)
-  taxTotal           Decimal             @default(0) @db.Decimal(12, 2)
-  total              Decimal             @db.Decimal(12, 2)
-  customerEmail      String?
-  customerName       String?
-  customerPhone      String?
-  notes              String?
-  billingAddress     Json?
-  shippingAddress    Json?
-  timeline           Json?
-  invoiceNumber      String?             @unique
-  invoiceGeneratedAt DateTime?
-  printedAt          DateTime?
-  externalOrderId    String?
-  externalId         String?
-  source             String              @default("LOCAL")
-  syncStatus         SyncStatus          @default(LOCAL)
-  lastSyncedAt       DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  referralRewards       ReferralReward[]
+  status                OrderStatus            @default(PENDING)
+  paymentStatus         PaymentStatus          @default(UNPAID)
+  paymentMethod         PaymentMethod          @default(CASH_ON_DELIVERY)
+  paymentGateway        String?
+  transactionId         String?
+  paidAt                DateTime?
+  gatewayResponse       Json?
+  paymentMeta           Json?
+  currency              String                 @default("BDT")
+  subtotal              Decimal                @db.Decimal(12, 2)
+  discountTotal         Decimal                @default(0) @db.Decimal(12, 2)
+  deliveryCharge        Decimal                @default(0) @db.Decimal(12, 2)
+  taxTotal              Decimal                @default(0) @db.Decimal(12, 2)
+  total                 Decimal                @db.Decimal(12, 2)
+  customerEmail         String?
+  customerName          String?
+  customerPhone         String?
+  notes                 String?
+  billingAddress        Json?
+  shippingAddress       Json?
+  timeline              Json?
+  invoiceNumber         String?                @unique
+  invoiceGeneratedAt    DateTime?
+  printedAt             DateTime?
+  externalOrderId       String?
+  externalId            String?
+  source                String                 @default("LOCAL")
+  syncStatus            SyncStatus             @default(LOCAL)
+  lastSyncedAt          DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 
   @@index([customerId])
   @@index([status])
@@ -1592,22 +1630,22 @@ model Order {
 }
 
 model ReturnRequest {
-  id            String            @id @default(cuid())
-  returnNumber  String            @unique
-  orderId       String
-  order         Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  customerId    String
-  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  status        ReturnStatus      @default(REQUESTED)
-  reason        String?
-  notes         String?
-  requestedAt   DateTime          @default(now())
-  completedAt   DateTime?
-  items         ReturnItem[]
-  inspection    ReturnInspection?
-  refundCase    RefundCase?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  returnNumber String            @unique
+  orderId      String
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId   String
+  customer     Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status       ReturnStatus      @default(REQUESTED)
+  reason       String?
+  notes        String?
+  requestedAt  DateTime          @default(now())
+  completedAt  DateTime?
+  items        ReturnItem[]
+  inspection   ReturnInspection?
+  refundCase   RefundCase?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([orderId])
   @@index([customerId])
@@ -1703,12 +1741,12 @@ model OrderItem {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
+  id              String           @id @default(cuid())
   orderId         String
-  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   method          PaymentMethod
-  status          PaymentStatus @default(PENDING)
-  amount          Decimal       @db.Decimal(12, 2)
+  status          PaymentStatus    @default(PENDING)
+  amount          Decimal          @db.Decimal(12, 2)
   transactionId   String?
   gateway         String?
   gatewayPayload  Json?
@@ -1717,11 +1755,11 @@ model Payment {
   paidAt          DateTime?
   settlementLines SettlementLine[]
   externalId      String?
-  source          String        @default("LOCAL")
-  syncStatus      SyncStatus    @default(LOCAL)
+  source          String           @default("LOCAL")
+  syncStatus      SyncStatus       @default(LOCAL)
   lastSyncedAt    DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([orderId])
   @@index([method, status])
@@ -1915,16 +1953,16 @@ model IntegrationEventLog {
 }
 
 model IntegrationIdempotencyKey {
-  id          String                 @id @default(cuid())
-  key         String                 @unique
+  id           String                 @id @default(cuid())
+  key          String                 @unique
   sourceSystem String
-  endpoint    String
-  requestHash String?
+  endpoint     String
+  requestHash  String?
   responseJson Json?
-  status      IntegrationEventStatus @default(RECEIVED)
-  expiresAt   DateTime?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
+  status       IntegrationEventStatus @default(RECEIVED)
+  expiresAt    DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 
   @@index([sourceSystem])
   @@index([endpoint])
@@ -1953,5 +1991,124 @@ model IntegrationConflict {
   @@index([externalId])
   @@index([conflictType])
   @@index([status])
+  @@index([createdAt])
+}
+
+model Agent {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  type            String
+  status          AgentStatus   @default(ACTIVE)
+  description     String?
+  configJson      Json?
+  permissionsJson Json?
+  isActive        Boolean       @default(true)
+  tasks           AgentTask[]
+  memory          AgentMemory[]
+  logs            AgentLog[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model AgentTask {
+  id           String          @id @default(cuid())
+  agentId      String
+  agent        Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  taskType     String
+  status       AgentTaskStatus @default(PENDING)
+  priority     String          @default("MEDIUM")
+  inputJson    Json?
+  outputJson   Json?
+  errorMessage String?
+  scheduledFor DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  actions      AgentAction[]
+  logs         AgentLog[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([agentId])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+}
+
+model AgentAction {
+  id                 String            @id @default(cuid())
+  taskId             String
+  task               AgentTask         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actionType         String
+  entityType         String?
+  entityId           String?
+  proposedChangeJson Json?
+  status             AgentActionStatus @default(PROPOSED)
+  executedAt         DateTime?
+  approval           AgentApproval?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([taskId])
+  @@index([status])
+  @@index([entityType])
+  @@index([entityId])
+}
+
+model AgentApproval {
+  id            String              @id @default(cuid())
+  actionId      String              @unique
+  action        AgentAction         @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  requestedById String?
+  requestedBy   User?               @relation("AgentApprovalRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  approvedById  String?
+  approvedBy    User?               @relation("AgentApprovalApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  status        AgentApprovalStatus @default(PENDING)
+  notes         String?
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([status])
+  @@index([requestedById])
+  @@index([approvedById])
+}
+
+model AgentMemory {
+  id         String    @id @default(cuid())
+  agentId    String
+  agent      Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  scope      String
+  entityType String?
+  entityId   String?
+  memoryJson Json
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([agentId])
+  @@index([scope])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([expiresAt])
+}
+
+model AgentLog {
+  id           String        @id @default(cuid())
+  agentId      String
+  agent        Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  taskId       String?
+  task         AgentTask?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  level        AgentLogLevel
+  message      String
+  metadataJson Json?
+  createdAt    DateTime      @default(now())
+
+  @@index([agentId])
+  @@index([taskId])
+  @@index([level])
   @@index([createdAt])
 }
