@@ -99,6 +99,85 @@ function recommendationCard(item) {
   );
 }
 
+function runAnalysisControl() {
+  const script = `
+    (() => {
+      const button = document.getElementById("inventory-ai-run-button");
+      const status = document.getElementById("inventory-ai-run-status");
+      const storageKey = "inventory-ai-run-result";
+      const pendingMessage = "Running inventory analysis...";
+
+      function setStatus(message, tone) {
+        if (!status) return;
+        status.textContent = message || "";
+        status.className = tone === "error"
+          ? "text-sm font-bold text-[#ef3338]"
+          : tone === "success"
+            ? "text-sm font-bold text-emerald-700"
+            : "text-sm font-bold text-[#667085]";
+      }
+
+      try {
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) {
+          sessionStorage.removeItem(storageKey);
+          const result = JSON.parse(stored);
+          setStatus("Analysis completed. Task " + result.taskId + " created " + result.recommendationCount + " recommendations.", "success");
+        }
+      } catch {
+        sessionStorage.removeItem(storageKey);
+      }
+
+      if (!button) return;
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.textContent = pendingMessage;
+        setStatus(pendingMessage, "info");
+
+        try {
+          const response = await fetch("/api/admin/ai/inventory/run", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            const message = response.status === 401
+              ? "Your admin session has expired. Please sign in again."
+              : data.error || "Inventory analysis could not be started.";
+            throw new Error(message);
+          }
+
+          sessionStorage.setItem(storageKey, JSON.stringify({
+            taskId: data.taskId || "unknown",
+            recommendationCount: data.recommendationCount || 0,
+          }));
+          window.location.reload();
+        } catch (error) {
+          button.disabled = false;
+          button.textContent = "Run Analysis";
+          setStatus(error.message || "Inventory analysis failed safely.", "error");
+        }
+      });
+    })();
+  `;
+
+  return (
+    <div className="flex flex-col items-start gap-2 sm:items-end">
+      <button
+        id="inventory-ai-run-button"
+        type="button"
+        className="inline-flex h-11 items-center rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Run Analysis
+      </button>
+      <p id="inventory-ai-run-status" className="text-sm font-bold text-[#667085]" aria-live="polite" />
+      <script dangerouslySetInnerHTML={{ __html: script }} />
+    </div>
+  );
+}
+
 async function getInventoryAiData(searchParams) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") || "localhost:3000";
@@ -161,9 +240,12 @@ export default async function AdminInventoryAiPage({ searchParams }) {
               Read-only recommendation scan across up to {filters.scanLimit || 100} products. No tasks, actions, approvals, AI calls, or inventory mutations are performed.
             </p>
           </div>
-          <Link href="/api/admin/ai/inventory" className="inline-flex h-11 items-center rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054]">
-            API Summary
-          </Link>
+          <div className="flex flex-wrap items-start gap-3">
+            <Link href="/api/admin/ai/inventory" className="inline-flex h-11 items-center rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054]">
+              API Summary
+            </Link>
+            {runAnalysisControl()}
+          </div>
         </div>
       </section>
 
