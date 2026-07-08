@@ -6,10 +6,11 @@ import CompareHashRedirect from "./CompareHashRedirect";
 import PartsInquirySection from "./PartsInquirySection";
 import SlideManualControls from "./SlideManualControls";
 import { Header } from "./homepage/site-header";
-import { premiumBrands, categoryShowcase, heroCategorySlider } from "./homepage/homepage-data";
+import { premiumBrands, categoryShowcase as staticCategoryShowcase, heroCategorySlider } from "./homepage/homepage-data";
 import { Icon, slugify } from "./homepage/homepage-ui-helpers";
 import { articles as staticArticles } from "./blog/articles";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
+import { getHomepageCategoryViewModel } from "@/lib/homepage/categories";
 import { prisma } from "../lib/db";
 
 const fallbackHomepageSeo = {
@@ -213,7 +214,7 @@ function HeroCategorySlider() {
   );
 }
 
-function CategoryShowcase() {
+function CategoryShowcase({ groups = staticCategoryShowcase }) {
   return (
     <section id="categories" className="bg-transparent pt-3 pb-4 max-sm:py-3">
       <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
@@ -229,21 +230,35 @@ function CategoryShowcase() {
       </div>
       <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-7 lg:w-[calc(100%-80px)] lg:p-10">
         <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
-          {categoryShowcase.map((group) => (
-            <article key={group.title} className={`group/showcase relative overflow-hidden rounded-[8px] border p-6 shadow-[0_10px_24px_rgba(15,23,42,0.045)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:opacity-0 before:transition-opacity hover:-translate-y-0.5 hover:before:opacity-100 ${group.theme.card}`}>
-              <div className="mb-[14px] flex items-center justify-between gap-3">
-                <h2 className={`min-w-0 truncate text-[15px] font-black leading-5 transition ${group.theme.title}`}>{group.title}</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
-                {group.items.map((item) => (
-                  <a key={item.label} href={`#${slugify(item.label)}`} className="group/category block">
-                    <div className={`relative h-[150px] overflow-hidden rounded-[7px] bg-[#f5f6f8] bg-[url('/japanparts-reference.png')] bg-[length:1920px_957px] bg-no-repeat shadow-[inset_0_0_0_1px_rgba(226,232,240,0.9)] ${item.crop} ${group.theme.itemStroke} transition duration-200 after:absolute after:inset-0 after:bg-[linear-gradient(180deg,transparent_45%,rgba(17,24,39,0.18)_100%)] after:opacity-0 after:transition group-hover/category:scale-[1.015] group-hover/category:shadow-[0_10px_22px_rgba(15,23,42,0.14)] group-hover/category:after:opacity-100 max-sm:h-[170px]`} />
-                    <p className="mt-[7px] truncate text-[14px] font-semibold leading-5 text-[#4b5563] transition group-hover/category:text-[#ef3338]">{item.label}</p>
-                  </a>
-                ))}
-              </div>
-            </article>
-          ))}
+          {groups.map((group, groupIndex) => {
+            const theme = group.theme || staticCategoryShowcase[groupIndex % staticCategoryShowcase.length]?.theme || staticCategoryShowcase[0].theme;
+            const items = group.items?.length ? group.items : group.children || [];
+
+            return (
+              <article key={group.id || group.title} className={`group/showcase relative overflow-hidden rounded-[8px] border p-6 shadow-[0_10px_24px_rgba(15,23,42,0.045)] transition duration-200 before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:opacity-0 before:transition-opacity hover:-translate-y-0.5 hover:before:opacity-100 ${theme.card}`}>
+                <div className="mb-[14px] flex items-center justify-between gap-3">
+                  <h2 className={`min-w-0 truncate text-[15px] font-black leading-5 transition ${theme.title}`}>{group.title || group.name}</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+                  {items.map((item) => {
+                    const label = item.label || item.name;
+                    const href = item.href || `#${slugify(label)}`;
+                    const imageUrl = item.imageUrl || "/japanparts-reference.png";
+
+                    return (
+                      <a key={item.id || label} href={href} className="group/category block">
+                        <div
+                          className={`relative h-[150px] overflow-hidden rounded-[7px] bg-[#f5f6f8] bg-no-repeat shadow-[inset_0_0_0_1px_rgba(226,232,240,0.9)] ${item.crop || "bg-center bg-contain"} ${theme.itemStroke} transition duration-200 after:absolute after:inset-0 after:bg-[linear-gradient(180deg,transparent_45%,rgba(17,24,39,0.18)_100%)] after:opacity-0 after:transition group-hover/category:scale-[1.015] group-hover/category:shadow-[0_10px_22px_rgba(15,23,42,0.14)] group-hover/category:after:opacity-100 max-sm:h-[170px]`}
+                          style={{ backgroundImage: `url('${imageUrl}')`, backgroundSize: item.crop ? "1920px 957px" : undefined }}
+                        />
+                        <p className="mt-[7px] truncate text-[14px] font-semibold leading-5 text-[#4b5563] transition group-hover/category:text-[#ef3338]">{label}</p>
+                      </a>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -536,6 +551,7 @@ function FeaturedArticlesSection({ articles }) {
 export default async function Home() {
   const featuredArticles = await getHomepageFeaturedArticles();
   const campaignPicks = await getHomepageCampaignPicks();
+  const homepageCategories = await getHomepageCategoryViewModel();
 
   return (
     <main className="min-h-screen bg-[#f2f3f5] text-[#111827]">
@@ -544,7 +560,7 @@ export default async function Home() {
       <Header />
       <Hero />
       <HeroFeatureStrip />
-      <CategoryShowcase />
+      <CategoryShowcase groups={homepageCategories.categoryShowcase} />
       <LatestJapaneseAutoParts />
       <HeroCategorySlider />
       <section className="bg-transparent py-4">
