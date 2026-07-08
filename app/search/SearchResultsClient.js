@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import CartDrawer from "../CartDrawer";
 import { addProductToCart } from "../commerce-client";
 import { ProductCardInfo } from "../ProductTabs";
 import ProductQuickActions from "../ProductQuickActions";
-import { searchCatalog } from "../../lib/searchCatalog";
+import { fetchSearchCatalog, searchCatalog } from "../../lib/searchCatalog";
 
 function SearchProductCard({ product, isAdded, onAdd, cardIndex }) {
   const productUrl = `/products/${product.slug}`;
@@ -31,7 +31,29 @@ function SearchProductCard({ product, isAdded, onAdd, cardIndex }) {
 export default function SearchResultsClient({ query }) {
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
-  const products = useMemo(() => searchCatalog(query), [query]);
+  const [products, setProducts] = useState(() => searchCatalog(query));
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fallbackProducts = searchCatalog(query);
+    setProducts(fallbackProducts);
+    setCategories([]);
+
+    fetchSearchCatalog(query, { signal: controller.signal })
+      .then((results) => {
+        if (controller.signal.aborted) return;
+        setProducts(results.products);
+        setCategories(results.categories || []);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setProducts(fallbackProducts);
+        setCategories([]);
+      });
+
+    return () => controller.abort();
+  }, [query]);
 
   async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
@@ -53,6 +75,19 @@ export default function SearchResultsClient({ query }) {
             <p className="mt-3 text-[16px] font-semibold text-[#667085]">
               {products.length ? `${products.length} matching product${products.length === 1 ? "" : "s"} found.` : "No matching products found."}
             </p>
+            {categories.length ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {categories.slice(0, 8).map((category) => (
+                  <a
+                    key={category.id || category.slug}
+                    href={category.href}
+                    className="inline-flex h-9 items-center rounded-full border border-[#ef3338]/20 bg-white px-4 text-[13px] font-black text-[#ef3338] transition hover:border-[#ef3338] hover:bg-[#fff3f3]"
+                  >
+                    {category.name}
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

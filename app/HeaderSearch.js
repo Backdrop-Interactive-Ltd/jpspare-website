@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getHomepageClientData } from "@/lib/homepage/client-cache";
-import { searchCatalog } from "../lib/searchCatalog";
+import { fetchSearchCatalog, searchCatalog } from "../lib/searchCatalog";
 import { formatPriceDisplay } from "./price-format";
 
 const vehicleMakes = [
@@ -163,6 +163,8 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [matchedProducts, setMatchedProducts] = useState([]);
+  const [matchedCategories, setMatchedCategories] = useState([]);
   const suggestionsCloseTimer = useRef(null);
   const [recentSearches, setRecentSearches] = useState(() => {
     if (typeof window === "undefined") return [];
@@ -228,6 +230,39 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
       mounted = false;
     };
   }, [placeholderTexts]);
+
+  useEffect(() => {
+    const normalizedQuery = query.trim();
+    const controller = new AbortController();
+
+    if (!normalizedQuery) {
+      setMatchedProducts([]);
+      setMatchedCategories([]);
+      return () => controller.abort();
+    }
+
+    setMatchedProducts(searchCatalog(normalizedQuery, 5));
+    setMatchedCategories([]);
+
+    const timer = window.setTimeout(() => {
+      fetchSearchCatalog(normalizedQuery, { limit: 5, signal: controller.signal })
+        .then((results) => {
+          if (controller.signal.aborted) return;
+          setMatchedProducts(results.products || []);
+          setMatchedCategories(results.categories || []);
+        })
+        .catch(() => {
+          if (controller.signal.aborted) return;
+          setMatchedProducts(searchCatalog(normalizedQuery, 5));
+          setMatchedCategories([]);
+        });
+    }, 180);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [query]);
 
   useEffect(() => {
     function openVehicleFinder() {
@@ -314,6 +349,12 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
     window.location.href = `/products/${product.slug}`;
   }
 
+  function handleCategorySuggestionSelect(category) {
+    saveRecentSearch(category.name);
+    setSuggestionsOpen(false);
+    window.location.href = category.href || `/products?category=${encodeURIComponent(category.slug)}`;
+  }
+
   function handleVehicleComplete() {
     const { make, model, year } = vehicleSelection;
     setStatus(`Vehicle fitment: ${make} ${model} ${year}`);
@@ -321,10 +362,6 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
   }
 
   const selectedVehicle = [vehicleSelection.make, vehicleSelection.model, vehicleSelection.year].filter(Boolean).join(" ");
-  const normalizedQuery = query.trim().toLowerCase();
-  const matchedProducts = normalizedQuery
-    ? searchCatalog(normalizedQuery, 5)
-    : [];
   const calculatedPopularSearches = calculatePopularSearches(recentSearches);
 
   return (
@@ -406,8 +443,10 @@ export default function HeaderSearch({ vehicleBrands, placeholderTexts }) {
             recentSearches={recentSearches}
             popularSearches={calculatedPopularSearches}
             products={matchedProducts}
+            categories={matchedCategories}
             onSelect={handleSuggestionSelect}
             onProductSelect={handleProductSuggestionSelect}
+            onCategorySelect={handleCategorySuggestionSelect}
             onClearRecent={clearRecentSearches}
             onMouseEnter={openSearchSuggestions}
             onMouseLeave={closeSearchSuggestionsSoon}
@@ -572,7 +611,7 @@ function VehicleFinderModal({
   );
 }
 
-function SearchSuggestions({ query, recentSearches, popularSearches, products, onSelect, onProductSelect, onClearRecent, onMouseEnter, onMouseLeave }) {
+function SearchSuggestions({ query, recentSearches, popularSearches, products, categories = [], onSelect, onProductSelect, onCategorySelect, onClearRecent, onMouseEnter, onMouseLeave }) {
   const hasQuery = query.trim().length > 0;
 
   return (
@@ -605,6 +644,24 @@ function SearchSuggestions({ query, recentSearches, popularSearches, products, o
           </button>
 
           <div className="divide-y divide-[#eef0f4]">
+            {categories.map((category) => (
+              <button
+                key={category.id || category.slug}
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onCategorySelect(category)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#fff8f8]"
+              >
+                <span className="grid size-12 shrink-0 place-items-center rounded-[8px] bg-[#fff3f3] text-[#ef3338] shadow-[inset_0_0_0_1px_rgba(239,51,56,0.12)]">
+                  <SearchIcon name="search" className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold text-[#111827]">{category.name}</span>
+                  <span className="mt-1 block text-[12px] font-black uppercase tracking-[0.04em] text-[#ef3338]">Category</span>
+                </span>
+                <span className="text-[18px] text-[#ef3338]">→</span>
+              </button>
+            ))}
             {products.map((product) => (
               <button
                 key={product.name}
@@ -626,7 +683,7 @@ function SearchSuggestions({ query, recentSearches, popularSearches, products, o
                 <span className="text-[18px] text-[#aab2bf]">→</span>
               </button>
             ))}
-            {!products.length ? (
+            {!products.length && !categories.length ? (
               <p className="px-4 py-3 text-[13px] font-semibold text-[#9aa3af]">No product suggestions found</p>
             ) : null}
           </div>
