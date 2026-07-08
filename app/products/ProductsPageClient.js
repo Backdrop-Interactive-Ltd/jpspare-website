@@ -9,28 +9,41 @@ import { addProductToCart, addProductToWishlist } from "../commerce-client";
 
 const PAGE_LIMIT = 12;
 
-const filterGroups = [
-  {
-    title: "Brand",
-    field: "brand",
-    options: [
-      ["Japan Parts", "japan-parts", "1"],
-      ["Dreamz Drive International", "dreamz-drive-international", "7"],
-      ["MICHELIN", "michelin", "9"],
-      ["DENSO", "denso", "1"],
-    ],
-  },
-  {
+const brandFilterGroup = {
+  title: "Brand",
+  field: "brand",
+  options: [
+    ["Japan Parts", "japan-parts", "1"],
+    ["Dreamz Drive International", "dreamz-drive-international", "7"],
+    ["MICHELIN", "michelin", "9"],
+    ["DENSO", "denso", "1"],
+  ],
+};
+
+const fallbackCategoryOptions = [
+  ["Car care Product", "car-care-product", "6"],
+  ["Brush", "brush", "2"],
+  ["Lubricant", "lubricant", "1"],
+  ["AirFilter", "airfilter", "1"],
+];
+
+function flattenCategoryOptions(categories, depth = 0) {
+  if (!Array.isArray(categories)) return [];
+
+  return categories.flatMap((category) => {
+    if (!category?.slug || !category?.name) return [];
+    const children = flattenCategoryOptions(category.children, depth + 1);
+    return [[`${"-- ".repeat(depth)}${category.name}`, category.slug, ""]].concat(children);
+  });
+}
+
+function categoryFilterGroup(options) {
+  return {
     title: "Category",
     field: "category",
-    options: [
-      ["Car care Product", "car-care-product", "6"],
-      ["Brush", "brush", "2"],
-      ["Lubricant", "lubricant", "1"],
-      ["AirFilter", "airfilter", "1"],
-    ],
-  },
-];
+    options: options.length ? options : fallbackCategoryOptions,
+  };
+}
 
 function getProductImage(product) {
   return (
@@ -151,6 +164,9 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState(fallbackCategoryOptions);
+
+  const filterGroups = useMemo(() => [brandFilterGroup, categoryFilterGroup(categoryOptions)], [categoryOptions]);
 
   const requestQuery = useMemo(() => {
     const params = new URLSearchParams({ status: "ACTIVE", page: String(currentPage), limit: String(PAGE_LIMIT), sort: appliedFilters.sort });
@@ -186,6 +202,26 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
     loadProducts();
     return () => controller.abort();
   }, [currentPage, requestQuery]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCategories() {
+      try {
+        const response = await fetch("/api/categories/tree", { signal: controller.signal });
+        const payload = await response.json();
+        if (!response.ok) throw new Error("Unable to load categories");
+
+        const options = flattenCategoryOptions(payload.items || payload.data);
+        if (options.length) setCategoryOptions(options);
+      } catch (loadError) {
+        if (loadError.name !== "AbortError") setCategoryOptions(fallbackCategoryOptions);
+      }
+    }
+
+    loadCategories();
+    return () => controller.abort();
+  }, []);
 
   function updateUrl(nextFilters, page = 1) {
     const params = new URLSearchParams();
@@ -287,7 +323,7 @@ export default function ProductsPageClient({ initialFilters, basePath = "/produc
                           </span>
                           {label}
                         </span>
-                        <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[12px] font-bold text-[#64748b]">{count}</span>
+                        {count ? <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[12px] font-bold text-[#64748b]">{count}</span> : null}
                       </button>
                     );
                   })}
