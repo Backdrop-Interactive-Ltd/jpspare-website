@@ -6,11 +6,11 @@ import CompareHashRedirect from "./CompareHashRedirect";
 import PartsInquirySection from "./PartsInquirySection";
 import SlideManualControls from "./SlideManualControls";
 import { Header } from "./homepage/site-header";
-import { premiumBrands, categoryShowcase as staticCategoryShowcase, heroCategorySlider } from "./homepage/homepage-data";
+import { premiumBrands } from "./homepage/homepage-data";
 import { Icon, slugify } from "./homepage/homepage-ui-helpers";
 import { articles as staticArticles } from "./blog/articles";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
-import { getHomepageCategoryViewModel } from "@/lib/homepage/categories";
+import { fallbackCategoryShowcase, fallbackHeroCategorySlider, getHomepageCategoryViewModel } from "@/lib/homepage/categories";
 import { prisma } from "../lib/db";
 
 const fallbackHomepageSeo = {
@@ -187,7 +187,7 @@ function HeroFeatureStrip() {
   );
 }
 
-function HeroCategorySlider({ categories = heroCategorySlider }) {
+function HeroCategorySlider({ categories = fallbackHeroCategorySlider }) {
   return (
     <section className="bg-transparent pt-2 pb-3">
       <div className="w-full max-w-none">
@@ -219,7 +219,7 @@ function HeroCategorySlider({ categories = heroCategorySlider }) {
   );
 }
 
-function CategoryShowcase({ groups = staticCategoryShowcase }) {
+function CategoryShowcase({ groups = fallbackCategoryShowcase }) {
   return (
     <section id="categories" className="bg-transparent pt-3 pb-4 max-sm:py-3">
       <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
@@ -236,7 +236,7 @@ function CategoryShowcase({ groups = staticCategoryShowcase }) {
       <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-7 lg:w-[calc(100%-80px)] lg:p-10">
         <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
           {groups.map((group, groupIndex) => {
-            const theme = group.theme || staticCategoryShowcase[groupIndex % staticCategoryShowcase.length]?.theme || staticCategoryShowcase[0].theme;
+            const theme = group.theme || fallbackCategoryShowcase[groupIndex % fallbackCategoryShowcase.length]?.theme || fallbackCategoryShowcase[0].theme;
             const items = group.items?.length ? group.items : group.children || [];
 
             return (
