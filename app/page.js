@@ -187,7 +187,7 @@ function HeroFeatureStrip() {
   );
 }
 
-function HeroCategorySlider() {
+function HeroCategorySlider({ categories = heroCategorySlider }) {
   return (
     <section className="bg-transparent pt-2 pb-3">
       <div className="w-full max-w-none">
@@ -195,16 +195,21 @@ function HeroCategorySlider() {
           <div className="category-marquee-track flex w-max items-center">
             {[0, 1, 2, 3].map((group) => (
               <div key={group} className="flex shrink-0 items-center gap-2 pr-2">
-                {heroCategorySlider.map((item) => (
-                  <a
-                    key={`${item.label}-${group}`}
-                    href={item.href}
-                    className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] bg-[#ffe5ee] px-3.5 text-[14px] font-black leading-none text-[#2b2529] shadow-[inset_0_0_0_1px_rgba(255,216,226,0.9)] transition hover:bg-[#ffd5e3] hover:text-[#d41667]"
-                  >
-                    <span className="text-[17px] leading-none">{item.icon}</span>
-                    {item.label}
-                  </a>
-                ))}
+                {categories.map((item) => {
+                  const label = item.label || item.name;
+                  const href = item.href || "/category";
+
+                  return (
+                    <a
+                      key={`${item.id || label}-${group}`}
+                      href={href}
+                      className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] bg-[#ffe5ee] px-3.5 text-[14px] font-black leading-none text-[#2b2529] shadow-[inset_0_0_0_1px_rgba(255,216,226,0.9)] transition hover:bg-[#ffd5e3] hover:text-[#d41667]"
+                    >
+                      {item.icon ? <span className="text-[17px] leading-none">{item.icon}</span> : null}
+                      {label}
+                    </a>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -562,7 +567,7 @@ export default async function Home() {
       <HeroFeatureStrip />
       <CategoryShowcase groups={homepageCategories.categoryShowcase} />
       <LatestJapaneseAutoParts />
-      <HeroCategorySlider />
+      <HeroCategorySlider categories={homepageCategories.heroSliderCategories} />
       <section className="bg-transparent py-4">
         <div className="mx-auto w-[calc(100%-40px)] max-w-none sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
           <FeaturedOfferBanners />
