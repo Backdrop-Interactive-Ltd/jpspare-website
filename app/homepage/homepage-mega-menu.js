@@ -18,7 +18,6 @@ import {
   rimSizes,
   lubricantCategories,
   lubricantBrands,
-  menuCategorySlugs,
   fallbackMenuCategories,
   categoryIconCycle,
   categoryToneCycle,
@@ -52,8 +51,27 @@ function normalizeMenuCategory(category, fallback) {
   };
 }
 
-function getMenuCategory(menuCategories, slug) {
-  return menuCategories?.[slug] || fallbackMenuCategories.find((category) => category.slug === slug);
+function categoryCollectionHref(category) {
+  return collectionHref(category?.slug || "");
+}
+
+function normalizeCategoryTree(categories) {
+  if (!Array.isArray(categories)) return [];
+
+  return categories
+    .map((category, index) => ({
+      id: category?.id || category?.slug || `${category?.name || "category"}-${index}`,
+      name: cleanText(category?.name),
+      slug: cleanText(category?.slug),
+      sortOrder: Number.isFinite(Number(category?.sortOrder)) ? Number(category.sortOrder) : (index + 1) * 10,
+      children: normalizeCategoryTree(category?.children),
+    }))
+    .filter((category) => category.name && category.slug)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function getFallbackMenuCategories() {
+  return normalizeCategoryTree(fallbackMenuCategories);
 }
 
 function CategoryCard({ category }) {
@@ -419,7 +437,19 @@ function normalizeMegaMenuFeaturedBrands(megaMenu) {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-function normalizeMegaMenuCategoryRail(megaMenu) {
+function normalizeMegaMenuCategoryRail(megaMenu, menuCategories) {
+  const cmsCategories = normalizeCategoryTree(menuCategories);
+  if (cmsCategories.length) {
+    return cmsCategories.map((category, index) => ({
+      key: category.slug,
+      label: category.name,
+      icon: categoryIconCycle[index % categoryIconCycle.length],
+      enabled: true,
+      sortOrder: category.sortOrder,
+      items: category.children.map((child) => child.name),
+    }));
+  }
+
   const items = Array.isArray(megaMenu?.categoryRail) ? megaMenu.categoryRail : premiumCategoryRail;
 
   return items
@@ -443,8 +473,8 @@ function phoneHref(phone) {
   return digits ? `tel:${digits}` : "#";
 }
 
-function PremiumRail({ megaMenu, openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
-  const categoryRail = normalizeMegaMenuCategoryRail(megaMenu);
+function PremiumRail({ megaMenu, menuCategories, openCategory, selectedSubcategory, onToggleCategory, onSelectSubcategory }) {
+  const categoryRail = normalizeMegaMenuCategoryRail(megaMenu, menuCategories);
 
   return (
     <aside className="w-[275px] shrink-0 border-r border-[#e5e7eb] pr-5">
@@ -627,7 +657,7 @@ function PremiumHelpBar({ megaMenu }) {
   );
 }
 
-function PremiumMegaMenuShell({ children, megaMenu }) {
+function PremiumMegaMenuShell({ children, megaMenu, menuCategories }) {
   const [openCategory, setOpenCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const menuContent = typeof children === "function" ? children({ selectedSubcategory }) : children;
@@ -648,6 +678,7 @@ function PremiumMegaMenuShell({ children, megaMenu }) {
       <div className="flex gap-5">
         <PremiumRail
           megaMenu={megaMenu}
+          menuCategories={menuCategories}
           openCategory={openCategory}
           selectedSubcategory={selectedSubcategory}
           onToggleCategory={handleToggleCategory}
@@ -682,25 +713,9 @@ function PremiumRevealContent({ selectedSubcategory, megaMenu }) {
   );
 }
 
-function CarPartsMegaMenu({ category, megaMenu }) {
+function CategoryMegaMenu({ category, menuCategories, megaMenu }) {
   return (
-    <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
-    </PremiumMegaMenuShell>
-  );
-}
-
-function TyresMegaMenu({ category, megaMenu }) {
-  return (
-    <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
-    </PremiumMegaMenuShell>
-  );
-}
-
-function LubricantMegaMenu({ category, megaMenu }) {
-  return (
-    <PremiumMegaMenuShell megaMenu={megaMenu}>
+    <PremiumMegaMenuShell megaMenu={megaMenu} menuCategories={menuCategories}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
@@ -721,17 +736,9 @@ function MegaMenuCta({ href, eyebrow, text, buttonText }) {
   );
 }
 
-function CarAccessoriesMegaMenu({ category, megaMenu }) {
+function BrowseCategoriesMegaMenu({ megaMenu, menuCategories }) {
   return (
-    <PremiumMegaMenuShell megaMenu={megaMenu}>
-      {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
-    </PremiumMegaMenuShell>
-  );
-}
-
-function BrowseCategoriesMegaMenu({ megaMenu }) {
-  return (
-    <PremiumMegaMenuShell megaMenu={megaMenu}>
+    <PremiumMegaMenuShell megaMenu={megaMenu} menuCategories={menuCategories}>
       {({ selectedSubcategory }) => <PremiumRevealContent selectedSubcategory={selectedSubcategory} megaMenu={megaMenu} />}
     </PremiumMegaMenuShell>
   );
@@ -765,7 +772,9 @@ function normalizeCmsNavItems(items) {
 export function MainNavBar({ showTrackOrder = true, menuCategories }) {
   const [cmsNavItems, setCmsNavItems] = useState(null);
   const [cmsMegaMenu, setCmsMegaMenu] = useState(null);
+  const [cmsMenuCategories, setCmsMenuCategories] = useState(() => normalizeCategoryTree(menuCategories).length ? normalizeCategoryTree(menuCategories) : getFallbackMenuCategories());
   const sourceNavItems = cmsNavItems || navItems;
+  const visibleMenuCategories = cmsMenuCategories.length ? cmsMenuCategories : getFallbackMenuCategories();
 
   useEffect(() => {
     let mounted = true;
@@ -788,20 +797,35 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
     };
   }, []);
 
-  const categoryNavItems = sourceNavItems.map((item) => {
-    const category = menuCategorySlugs.includes(slugify(item.label)) ? getMenuCategory(menuCategories, slugify(item.label)) : null;
-    return category ? { ...item, label: category.name.toUpperCase(), href: collectionHref(category.slug) } : item;
-  });
-  const dropdownCategoryHrefs = new Set(["/collections/car-accessories", "/collections/car-parts", "/collections/tyres", "/collections/lubricant"]);
-  const navigationItems = categoryNavItems.reduce((items, item) => {
-    if (item.href === "/") {
-      items.push({ label: "BROWSE CATEGORIES", href: "/category", isBrowseCategories: true });
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadMenuCategories() {
+      try {
+        const response = await fetch("/api/categories/tree?menu=true", { cache: "no-store", signal: controller.signal });
+        const payload = await response.json();
+        if (!response.ok) throw new Error("Unable to load menu categories");
+
+        const categories = normalizeCategoryTree(payload.items || payload.data);
+        if (categories.length) setCmsMenuCategories(categories);
+      } catch (error) {
+        if (error.name !== "AbortError") setCmsMenuCategories(getFallbackMenuCategories());
+      }
     }
 
-    items.push(item);
+    loadMenuCategories();
+    return () => controller.abort();
+  }, []);
 
-    return items;
-  }, []).filter((item) => item.isBrowseCategories || (item.href !== "/" && !dropdownCategoryHrefs.has(item.href)));
+  const categoryHrefs = new Set(visibleMenuCategories.map((category) => categoryCollectionHref(category)));
+  const categoryNavItems = visibleMenuCategories.map((category) => ({
+    label: category.name.toUpperCase(),
+    href: categoryCollectionHref(category),
+    hasMenu: true,
+    category,
+  }));
+  const nonCategoryNavItems = sourceNavItems.filter((item) => item.href !== "/" && !categoryHrefs.has(item.href) && !String(item.href || "").startsWith("/collections/"));
+  const navigationItems = [{ label: "BROWSE CATEGORIES", href: "/category", isBrowseCategories: true }, ...categoryNavItems, ...nonCategoryNavItems];
 
   return (
     <div className="relative z-[90] border-t border-[#111827]/40 bg-[#d3191d] text-white">
@@ -815,39 +839,15 @@ export function MainNavBar({ showTrackOrder = true, menuCategories }) {
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <BrowseCategoriesMegaMenu megaMenu={cmsMegaMenu} />
+                <BrowseCategoriesMegaMenu megaMenu={cmsMegaMenu} menuCategories={visibleMenuCategories} />
               </div>
-            ) : item.href === "/collections/car-accessories" ? (
+            ) : item.category ? (
               <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} data-menu-root="car-accessories" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
+                <a href={item.href} data-menu-root={item.category.slug} className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
                   <span data-menu-root-label className="leading-none">{item.label}</span>
                   <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
                 </a>
-                <CarAccessoriesMegaMenu category={getMenuCategory(menuCategories, "car-accessories")} megaMenu={cmsMegaMenu} />
-              </div>
-            ) : item.href === "/collections/car-parts" ? (
-              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} data-menu-root="car-parts" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span data-menu-root-label className="leading-none">{item.label}</span>
-                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
-                </a>
-                <CarPartsMegaMenu category={getMenuCategory(menuCategories, "car-parts")} megaMenu={cmsMegaMenu} />
-              </div>
-            ) : item.href === "/collections/tyres" ? (
-              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} data-menu-root="tyres" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span data-menu-root-label className="leading-none">{item.label}</span>
-                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
-                </a>
-                <TyresMegaMenu category={getMenuCategory(menuCategories, "tyres")} megaMenu={cmsMegaMenu} />
-              </div>
-            ) : item.href === "/collections/lubricant" ? (
-              <div key={item.label} className="group/nav flex h-[48px] shrink-0 items-center max-lg:h-auto">
-                <a href={item.href} data-menu-root="lubricant" className="inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 leading-none no-underline transition group-hover/nav:bg-[#dd3b3f] group-hover/nav:!text-[#f7d95f]">
-                  <span data-menu-root-label className="leading-none">{item.label}</span>
-                  <ChevronDown className="size-[11px] translate-y-px transition group-hover/nav:rotate-180" />
-                </a>
-                <LubricantMegaMenu category={getMenuCategory(menuCategories, "lubricant")} megaMenu={cmsMegaMenu} />
+                <CategoryMegaMenu category={item.category} menuCategories={visibleMenuCategories} megaMenu={cmsMegaMenu} />
               </div>
             ) : item.label === "PARTS QUOTE" ? (
               <PartsQuoteModalLink

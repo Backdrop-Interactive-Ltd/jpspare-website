@@ -4,7 +4,6 @@ import { useEffect } from "react";
 
 export default function HeaderCategoryTreeClient() {
   useEffect(() => {
-    const roots = new Set(["car-accessories", "car-parts", "tyres", "lubricant"]);
     const title = (value) => String(value || "").toUpperCase();
     const href = (slug) => `/collections/${encodeURIComponent(slug)}`;
 
@@ -15,8 +14,6 @@ export default function HeaderCategoryTreeClient() {
         if (!items.length) return;
 
         items.forEach((category) => {
-          if (!roots.has(category.slug)) return;
-
           document.querySelectorAll(`[data-menu-root="${category.slug}"]`).forEach((node) => {
             node.setAttribute("href", href(category.slug));
             const label = node.querySelector("[data-menu-root-label]");
