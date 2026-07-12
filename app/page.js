@@ -294,6 +294,42 @@ function getUsableTrustStripItems(trustStrip) {
   return cmsItems.length ? cmsItems : fallbackTrustStripItems;
 }
 
+const fallbackPremiumMarketingBlock = {
+  image: "/jpspare-hero-slide-1.gif",
+  mobileImage: "/jpspare-hero-slide-1.gif",
+  title: "100% Premium & Authentic",
+  subtitle: "",
+  description: "All our products are premium branded and 100% authentic. Whatever you buy it will work.",
+  primaryButtonLabel: "Explore More",
+  primaryButtonLink: "/products",
+  secondaryButtonLabel: "",
+  secondaryButtonLink: "",
+  badge: "",
+};
+
+function getUsablePremiumMarketingBlock(block) {
+  if (block?.enabled === false) return null;
+
+  const image = cleanSeoText(block?.image || block?.desktopImage);
+  const title = cleanSeoText(block?.title);
+  const description = cleanSeoText(block?.description);
+
+  if (!image || !title || !description) return fallbackPremiumMarketingBlock;
+
+  return {
+    image,
+    mobileImage: cleanSeoText(block?.mobileImage, image),
+    title,
+    subtitle: cleanSeoText(block?.subtitle),
+    description,
+    primaryButtonLabel: cleanSeoText(block?.primaryButtonLabel || block?.ctaText),
+    primaryButtonLink: safeInternalHref(block?.primaryButtonLink || block?.ctaLink),
+    secondaryButtonLabel: cleanSeoText(block?.secondaryButtonLabel),
+    secondaryButtonLink: safeInternalHref(block?.secondaryButtonLink),
+    badge: cleanSeoText(block?.badge),
+  };
+}
+
 function HeroImage({ slide, className = "" }) {
   const image = (
     <picture>
@@ -501,32 +537,65 @@ function CategoryShowcase({ groups = fallbackCategoryShowcase }) {
   );
 }
 
-function PremiumAuthenticVideoSection() {
+function PremiumAuthenticVideoSection({ block }) {
+  const content = getUsablePremiumMarketingBlock(block);
+  if (!content) return null;
+
+  const primaryHref = content.primaryButtonLink || "/products";
+  const primaryLabel = content.primaryButtonLabel || "Explore More";
+  const secondaryHref = content.secondaryButtonLink;
+
   return (
     <section className="bg-transparent py-5 max-sm:py-4">
       <div className="mx-auto w-[calc(100%-40px)] max-w-none sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
         <div className="relative min-h-[430px] w-full overflow-hidden rounded-[12px] bg-[#050505] sm:min-h-[500px] lg:min-h-[560px]">
-          <img
-            src="/jpspare-hero-slide-1.gif"
-            alt=""
-            className="absolute inset-0 h-full w-full scale-105 object-cover opacity-60"
-          />
+          <picture>
+            {content.mobileImage && content.mobileImage !== content.image ? (
+              <source media="(max-width: 767px)" srcSet={content.mobileImage} />
+            ) : null}
+            <img
+              src={content.image}
+              alt=""
+              className="absolute inset-0 h-full w-full scale-105 object-cover opacity-60"
+            />
+          </picture>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.18),rgba(0,0,0,0.74))]" />
           <div className="absolute inset-0 bg-black/30" />
             <div className="relative z-10 mx-auto flex min-h-[430px] w-full max-w-none flex-col items-center justify-center px-4 py-16 text-center text-white sm:min-h-[500px] lg:min-h-[560px]">
+            {content.badge ? (
+              <span className="mb-5 inline-flex rounded-full bg-white/12 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]">
+                {content.badge}
+              </span>
+            ) : null}
             <h2 className="text-[34px] font-black uppercase leading-[1.05] tracking-[0.02em] text-white sm:text-[46px] lg:text-[64px]">
-              100% Premium & Authentic
+              {content.title}
             </h2>
+            {content.subtitle ? (
+              <p className="mt-4 max-w-[650px] text-[17px] font-black leading-7 text-white sm:text-[20px]">
+                {content.subtitle}
+              </p>
+            ) : null}
             <p className="mt-6 max-w-[650px] text-[15px] font-bold leading-7 text-white sm:text-[17px]">
-              All our products are premium branded and 100% authentic. Whatever you buy it will work.
+              {content.description}
             </p>
-            <Link
-              href="/products"
-              className="mt-10 inline-flex h-[52px] items-center justify-center gap-3 rounded-full bg-white px-8 text-[15px] font-bold leading-none !text-[#111827] shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition duration-200 hover:scale-[1.03] hover:bg-[#fff2f2] hover:shadow-[0_18px_38px_rgba(239,51,56,0.2)]"
-            >
-              Explore More
-              <Icon name="arrow" className="size-4" />
-            </Link>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={primaryHref}
+                className="inline-flex h-[52px] items-center justify-center gap-3 rounded-full bg-white px-8 text-[15px] font-bold leading-none !text-[#111827] shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition duration-200 hover:scale-[1.03] hover:bg-[#fff2f2] hover:shadow-[0_18px_38px_rgba(239,51,56,0.2)]"
+              >
+                {primaryLabel}
+                <Icon name="arrow" className="size-4" />
+              </Link>
+              {content.secondaryButtonLabel && secondaryHref ? (
+                <Link
+                  href={secondaryHref}
+                  className="inline-flex h-[52px] items-center justify-center gap-3 rounded-full border border-white/35 bg-white/10 px-8 text-[15px] font-bold leading-none !text-white shadow-[0_16px_34px_rgba(0,0,0,0.16)] transition duration-200 hover:scale-[1.03] hover:bg-white/20"
+                >
+                  {content.secondaryButtonLabel}
+                  <Icon name="arrow" className="size-4" />
+                </Link>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -817,7 +886,7 @@ export default async function Home() {
         </div>
       </section>
       <ProductTabs />
-      <PremiumAuthenticVideoSection />
+      <PremiumAuthenticVideoSection block={homepageCms?.premiumMarketingBlock} />
       <BestSellingAutoParts />
       <PremiumBrandsSection brands={homepageBrands} />
       <CampaignPicksSection campaigns={campaignPicks} />
