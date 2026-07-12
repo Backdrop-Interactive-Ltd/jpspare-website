@@ -2,6 +2,7 @@ import "./globals.css";
 import PublicChrome from "./PublicChrome";
 import CompareFloatingPanel from "./CompareFloatingPanel";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { defaultHomepageCms, getHomepageCms } from "@/lib/homepage/cms";
 import { buildOrganizationSchema, buildWebsiteSchema, jsonLdScript } from "@/lib/seo/structured-data";
 
@@ -96,9 +97,11 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" className={`h-full antialiased ${topDealFont.variable}`}>
       <body className="min-h-full flex flex-col">
-        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(organizationSchema)} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(websiteSchema)} />
-        <script
+        <Script id="jpspare-organization-schema" type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(organizationSchema)} />
+        <Script id="jpspare-website-schema" type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(websiteSchema)} />
+        <Script
+          id="jpspare-theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function () {
