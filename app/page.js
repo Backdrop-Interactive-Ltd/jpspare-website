@@ -20,6 +20,49 @@ const fallbackHomepageSeo = {
   canonicalBaseUrl: defaultHomepageCms.seoManager.global.canonicalBaseUrl,
 };
 
+const fallbackHeroSlides = [
+  {
+    id: "fallback-mobil-online",
+    desktopImage: "/hero-image-1-mobil-banner.webp",
+    mobileImage: "/hero-image-1-mobil-banner.webp",
+    alt: "Buy Mobil online with home delivery",
+    ctaLink: "",
+    active: true,
+  },
+  {
+    id: "fallback-app-offer",
+    desktopImage: "/hero-image-2-app-banner.webp",
+    mobileImage: "/hero-image-2-app-banner.webp",
+    alt: "Download the app and get 250 off on your first order",
+    ctaLink: "",
+    active: true,
+  },
+  {
+    id: "fallback-mobil-oil",
+    desktopImage: "/hero-image-3-slide-1.webp",
+    mobileImage: "/hero-image-3-slide-1.webp",
+    alt: "Mobil 1 engine oil genuine product banner",
+    ctaLink: "",
+    active: true,
+  },
+  {
+    id: "fallback-jump-starter",
+    desktopImage: "/hero-image-3-slide-2.webp",
+    mobileImage: "/hero-image-3-slide-2.webp",
+    alt: "Yesido VC13 car jump starter banner",
+    ctaLink: "",
+    active: true,
+  },
+  {
+    id: "fallback-car-cover",
+    desktopImage: "/hero-image-3-slide-3.webp",
+    mobileImage: "/hero-image-3-slide-3.webp",
+    alt: "Car cover protection service banner",
+    ctaLink: "",
+    active: true,
+  },
+];
+
 function cleanSeoText(value, fallback = "") {
   const clean = String(value ?? "").trim();
   return clean || fallback;
@@ -40,6 +83,71 @@ function safeSeoImage(value, baseUrl, fallback) {
   } catch {
     return new URL(fallback, baseUrl).toString();
   }
+}
+
+function safeInternalHref(value) {
+  const href = cleanSeoText(value);
+  if (!href || href.startsWith("#")) return href;
+  if (href.startsWith("/")) return href;
+
+  try {
+    const url = new URL(href);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizeHeroSlide(slide, index) {
+  const desktopImage = cleanSeoText(slide?.desktopImage || slide?.image || slide?.src);
+  const mobileImage = cleanSeoText(slide?.mobileImage || desktopImage);
+  if (!desktopImage) return null;
+
+  return {
+    id: cleanSeoText(slide?.id, `hero-slide-${index}`),
+    desktopImage,
+    mobileImage,
+    alt: cleanSeoText(slide?.alt || slide?.heading, "JPSPARE homepage banner"),
+    href: safeInternalHref(slide?.ctaLink || slide?.href),
+  };
+}
+
+function getUsableHeroSlides(heroSlider) {
+  const cmsSlides =
+    heroSlider?.enabled === false
+      ? []
+      : Array.isArray(heroSlider?.slides)
+        ? heroSlider.slides
+            .filter((slide) => slide?.active !== false)
+            .map(normalizeHeroSlide)
+            .filter(Boolean)
+        : [];
+
+  if (cmsSlides.length) return cmsSlides;
+  return fallbackHeroSlides.map(normalizeHeroSlide).filter(Boolean);
+}
+
+function HeroImage({ slide, className = "" }) {
+  const image = (
+    <picture>
+      {slide.mobileImage && slide.mobileImage !== slide.desktopImage ? (
+        <source media="(max-width: 767px)" srcSet={slide.mobileImage} />
+      ) : null}
+      <img
+        src={slide.desktopImage}
+        alt={slide.alt}
+        className={`absolute inset-0 h-full w-full object-cover ${className}`}
+      />
+    </picture>
+  );
+
+  if (!slide.href) return image;
+
+  return (
+    <Link href={slide.href} aria-label={slide.alt} className="absolute inset-0 block">
+      {image}
+    </Link>
+  );
 }
 
 async function getHomepageSeoManager() {
@@ -79,48 +187,34 @@ export async function generateMetadata() {
   };
 }
 
-function Hero() {
-  const image3Slides = [
-    {
-      src: "/hero-image-3-slide-1.webp",
-      alt: "Mobil 1 engine oil genuine product banner",
-    },
-    {
-      src: "/hero-image-3-slide-2.webp",
-      alt: "Yesido VC13 car jump starter banner",
-    },
-    {
-      src: "/hero-image-3-slide-3.webp",
-      alt: "Car cover protection service banner",
-    },
-  ];
+function Hero({ heroSlider }) {
+  const heroSlides = getUsableHeroSlides(heroSlider);
+  const [primarySlide, secondarySlide, ...carouselSlides] = heroSlides;
+  const topSlide = secondarySlide || primarySlide;
+  const rotatingSlides = carouselSlides.length ? carouselSlides : [primarySlide].filter(Boolean);
 
   return (
     <section className="bg-[#f2f3f5] pt-0 pb-4">
       <div className="grid w-full max-w-none gap-3 bg-[#f2f3f5] md:grid-cols-[minmax(0,4fr)_minmax(220px,1fr)]">
-        <section className="relative h-[220px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-[665px]" aria-label="Mobil online shopping banner">
-          <img
-            src="/hero-image-1-mobil-banner.webp"
-            alt="Buy Mobil online with home delivery"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+        <section className="relative h-[220px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-[665px]" aria-label={primarySlide?.alt || "JPSPARE homepage banner"}>
+          {primarySlide ? <HeroImage slide={primarySlide} /> : null}
         </section>
         <div className="grid h-[292px] gap-3 md:h-[665px] md:grid-rows-[1fr_2fr]">
-          <section className="hero-zoom-panel relative h-[110px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label="Download app offer banner">
-            <img
-              src="/hero-image-2-app-banner.webp"
-              alt="Download the app and get 250 off on your first order"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+          <section className="hero-zoom-panel relative h-[110px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label={topSlide?.alt || "JPSPARE promotional banner"}>
+            {topSlide ? <HeroImage slide={topSlide} /> : null}
           </section>
           <section className="manual-slide-shell hero-zoom-panel relative h-[170px] overflow-hidden rounded-[6px] border border-[#dfe4ea] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)] md:h-auto md:min-h-0" aria-label="Promotional banner slider">
             <div className="hero-image-3-track absolute inset-0">
-              {[...image3Slides, image3Slides[0]].map((slide, index) => (
-                <img
-                  key={`${slide.src}-${index}`}
-                  src={slide.src}
-                  alt={index === image3Slides.length ? "" : slide.alt}
-                />
+              {[...rotatingSlides, rotatingSlides[0]].filter(Boolean).map((slide, index) => (
+                <picture key={`${slide.id}-${index}`}>
+                  {slide.mobileImage && slide.mobileImage !== slide.desktopImage ? (
+                    <source media="(max-width: 767px)" srcSet={slide.mobileImage} />
+                  ) : null}
+                  <img
+                    src={slide.desktopImage}
+                    alt={index === rotatingSlides.length ? "" : slide.alt}
+                  />
+                </picture>
               ))}
             </div>
           </section>
@@ -557,13 +651,14 @@ export default async function Home() {
   const featuredArticles = await getHomepageFeaturedArticles();
   const campaignPicks = await getHomepageCampaignPicks();
   const homepageCategories = await getHomepageCategoryViewModel();
+  const homepageCms = await getHomepageCms();
 
   return (
     <main className="min-h-screen bg-[#f2f3f5] text-[#111827]">
       <CompareHashRedirect />
       <TopDealBar />
       <Header />
-      <Hero />
+      <Hero heroSlider={homepageCms?.heroSlider} />
       <HeroFeatureStrip />
       <CategoryShowcase groups={homepageCategories.categoryShowcase} />
       <LatestJapaneseAutoParts />
