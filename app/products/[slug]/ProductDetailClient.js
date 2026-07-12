@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { addProductToCart, addProductToWishlist } from "../../commerce-client";
 import { formatPriceDisplay } from "../../price-format";
 import { ProductCardInfo } from "../../ProductTabs";
 import ProductQuickActions from "../../ProductQuickActions";
-import { addRecentlyViewedProduct } from "../../../lib/commerce/recently-viewed";
+import { addRecentlyViewedProduct, getRecentlyViewedProducts } from "../../../lib/commerce/recently-viewed";
 
 const fallbackProduct = {
   id: "fallback-product",
@@ -195,6 +195,16 @@ function getRecentlyViewedSnapshot(product) {
     brand: product.brand,
     category: product.category,
   };
+}
+
+function getProductIdentity(product) {
+  return product?.id || product?.productId || product?.slug || "";
+}
+
+function isCurrentProduct(item, currentProduct) {
+  const currentId = currentProduct?.id || currentProduct?.productId;
+  const currentSlug = currentProduct?.slug;
+  return Boolean((currentId && (item?.id === currentId || item?.productId === currentId)) || (currentSlug && item?.slug === currentSlug));
 }
 
 function ProductMerchImage({ item, productUrl }) {
@@ -659,6 +669,8 @@ export default function ProductDetailClient({ slug, product: productProp, relate
   const [added, setAdded] = useState(false);
   const [addedRelated, setAddedRelated] = useState([]);
   const [addedBuyingNow, setAddedBuyingNow] = useState([]);
+  const [addedRecentlyViewed, setAddedRecentlyViewed] = useState([]);
+  const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([]);
   const [wishlisted, setWishlisted] = useState(false);
   const [activeInfoTab, setActiveInfoTab] = useState("Description");
   const [isStickyCartVisible, setIsStickyCartVisible] = useState(false);
@@ -668,6 +680,8 @@ export default function ProductDetailClient({ slug, product: productProp, relate
   const discount = discountPercent(product);
   const stock = stockCopy(product);
   const recentlyViewedSnapshot = useMemo(() => getRecentlyViewedSnapshot(product), [product]);
+  const currentProductId = product?.id || product?.productId || "";
+  const currentProductSlug = product?.slug || "";
   const handleRelatedAdd = async (item) => {
     const productName = item.name || item.title;
     setAddedRelated((items) => (items.includes(productName) ? items : [...items, productName]));
@@ -678,14 +692,28 @@ export default function ProductDetailClient({ slug, product: productProp, relate
     setAddedBuyingNow((items) => (items.includes(productName) ? items : [...items, productName]));
     await addProductToCart(item);
   };
+  const handleRecentlyViewedAdd = async (item) => {
+    const productName = item.name || item.title;
+    setAddedRecentlyViewed((items) => (items.includes(productName) ? items : [...items, productName]));
+    await addProductToCart(item);
+  };
   const handleMainAdd = async () => {
     setAdded(true);
     await addProductToCart(cartProduct, quantity);
   };
+  const refreshRecentlyViewedProducts = useCallback(() => {
+    const currentProductIdentity = { id: currentProductId, slug: currentProductSlug };
+    setRecentlyViewedProducts(
+      getRecentlyViewedProducts()
+        .filter((item) => !isCurrentProduct(item, currentProductIdentity))
+        .slice(0, 8)
+    );
+  }, [currentProductId, currentProductSlug]);
 
   useEffect(() => {
     if (recentlyViewedSnapshot) addRecentlyViewedProduct(recentlyViewedSnapshot);
-  }, [recentlyViewedSnapshot]);
+    queueMicrotask(refreshRecentlyViewedProducts);
+  }, [recentlyViewedSnapshot, refreshRecentlyViewedProducts]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -810,6 +838,43 @@ export default function ProductDetailClient({ slug, product: productProp, relate
           </div>
         </div>
       </section>
+
+      {recentlyViewedProducts.length > 0 && (
+        <section className="overflow-hidden bg-white px-6 py-20 max-sm:px-4 max-sm:py-14">
+          <div className="mx-auto max-w-[1600px] text-center">
+            <div className="inline-flex h-[58px] items-center gap-3 rounded-full border border-[#ff8d8d] bg-[#fff2ee] px-9 text-[15px] font-black uppercase tracking-[0.18em] text-[#c51f24] shadow-[0_16px_30px_rgba(220,38,38,0.10)] max-sm:h-auto max-sm:px-5 max-sm:py-3 max-sm:text-[11px]">
+              <span className="text-[22px]">↺</span>
+              Recently Viewed
+            </div>
+            <h2 className="mt-10 text-[56px] font-black leading-none tracking-[-0.06em] text-[#111827] max-md:text-[42px] max-sm:mt-7 max-sm:text-[34px]">
+              Recently Viewed <span className="text-[#f1461d]">Products</span>
+            </h2>
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-[1600px] grid-cols-4 gap-5 max-xl:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+            {recentlyViewedProducts.map((item, index) => {
+              const productUrl = getProductUrl(item);
+              const productName = item.name || item.title;
+              return (
+                <article key={`${getProductIdentity(item)}-${index}`} className="group/product rounded-[8px] border border-transparent bg-transparent p-2.5 text-left transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
+                  <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
+                    <ProductMerchImage item={item} productUrl={productUrl} />
+                    <ProductQuickActions productUrl={productUrl} productName={productName} />
+                  </div>
+                  <ProductCardInfo
+                    product={item}
+                    productUrl={productUrl}
+                    onAdd={() => handleRecentlyViewedAdd(item)}
+                    isAdded={addedRecentlyViewed.includes(productName)}
+                    cardIndex={index}
+                    compact
+                  />
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="overflow-hidden bg-[radial-gradient(circle_at_50%_0%,#fff5f5_0%,#fffaf9_34%,#ffffff_78%)] px-6 py-20 max-sm:px-4 max-sm:py-14">
         <div className="mx-auto max-w-[1600px] text-center">
