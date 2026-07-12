@@ -891,7 +891,7 @@ export default async function Home() {
       <PremiumBrandsSection brands={homepageBrands} />
       <CampaignPicksSection campaigns={campaignPicks} />
       <FeaturedArticlesSection articles={featuredArticles} />
-      <CustomerReviews />
+      <CustomerReviews testimonials={homepageCms?.customerTestimonials} />
       <PartsInquirySection />
       <section id="parts" className="sr-only">
         <h2>Demo parts results</h2>

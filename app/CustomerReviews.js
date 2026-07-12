@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const reviews = [
+const fallbackReviews = [
   {
     category: "Suspension",
     categoryTone: "green",
@@ -66,6 +66,59 @@ const reviews = [
   },
 ];
 
+function cleanText(value, fallback = "") {
+  const clean = String(value ?? "").trim();
+  return clean || fallback;
+}
+
+function normalizeReview(review, index) {
+  const name = cleanText(review?.name);
+  const text = cleanText(review?.review || review?.text);
+  const product = cleanText(review?.product);
+  if (!name || !text || !product) return null;
+
+  return {
+    id: cleanText(review?.id, `review-${index}`),
+    category: cleanText(review?.category, "Customer"),
+    categoryTone: cleanText(review?.categoryTone, "red"),
+    text,
+    product,
+    vehicle: cleanText(review?.vehicle, "Verified purchase"),
+    partId: cleanText(review?.partId, "JPSPARE"),
+    name,
+    role: cleanText(review?.designation || review?.role || review?.company, "Verified Customer"),
+    avatar: cleanText(review?.avatar),
+    date: cleanText(review?.date),
+    rating: Math.max(1, Math.min(5, Number(review?.rating) || 5)),
+    views: Math.max(0, Number(review?.views) || 0),
+    verified: review?.verified !== false,
+    featured: review?.featured === true,
+    sortOrder: Number.isFinite(Number(review?.sortOrder)) ? Number(review.sortOrder) : (index + 1) * 10,
+  };
+}
+
+function getUsableReviews(testimonials) {
+  if (testimonials?.enabled === false) return [];
+
+  const cmsReviews = Array.isArray(testimonials?.testimonials)
+    ? testimonials.testimonials
+        .filter((review) => review?.enabled !== false)
+        .map(normalizeReview)
+        .filter(Boolean)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
+  return cmsReviews.length ? cmsReviews : fallbackReviews;
+}
+
+function getReviewSummary(testimonials) {
+  return {
+    rating: cleanText(testimonials?.summaryRating, "4.9/5"),
+    text: cleanText(testimonials?.summaryText, "Trusted by Many"),
+    suffix: cleanText(testimonials?.summarySuffix, "Happy Customers"),
+  };
+}
+
 function ReviewIcon({ name }) {
   if (name === "shield") {
     return (
@@ -94,6 +147,9 @@ function ReviewCard({ review, active }) {
         ? "border-[#bfdbfe] bg-[#eff6ff] text-[#155dfc]"
         : "border-[#ffb1b1] bg-[#fff0f0] text-[#c73524]";
 
+  const rating = Math.max(1, Math.min(5, Number(review.rating) || 5));
+  const stars = "★★★★★".slice(0, rating);
+
   return (
     <article
       className={[
@@ -113,8 +169,8 @@ function ReviewCard({ review, active }) {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <span className="text-[16px] leading-none text-[#ef3c40]">★★★★★</span>
-        <span className="rounded-full bg-[#fff0f0] px-1.5 py-0.5 text-[11px] font-black text-[#ef3c40]">5.0</span>
+        <span className="text-[16px] leading-none text-[#ef3c40]">{stars}</span>
+        <span className="rounded-full bg-[#fff0f0] px-1.5 py-0.5 text-[11px] font-black text-[#ef3c40]">{rating.toFixed(1)}</span>
       </div>
 
       <p className="mt-4 line-clamp-4 text-[13px] font-semibold leading-[1.55] text-[#374151]">&quot;{review.text}&quot;</p>
@@ -139,11 +195,19 @@ function ReviewCard({ review, active }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#ef3338] text-[12px] font-black text-white">
-              {review.name.charAt(0)}
+              {review.avatar ? (
+                <span
+                  aria-hidden="true"
+                  className="size-8 rounded-full bg-cover bg-center"
+                  style={{ backgroundImage: `url('${review.avatar}')` }}
+                />
+              ) : (
+                review.name.charAt(0)
+              )}
             </span>
             <div className="min-w-0">
               <p className="truncate text-[12px] font-black text-[#111827]">
-                {review.name} <span className="text-[#10b981]">✺</span>
+                {review.name} {review.verified ? <span className="text-[#10b981]">✺</span> : null}
               </p>
               <p className="line-clamp-1 text-[10px] leading-tight text-[#5b6472]">{review.role}</p>
               <p className="mt-1 text-[10px] text-[#6b7280]">{review.date}</p>
@@ -158,8 +222,11 @@ function ReviewCard({ review, active }) {
   );
 }
 
-export default function CustomerReviews() {
-  const visibleReviews = reviews.slice(0, 5);
+export default function CustomerReviews({ testimonials }) {
+  const allReviews = getUsableReviews(testimonials);
+  const disabled = testimonials?.enabled === false;
+  const visibleReviews = (allReviews.length ? allReviews : fallbackReviews).slice(0, 5);
+  const summary = getReviewSummary(testimonials);
   const [activeIndex, setActiveIndex] = useState(2);
   const [paused, setPaused] = useState(false);
 
@@ -177,9 +244,13 @@ export default function CustomerReviews() {
     return () => window.clearInterval(timer);
   }, [goToNext, paused]);
 
+  if (disabled) return null;
+
+  const currentActiveIndex = Math.min(activeIndex, visibleReviews.length - 1);
+
   function getCardPosition(index) {
     const total = visibleReviews.length;
-    const raw = (index - activeIndex + total) % total;
+    const raw = (index - currentActiveIndex + total) % total;
     return raw > Math.floor(total / 2) ? raw - total : raw;
   }
 
@@ -205,7 +276,7 @@ export default function CustomerReviews() {
               const position = getCardPosition(index);
               return (
                 <div
-                  key={review.partId}
+                  key={review.id || review.partId}
                   className={`review-coverflow-card review-coverflow-card-${position} ${position === 0 ? "review-coverflow-card-active" : ""}`}
                   aria-hidden={Math.abs(position) > 2}
                 >
@@ -218,9 +289,9 @@ export default function CustomerReviews() {
 
         <div className="mt-0 flex items-center justify-center gap-6 border-t border-[#eef1f5] pt-5 text-[14px] max-sm:flex-col max-sm:gap-2">
           <span className="tracking-[0.08em] text-[#ef3338]">★★★★★</span>
-          <span className="font-black text-[#111827]">4.9/5</span>
+          <span className="font-black text-[#111827]">{summary.rating}</span>
           <span className="text-[#4b5563]">
-            <strong className="text-[#ef3338]">Trusted by Many</strong> Happy Customers
+            <strong className="text-[#ef3338]">{summary.text}</strong> {summary.suffix}
           </span>
         </div>
       </div>
