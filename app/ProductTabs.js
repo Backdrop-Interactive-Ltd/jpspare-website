@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getHomepageFeaturedProductsClientData } from "@/lib/homepage/featured-products-client-cache";
 import { getActiveCampaignBadges } from "@/lib/campaigns/get-active-badges";
 import CartDrawer from "./CartDrawer";
@@ -203,6 +204,30 @@ function buildDisplayTabData(cmsProducts) {
   return Object.fromEntries(
     tabs.map((tab) => [tab, grouped[tab].length ? grouped[tab] : tabData[tab]])
   );
+}
+
+function useHomepageProductSet(sectionKey, fallbackProducts) {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    getHomepageFeaturedProductsClientData()
+      .then((payload) => {
+        if (!mounted) return;
+        const sectionProducts = payload?.[sectionKey];
+        if (Array.isArray(sectionProducts) && sectionProducts.length) {
+          setProducts(sectionProducts);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [sectionKey]);
+
+  return products.length ? products : fallbackProducts;
 }
 
 const bestSellingCategoryGroups = tabs.map((tab) => ({
@@ -442,7 +467,7 @@ export function FeaturedOfferBanners() {
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_60%_42%,rgba(255,255,255,0.95),transparent_22%),radial-gradient(circle_at_85%_72%,rgba(239,51,56,0.13),transparent_30%)]" />
       </a>
 
-      <a href="/collections/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
+      <Link href="/collections/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
         <div className="relative z-10 ml-auto max-w-[47%] text-right max-sm:max-w-[58%]">
           <p className="text-[22px] font-black uppercase leading-none tracking-[-0.03em] text-[#2b2529] max-sm:text-[18px]">Clean & Shine</p>
           <h3 className="mt-1 text-[44px] font-black uppercase leading-[0.88] tracking-[0.02em] text-white max-xl:text-[36px] max-sm:text-[30px]">
@@ -463,7 +488,7 @@ export function FeaturedOfferBanners() {
           ))}
         </div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_78%,rgba(255,255,255,0.2),transparent_26%),radial-gradient(circle_at_76%_18%,rgba(255,255,255,0.18),transparent_24%)]" />
-      </a>
+      </Link>
     </div>
   );
 }
@@ -534,8 +559,8 @@ export default function ProductTabs({ cmsProducts = [] }) {
   const [visibleRows, setVisibleRows] = useState(PRODUCT_ROWS_PER_CLICK);
   const [productRotation, setProductRotation] = useState([]);
   const dynamicProducts = cmsProducts.length ? cmsProducts : remoteProducts;
-  const displayTabData = buildDisplayTabData(dynamicProducts);
-  const rotationSourceProducts = tabs.flatMap((tab) => displayTabData[tab] || []);
+  const displayTabData = useMemo(() => buildDisplayTabData(dynamicProducts), [dynamicProducts]);
+  const rotationSourceProducts = useMemo(() => tabs.flatMap((tab) => displayTabData[tab] || []), [displayTabData]);
   const visibleCount = visibleRows * PRODUCT_GRID_COLUMNS;
   const visibleProducts = productRotation.slice(0, visibleCount);
 
@@ -558,9 +583,18 @@ export default function ProductTabs({ cmsProducts = [] }) {
   }, [cmsProducts.length]);
 
   useEffect(() => {
-    setVisibleRows(PRODUCT_ROWS_PER_CLICK);
-    setProductRotation(extendProductRotation([], rotationSourceProducts, PRODUCT_ROWS_PER_CLICK * PRODUCT_GRID_COLUMNS));
-  }, [dynamicProducts]);
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setVisibleRows(PRODUCT_ROWS_PER_CLICK);
+      setProductRotation(extendProductRotation([], rotationSourceProducts, PRODUCT_ROWS_PER_CLICK * PRODUCT_GRID_COLUMNS));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rotationSourceProducts]);
 
   function handleViewMore() {
     const nextRows = visibleRows + PRODUCT_ROWS_PER_CLICK;
@@ -639,6 +673,8 @@ export default function ProductTabs({ cmsProducts = [] }) {
 export function BestSellingAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
+  const products = useHomepageProductSet("bestSellers", bestSellingProducts);
+  const displayProducts = [...products, ...products];
 
   async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
@@ -656,19 +692,19 @@ export function BestSellingAutoParts() {
         <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
           BEST SELLING
         </div>
-        <a
+        <Link
           href="/products"
           className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
         >
           View all
-        </a>
+        </Link>
       </div>
       <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
         <div className="manual-slide-shell new-arrivals-showcase text-left">
           <SlideManualControls step={4} />
           <div className="new-arrivals-viewport">
           <div className="new-arrivals-track flex w-max gap-5">
-          {[...bestSellingProducts, ...bestSellingProducts].map((product, index) => (
+          {displayProducts.map((product, index) => (
             <article key={`${product.name}-${index}`} className="product-card-shell group/product relative z-0 w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:z-30 hover:rounded-b-none hover:bg-[#fffafa] hover:shadow-[0_18px_38px_rgba(220,38,38,0.18)]">
               <span className="product-card-sweep" aria-hidden="true" />
               <div className="product-card-media relative overflow-hidden rounded-[7px]">
@@ -714,6 +750,8 @@ export function BestSellingAutoParts() {
 export function LatestJapaneseAutoParts() {
   const [addedItems, setAddedItems] = useState([]);
   const [cartProduct, setCartProduct] = useState(null);
+  const products = useHomepageProductSet("newArrivals", latestJapaneseProducts);
+  const displayProducts = [...products, ...products];
 
   async function handleAddToCart(product) {
     setAddedItems((items) => (items.includes(product.name) ? items : [...items, product.name]));
@@ -731,19 +769,19 @@ export function LatestJapaneseAutoParts() {
         <div className="text-[20px] font-semibold leading-none text-[#111827] max-sm:text-[16px]">
           NEW ARRIVALS
         </div>
-        <a
+        <Link
           href="/offers"
           className="inline-flex h-[30px] shrink-0 items-center justify-center rounded-[7px] bg-[#ef3338] px-4 text-[11px] font-black leading-none !text-white shadow-[0_7px_16px_rgba(239,51,56,0.22)] transition hover:bg-[#d3191d] hover:shadow-[0_10px_20px_rgba(239,51,56,0.18)]"
         >
           View all
-        </a>
+        </Link>
       </div>
       <div className="mx-auto w-[calc(100%-40px)] max-w-none rounded-[12px] bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:w-[calc(100%-64px)] sm:p-6 lg:w-[calc(100%-80px)] lg:p-8">
         <div className="manual-slide-shell new-arrivals-showcase text-left" data-loop-copies="2">
           <SlideManualControls step={4} />
           <div className="new-arrivals-viewport">
           <div className="new-arrivals-track flex w-max gap-5">
-          {[...latestJapaneseProducts, ...latestJapaneseProducts].map((product, index) => (
+          {displayProducts.map((product, index) => (
             <article key={`${product.name}-${index}`} className="product-card-shell group/product relative z-0 w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:z-30 hover:rounded-b-none hover:bg-[#fffafa] hover:shadow-[0_18px_38px_rgba(220,38,38,0.18)]">
               <span className="product-card-sweep" aria-hidden="true" />
               <div className="product-card-media relative overflow-hidden rounded-[7px]">
