@@ -46,10 +46,33 @@ const footerColumns = [
   },
 ];
 
-const paymentLabels = ["Pay", "VISA", "MC", "AMEX", "bKash", "Nagad", "Rocket", "DBBL", "AB", "City", "MTB", "UPay", "SSL"];
 const footerAboutText = "Building Bangladesh's most trusted online marketplace for genuine car parts, premium automotive accessories, and automotive lifestyle products—delivering authenticity, competitive prices, and a seamless shopping experience.";
 const footerAddress = "167/3/c/3, Mollapara, Taltola, Sher-E-Bangla Nagor, Dhaka-1207";
 const footerPhoneNumbers = ["09617226688", "01718914582"];
+const fallbackAppBadges = {
+  appStoreImage: "/footer-app-store-badge.png",
+  appStoreHref: "#app",
+  appStoreAlt: "Download on the App Store",
+  googlePlayImage: "/footer-google-play-badge.png",
+  googlePlayHref: "#app",
+  googlePlayAlt: "Get it on Google Play",
+};
+const fallbackSecurity = {
+  enabled: true,
+  title: "Secure payments",
+  description: "Safe, encrypted, and trusted payment solutions for every purchase.",
+};
+const fallbackSocialIcons = [
+  ["Facebook", "facebook", "/footer-social-facebook.png"],
+  ["Instagram", "instagram", "/footer-social-instagram.png"],
+  ["YouTube", "youtube", "/footer-social-youtube.png"],
+  ["TikTok", "tiktok", "/footer-social-tiktok.png"],
+];
+const fallbackTrustBadges = [
+  { label: "3000+ Accessories", enabled: true, sortOrder: 10 },
+  { label: "98% Satisfaction", enabled: true, sortOrder: 20 },
+  { label: "24/7 Support", enabled: true, sortOrder: 30 },
+];
 
 function FooterIcon({ name }) {
   const common = "size-4";
@@ -108,6 +131,66 @@ function normalizeFooterLinks(value) {
   return links.length ? links : null;
 }
 
+function cleanText(value, fallback = "") {
+  const clean = String(value ?? "").trim();
+  return clean || fallback;
+}
+
+function safeHref(value, fallback = "#") {
+  const href = cleanText(value);
+  if (!href) return fallback;
+  if (href.startsWith("/") || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return href;
+
+  try {
+    const url = new URL(href);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getFooterTrustBadges(footerCms) {
+  const badges = Array.isArray(footerCms?.trustBadges) ? footerCms.trustBadges : fallbackTrustBadges;
+  const normalized = badges
+    .map((badge, index) => ({
+      label: cleanText(badge?.label),
+      enabled: badge?.enabled !== false,
+      sortOrder: Number.isFinite(Number(badge?.sortOrder)) ? Number(badge.sortOrder) : (index + 1) * 10,
+    }))
+    .filter((badge) => badge.label && badge.enabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return normalized.length ? normalized : fallbackTrustBadges;
+}
+
+function getFooterSocialLinks(footerCms) {
+  const socials = footerCms?.socials || footerCms?.socialLinks || {};
+  return fallbackSocialIcons
+    .map(([label, key, icon]) => [label, safeHref(socials[key], "#social"), icon])
+    .filter(([, href]) => href);
+}
+
+function getFooterAppBadges(footerCms) {
+  return {
+    ...fallbackAppBadges,
+    ...(footerCms?.appBadges || {}),
+  };
+}
+
+function getFooterPaymentImage(footerCms) {
+  const paymentIcons = Array.isArray(footerCms?.paymentIcons) ? footerCms.paymentIcons : [];
+  const primaryPaymentIcon = paymentIcons
+    .filter((item) => item?.enabled !== false)
+    .sort((a, b) => {
+      const aSort = Number.isFinite(Number(a?.sortOrder)) ? Number(a.sortOrder) : 0;
+      const bSort = Number.isFinite(Number(b?.sortOrder)) ? Number(b.sortOrder) : 0;
+      return aSort - bSort;
+    })
+    .find((item) => cleanText(item?.image));
+
+  return primaryPaymentIcon?.image || footerCms?.bottomImage || "/footer-ssl-payment.jpg";
+}
+
 function getFooterColumns(footerCms) {
   if (!footerCms || typeof footerCms !== "object") return footerColumns;
 
@@ -147,23 +230,33 @@ export default function SiteFooter() {
     };
   }, []);
 
-  const footerLogo = "/jpspare-logo-wide-clean.png";
-  const aboutText = footerAboutText;
+  if (footerCms?.enabled === false) return null;
+
+  const footerLogo = footerCms?.logo || footerCms?.footerLogo || "/jpspare-logo-wide-clean.png";
+  const aboutText = footerCms?.about || footerCms?.aboutText || footerAboutText;
+  const contacts = footerCms?.contacts || footerCms?.contact || {};
   const contact = {
-    phone: footerCms?.contact?.phone || "01718914582",
-    email: footerCms?.contact?.email || "info@jpspare.com.bd",
-    address: footerAddress,
+    phone: contacts.phone || "01718914582",
+    secondaryPhone: contacts.secondaryPhone || "",
+    email: contacts.email || "info@jpspare.com.bd",
+    address: contacts.address || footerAddress,
+    workingHours: contacts.workingHours || "",
   };
-  const phoneNumbers = Array.from(new Set([...footerPhoneNumbers, contact.phone, footerCms?.contact?.secondaryPhone].filter(Boolean)));
+  const phoneNumbers = Array.from(new Set([...footerPhoneNumbers, contact.phone, contact.secondaryPhone].filter(Boolean)));
   const mapQuery = encodeURIComponent(contact.address);
-  const socialLinks = {
-    facebook: footerCms?.socialLinks?.facebook || "#social",
-    instagram: footerCms?.socialLinks?.instagram || "#social",
-    youtube: footerCms?.socialLinks?.youtube || "#social",
-    tiktok: footerCms?.socialLinks?.tiktok || "#social",
-  };
-  const footerBottomImage = footerCms?.bottomImage || "/footer-ssl-payment.jpg";
+  const footerBottomImage = getFooterPaymentImage(footerCms);
   const activeFooterColumns = getFooterColumns(footerCms);
+  const trustBadges = getFooterTrustBadges(footerCms);
+  const appBadges = getFooterAppBadges(footerCms);
+  const security = { ...fallbackSecurity, ...(footerCms?.security || {}) };
+  const socialLinks = getFooterSocialLinks(footerCms);
+  const copyright = footerCms?.copyright || footerCms?.copyrightText || "© 2026 JPSPARE. All rights reserved.";
+  const credit = footerCms?.credit || {
+    enabled: true,
+    prefix: "Developed by",
+    label: "Backdrop Interactive",
+    href: "https://backdropinteractive.com/",
+  };
 
   return (
     <footer className="mt-auto border-t-[6px] border-[#ef3338] bg-[#f4f6f9] text-[#111827]">
@@ -205,6 +298,12 @@ export default function SiteFooter() {
                   <span className="text-[#ff6267]"><FooterIcon name="pin" /></span>
                   {contact.address}
                 </p>
+                {contact.workingHours ? (
+                  <p className="flex items-center gap-3 rounded-[7px] bg-white/60 px-3 py-2">
+                    <span className="text-[#ff6267]"><FooterIcon name="check" /></span>
+                    {contact.workingHours}
+                  </p>
+                ) : null}
                 <div className="relative overflow-hidden rounded-[10px] border border-[#111827]/10 bg-white shadow-[0_12px_28px_rgba(17,24,39,0.06)]">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
@@ -257,13 +356,13 @@ export default function SiteFooter() {
               <div className="flex flex-1 items-center pb-3">
                 <div className="mx-4 flex min-h-[52px] flex-1 flex-wrap items-center justify-center gap-x-8 gap-y-2 border-y border-[#111827]/10 text-[14px] font-medium text-[#364152]">
                   <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                    {["3000+ Accessories", "98% Satisfaction", "24/7 Support"].map((item) => (
-                      <div key={item} className="flex items-center gap-2">
+                    {trustBadges.map((item) => (
+                      <div key={item.label} className="flex items-center gap-2">
                         <svg viewBox="0 0 24 24" className="size-4 text-[#00c48c]" fill="none" stroke="currentColor" strokeWidth="2.4">
                           <path d="M20 6 9 17l-5-5" />
                           <circle cx="12" cy="12" r="10" />
                         </svg>
-                        <span>{item}</span>
+                        <span>{item.label}</span>
                       </div>
                     ))}
                   </div>
@@ -273,27 +372,33 @@ export default function SiteFooter() {
               <div className="flex -translate-y-5 items-end justify-center gap-4 pt-0 max-xl:flex-wrap max-xl:translate-y-0">
                 <div className="w-[250px] shrink-0">
                   <div className="flex items-center gap-2">
-                    <a href="#app" aria-label="Download on the App Store" className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
-                      <img src="/footer-app-store-badge.png" alt="Download on the App Store" className="h-auto w-full object-contain" />
-                    </a>
-                    <a href="#app" aria-label="Get it on Google Play" className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
-                      <img src="/footer-google-play-badge.png" alt="Get it on Google Play" className="h-auto w-full object-contain" />
-                    </a>
+                    {appBadges.appStoreImage ? (
+                      <a href={safeHref(appBadges.appStoreHref, "#app")} aria-label={appBadges.appStoreAlt || "Download on the App Store"} className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
+                        <img src={appBadges.appStoreImage} alt={appBadges.appStoreAlt || "Download on the App Store"} className="h-auto w-full object-contain" />
+                      </a>
+                    ) : null}
+                    {appBadges.googlePlayImage ? (
+                      <a href={safeHref(appBadges.googlePlayHref, "#app")} aria-label={appBadges.googlePlayAlt || "Get it on Google Play"} className="block flex-1 transition duration-300 ease-out hover:scale-[1.06]">
+                        <img src={appBadges.googlePlayImage} alt={appBadges.googlePlayAlt || "Get it on Google Play"} className="h-auto w-full object-contain" />
+                      </a>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex items-end justify-center gap-4">
-                  <div className="max-w-[210px] shrink-0 pb-1 text-left text-[#6f7785]">
-                    <div className="flex items-center gap-2">
-                      <svg viewBox="0 0 24 24" className="size-5 shrink-0 text-[#00c48c]" fill="none" stroke="currentColor" strokeWidth="2.4">
-                        <path d="M20 6 9 17l-5-5" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                      <span className="text-[15px] font-bold leading-tight">Secure payments</span>
+                  {security.enabled !== false ? (
+                    <div className="max-w-[210px] shrink-0 pb-1 text-left text-[#6f7785]">
+                      <div className="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" className="size-5 shrink-0 text-[#00c48c]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                          <path d="M20 6 9 17l-5-5" />
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        <span className="text-[15px] font-bold leading-tight">{security.title}</span>
+                      </div>
+                      <p className="mt-1 text-[11px] leading-snug text-[#8b93a1]">
+                        {security.description}
+                      </p>
                     </div>
-                    <p className="mt-1 text-[11px] leading-snug text-[#8b93a1]">
-                      Safe, encrypted, and trusted payment solutions for every purchase.
-                    </p>
-                  </div>
+                  ) : null}
                   <div className="flex aspect-[1280/143] w-full max-w-[610px] items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-white/12 bg-white text-[12px] font-semibold uppercase tracking-[0.12em] text-white/35">
                     {footerBottomImage ? (
                       <img
@@ -315,12 +420,7 @@ export default function SiteFooter() {
         <div className="border-t border-[#111827]/10 py-3">
           <div className="mx-auto grid w-full max-w-[1635px] grid-cols-3 items-center gap-6 max-md:grid-cols-1">
             <div className="flex items-center gap-1 max-md:justify-center">
-              {[
-                ["Facebook", socialLinks.facebook, "/footer-social-facebook.png"],
-                ["Instagram", socialLinks.instagram, "/footer-social-instagram.png"],
-                ["YouTube", socialLinks.youtube, "/footer-social-youtube.png"],
-                ["TikTok", socialLinks.tiktok, "/footer-social-tiktok.png"],
-              ].map(([label, href, icon]) => (
+              {socialLinks.map(([label, href, icon]) => (
                 <a
                   key={label}
                   href={href}
@@ -332,10 +432,16 @@ export default function SiteFooter() {
               ))}
             </div>
             <p className="text-center text-[13px] text-[#8b93a1]">
-              © 2026 JPSPARE. All rights reserved. | Developed by{" "}
-              <a href="https://backdropinteractive.com/" target="_blank" rel="noreferrer" className="footer-credit-link">
-                Backdrop Interactive
-              </a>
+              {copyright}
+              {credit?.enabled !== false && credit?.label ? (
+                <>
+                  {" | "}
+                  {credit.prefix || "Developed by"}{" "}
+                  <a href={safeHref(credit.href, "#")} target="_blank" rel="noreferrer" className="footer-credit-link">
+                    {credit.label}
+                  </a>
+                </>
+              ) : null}
             </p>
             <div aria-hidden="true" />
           </div>
