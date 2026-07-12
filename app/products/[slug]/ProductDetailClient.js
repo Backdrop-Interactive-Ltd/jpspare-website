@@ -9,9 +9,14 @@ import { ProductCardInfo } from "../../ProductTabs";
 import ProductQuickActions from "../../ProductQuickActions";
 
 const fallbackProduct = {
-  title: "Liqui Moly Octane Booster - 200mL",
-  price: "Tk 850.00",
-  slug: "liqui-moly-octane-booster-200ml",
+  id: "fallback-product",
+  title: "JPSPARE Product",
+  name: "JPSPARE Product",
+  price: 0,
+  slug: "product",
+  image: "/product-gallery-reference.png",
+  images: [{ label: "JPSPARE Product", src: "/product-gallery-reference.png" }],
+  specifications: [],
 };
 
 const productCopy = {
@@ -65,20 +70,89 @@ const productReviews = [
   },
 ];
 
-const gallerySlides = [
-  { label: "Black Odor Red", src: "/black-odor-red-front.webp" },
-  { label: "Black Odor Amber", src: "/black-odor-amber-front.webp" },
-  { label: "Black Odor Blue Console", src: "/black-odor-blue-console.webp" },
-  { label: "Black Odor Red Console", src: "/black-odor-red-console.webp" },
-  { label: "Black Odor Green Console", src: "/black-odor-green-console.jpg" },
-  { label: "Black Odor Promo", src: "/black-odor-promo.webp" },
-];
-
 function slugify(value) {
-  return value
+  return String(value || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+function cleanText(value) {
+  const text = String(value ?? "").trim();
+  return text || "";
+}
+
+function numberValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function effectivePrice(product) {
+  return numberValue(product?.discountPrice) ?? numberValue(product?.price) ?? 0;
+}
+
+function comparePrice(product) {
+  const current = effectivePrice(product);
+  const compare = numberValue(product?.compareAtPrice);
+  if (compare && compare > current) return compare;
+  const regular = numberValue(product?.price);
+  if (regular && regular > current) return regular;
+  return null;
+}
+
+function discountPercent(product) {
+  const current = effectivePrice(product);
+  const compare = comparePrice(product);
+  if (!compare || !current || compare <= current) return null;
+  return Math.round(((compare - current) / compare) * 100);
+}
+
+function stockCopy(product) {
+  const status = cleanText(product?.stockStatus).replace(/_/g, " ");
+  const quantity = numberValue(product?.stockQuantity);
+  const isOut = product?.stockStatus === "OUT_OF_STOCK" || quantity === 0;
+
+  if (isOut) {
+    return { isOut, label: "Out of Stock", detail: "Currently unavailable" };
+  }
+
+  if (quantity !== null && quantity <= 5) {
+    return { isOut, label: "Limited Stock", detail: `Only ${quantity} items left` };
+  }
+
+  return { isOut, label: status || "In Stock", detail: quantity !== null ? `${quantity} available` : "Available" };
+}
+
+function buildGallerySlides(product) {
+  const images = Array.isArray(product?.images) ? product.images : [];
+  const slides = images
+    .map((image, index) => ({
+      label: image.alt || product?.title || `Product image ${index + 1}`,
+      src: image.url,
+    }))
+    .filter((image, index, list) => image.src && list.findIndex((item) => item.src === image.src) === index);
+
+  if (slides.length) return slides;
+  if (product?.image) return [{ label: product.title || "Product image", src: product.image }];
+  return [{ label: "JPSPARE Product", src: "/product-gallery-reference.png" }];
+}
+
+function buildCartProduct(product) {
+  const image = product?.image || product?.thumbnail || product?.images?.[0]?.url || "/product-gallery-reference.png";
+  return {
+    id: product?.id,
+    productId: product?.id,
+    slug: product?.slug,
+    title: product?.title,
+    name: product?.name || product?.title,
+    price: effectivePrice(product),
+    oldPrice: comparePrice(product),
+    image,
+    thumbnail: image,
+    sku: product?.sku,
+    brand: product?.brand,
+    category: product?.category,
+  };
 }
 
 function ZoomPlusIcon({ className = "size-4" }) {
@@ -90,7 +164,8 @@ function ZoomPlusIcon({ className = "size-4" }) {
   );
 }
 
-function ProductGallery() {
+function ProductGallery({ product }) {
+  const gallery = buildGallerySlides(product);
   const [active, setActive] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -98,7 +173,7 @@ function ProductGallery() {
   const [lightboxScale, setLightboxScale] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [zoomPoint, setZoomPoint] = useState({ x: 50, y: 50 });
-  const current = gallerySlides[active];
+  const current = gallery[active] || gallery[0];
   const resetZoom = () => {
     setIsZoomed(false);
     setZoomPoint({ x: 50, y: 50 });
@@ -106,7 +181,7 @@ function ProductGallery() {
   const move = (step) => {
     resetZoom();
     setLightboxScale(1);
-    setActive((active + step + gallerySlides.length) % gallerySlides.length);
+    setActive((active + step + gallery.length) % gallery.length);
   };
   const handlePointerMove = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -131,19 +206,23 @@ function ProductGallery() {
     if (!isPlaying || !isLightboxOpen) return undefined;
     const timer = setInterval(() => {
       setLightboxScale(1);
-      setActive((value) => (value + 1) % gallerySlides.length);
+      setActive((value) => (value + 1) % gallery.length);
     }, 1800);
     return () => clearInterval(timer);
-  }, [isPlaying, isLightboxOpen]);
+  }, [gallery.length, isPlaying, isLightboxOpen]);
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-[14px] font-semibold text-[#7b8794]">
         <Link href="/" className="transition hover:text-[#d3191d]">Home</Link>
         <span>›</span>
-        <button className="transition hover:text-[#d3191d]">Perfume &amp; Showpiece</button>
+        {product?.category?.slug ? (
+          <Link href={`/collections/${product.category.slug}`} className="transition hover:text-[#d3191d]">{product.category.name}</Link>
+        ) : (
+          <span>Product</span>
+        )}
         <span>›</span>
-        <span className="truncate text-[#7b8794]">Black Odor BO-41 Premium...</span>
+        <span className="truncate text-[#7b8794]">{product?.title || "Product Details"}</span>
       </div>
       <button
         type="button"
@@ -208,7 +287,7 @@ function ProductGallery() {
         </button>
       </div>
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1 max-sm:gap-2">
-        {gallerySlides.map((item, index) => (
+        {gallery.map((item, index) => (
           <button
             key={item.label}
             type="button"
@@ -253,7 +332,7 @@ function ProductGallery() {
             </div>
           </div>
           <div className="absolute bottom-7 left-1/2 flex max-w-full -translate-x-1/2 gap-4 overflow-x-auto px-5 max-sm:bottom-4 max-sm:gap-2">
-            {gallerySlides.map((item, index) => (
+            {gallery.map((item, index) => (
               <button
                 key={`lightbox-${item.label}`}
                 type="button"
@@ -380,7 +459,19 @@ function ProductReviews() {
   );
 }
 
-function SpecsPanel() {
+function SpecsPanel({ product }) {
+  const baseSpecs = [
+    product?.id ? { label: "Product ID", value: product.id, icon: "▣", tone: "blue" } : null,
+    product?.brand?.name ? { label: "Brand", value: product.brand.name, icon: "♙", tone: "red" } : null,
+    product?.sku ? { label: "SKU", value: product.sku, icon: "⚙", tone: "blue" } : null,
+    product?.category?.name ? { label: "Category", value: product.category.name, icon: "▣", tone: "red" } : null,
+    product?.stockStatus ? { label: "Availability", value: stockCopy(product).label, icon: "✓", tone: "blue" } : null,
+  ].filter(Boolean);
+  const cmsSpecs = Array.isArray(product?.specifications)
+    ? product.specifications.filter((item) => cleanText(item?.name) && cleanText(item?.value))
+    : [];
+  const specs = [...baseSpecs, ...cmsSpecs.map((item) => ({ label: item.name, value: item.value, icon: "•", tone: "red" }))];
+
   return (
     <section id="product-specs" className="scroll-mt-24 mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 py-6 max-sm:px-4">
       <div className="rounded-[14px] border border-[#f7d95f] bg-[#fffafa] px-8 py-9 shadow-[0_14px_28px_rgba(220,38,38,0.06)] max-sm:px-5 max-sm:py-6">
@@ -394,11 +485,9 @@ function SpecsPanel() {
           <h3 className="text-[18px] font-black uppercase tracking-[0.08em] text-[#111827]">Basic Information</h3>
         </div>
 
-        <div className="mt-6 grid max-w-[762px] grid-cols-2 gap-4 max-md:grid-cols-1">
-          {[
-            { label: "Brand", value: "DENSO", icon: "♙", tone: "red" },
-            { label: "Part Number", value: "7633670799616", icon: "⚙", tone: "blue" },
-          ].map((item) => (
+        {specs.length > 0 ? (
+          <div className="mt-6 grid max-w-[762px] grid-cols-2 gap-4 max-md:grid-cols-1">
+            {specs.map((item) => (
             <div key={item.label} className={`min-h-[126px] rounded-[10px] border bg-white/70 p-6 ${item.tone === "blue" ? "border-[#f7d95f] bg-[#fff7f7]" : "border-[#e5e7eb]"}`}>
               <div className="flex items-center gap-3">
                 <span className={`grid size-6 place-items-center rounded-[7px] text-[14px] ${item.tone === "blue" ? "bg-[#dbeafe] text-[#2f74f3]" : "bg-[#ffe7e7] text-[#ef3338]"}`}>{item.icon}</span>
@@ -406,65 +495,40 @@ function SpecsPanel() {
               </div>
               <p className="mt-6 text-[16px] text-[#374151]">{item.value}</p>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-[10px] border border-[#e5e7eb] bg-white/70 p-6 text-[15px] text-[#4b5563]">
+            Specifications are not available for this product yet.
+          </p>
+        )}
       </div>
     </section>
   );
 }
 
-function CompatibilityPanel() {
-  const vehicles = [
-    { vehicle: "Toyota Hiace", detail: "Toyota Hiace 2015-2024 - TRH200V", start: "2015", end: "2024", engine: "2000cc", chassis: "TRH200V" },
-    { vehicle: "Toyota Hiace", detail: "Toyota Hiace 2010-2015 - TRH200K", start: "2010", end: "2015", engine: "2000cc", chassis: "TRH200K", highlight: true },
-    { vehicle: "Toyota Hiace", detail: "Toyota Hiace (2015+) - TRH200K", start: "2015", end: "2025", engine: "2000cc", chassis: "TRH200K" },
-  ];
-
+function CompatibilityPanel({ product }) {
   return (
     <section id="product-compatibility" className="scroll-mt-24 mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 xl:px-10 py-9 max-sm:px-4">
       <div className="flex items-start gap-4">
         <span className="grid size-12 shrink-0 place-items-center rounded-[10px] bg-[#fff0f0] text-[24px] text-[#ed1f24]">▤</span>
         <div>
           <h2 className="text-[30px] font-black leading-none tracking-[-0.03em] text-[#111827] max-sm:text-[25px]">Vehicle Applications</h2>
-          <span className="mt-4 inline-flex rounded-full bg-[#ffe0d9] px-3 py-1 text-[12px] font-black uppercase tracking-[0.06em] text-[#92400e]">3 Compatible Vehicles</span>
+          <span className="mt-4 inline-flex rounded-full bg-[#ffe0d9] px-3 py-1 text-[12px] font-black uppercase tracking-[0.06em] text-[#92400e]">
+            {product?.category?.name || "Product"} fitment support
+          </span>
         </div>
       </div>
 
       <p className="mt-8 text-[16px] leading-7 text-[#4b5563]">
-        This part is compatible with the following vehicles. All fitment information is verified for accuracy.
+        Confirm fitment before ordering. Our support team can help verify compatibility using your vehicle model, chassis code, or part number.
       </p>
 
-      <div className="mt-8 overflow-x-auto rounded-[10px] border border-[#edf0f5] bg-white shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-        <table className="w-full min-w-[860px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-[#e5e7eb] bg-white text-[14px] font-black uppercase tracking-[0.04em] text-[#111827]">
-              <th className="px-6 py-5"><span className="mr-3 text-[#ed1f24]">▤</span>Vehicle</th>
-              <th className="px-6 py-5"><span className="mr-3 text-[#ed1f24]">▣</span>Year Range</th>
-              <th className="px-6 py-5"><span className="mr-3 text-[#ed1f24]">⌁</span>Engine</th>
-              <th className="px-6 py-5">Chassis Code</th>
-              <th className="px-6 py-5">Compatibility</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vehicles.map((item) => (
-              <tr key={`${item.detail}-${item.start}`} className={`border-b border-[#eef2f7] last:border-b-0 ${item.highlight ? "bg-[#fff6f6]" : "bg-white"}`}>
-                <td className="px-6 py-6">
-                  <div className="flex items-center gap-4">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[#fff1f1] text-[#ed1f24]">▤</span>
-                    <div>
-                      <p className={`text-[16px] font-black ${item.highlight ? "text-[#d3191d]" : "text-[#111827]"}`}>{item.vehicle}</p>
-                      <p className="mt-2 text-[14px] text-[#687386]">{item.detail}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-6 text-[17px] font-black text-[#111827]">{item.start} <span className="mx-3 text-[#9ca3af]">→</span> {item.end}</td>
-                <td className="px-6 py-6 text-[16px] text-[#374151]">{item.engine}</td>
-                <td className="px-6 py-6"><span className="rounded-[6px] bg-[#f1f3f6] px-4 py-2 font-mono text-[13px] text-[#4b5563]">{item.chassis}</span></td>
-                <td className="px-6 py-6"><span className="inline-flex items-center gap-2 rounded-full border border-[#b7f3ca] bg-[#d9ffe4] px-5 py-2 text-[14px] font-black text-[#04913a]">✓ Compatible</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-8 rounded-[10px] border border-[#edf0f5] bg-white p-7 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+        <h3 className="text-[18px] font-black text-[#111827]">Compatibility data</h3>
+        <p className="mt-3 text-[15px] leading-7 text-[#4b5563]">
+          Detailed vehicle compatibility is not available for this product yet. Please contact support before purchase if fitment is critical.
+        </p>
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-6 rounded-[12px] border-2 border-[#ed1f24] bg-[#fb4f53] px-8 py-9 text-white shadow-[0_16px_34px_rgba(220,38,38,0.18)] max-md:flex-col max-md:items-stretch max-sm:px-5 max-sm:py-6">
@@ -484,116 +548,48 @@ function CompatibilityPanel() {
   );
 }
 
-function DescriptionPanel() {
+function DescriptionPanel({ product }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const description = cleanText(product?.fullDescription) || cleanText(product?.description) || cleanText(product?.shortDescription);
+  const paragraphs = description.split(/\n{2,}|\r?\n/).map((item) => cleanText(item)).filter(Boolean);
+  const image = product?.images?.[0]?.url || product?.image;
 
   return (
     <section id="product-description" className="scroll-mt-24 mx-auto max-w-[1160px] px-5 py-14 text-[15.5px] leading-8 text-[#242424] max-sm:px-4 max-sm:py-10 max-sm:text-[14.5px] max-sm:leading-7">
       <h2 className="text-center text-[42px] font-black leading-tight tracking-[-0.04em] text-[#111111] max-sm:text-[30px]">Product Details</h2>
 
-      <div className="mt-9 space-y-5">
-        <p>
-          Keep your ride stable and comfortable with this premium <b>front left shock absorber</b>. Specially selected for drivers who want dependable suspension performance, this part helps reduce vibration, improve handling, and restore a confident road feel.
+      {paragraphs.length ? (
+        <div className="mt-9 space-y-5">
+          {(isExpanded ? paragraphs : paragraphs.slice(0, 3)).map((paragraph, index) => (
+            <p key={`${product?.id || product?.slug}-description-${index}`}>{paragraph}</p>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-9 rounded-[10px] border border-[#e5e7eb] bg-white p-6 text-[#4b5563]">
+          Product description is not available yet.
         </p>
-        <p>A smart replacement option for worn suspension parts on compatible Toyota Prius α models.</p>
-      </div>
+      )}
 
-      <div className="mt-8 space-y-5">
-        <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">✨ Smooth Stability in a Direct-Fit Shock Absorber</h2>
-        <p>
-          This shock absorber is designed to support <b>controlled suspension movement</b> and more predictable handling. It helps keep the tyre planted on uneven roads, giving better comfort and safer daily driving.
-        </p>
-        <p>Perfect for city traffic, highways, and regular maintenance replacement.</p>
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">⭐ Key Features of This Shock Absorber</h2>
-        <ul className="mt-5 list-disc space-y-3 pl-6">
-          <li>Direct-fit replacement for compatible vehicle models</li>
-          <li>Helps reduce vibration, bounce, and road harshness</li>
-          {isExpanded && (
-            <>
-              <li>Improves steering stability and braking confidence</li>
-              <li>Durable construction for long-term daily use</li>
-              <li>Suitable for front-left suspension replacement</li>
-              <li>Balanced ride comfort for city and highway driving</li>
-            </>
-          )}
-        </ul>
-        {isExpanded && <p className="mt-6">An essential part of your <b>car suspension maintenance</b> and regular safety care.</p>}
-      </div>
-
-      {!isExpanded && (
+      {!isExpanded && paragraphs.length > 3 && (
         <button onClick={() => setIsExpanded(true)} className="mt-8 rounded-full bg-[#1a73e8] px-8 py-4 text-[15px] font-black text-white transition hover:bg-[#155fc4]">Show More</button>
       )}
 
-      {isExpanded && (
-        <>
-          <div className="mt-8">
-            <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">💧 Easy to Install - No Guesswork, No Hassle</h2>
-            <p className="mt-3"><b>Recommended installation: professional mechanic</b></p>
-            <p className="mt-5">How to use:</p>
-            <ul className="mt-3 list-disc space-y-3 pl-6">
-              <li>Confirm your chassis code and side position before ordering</li>
-              <li>Install the part on the front-left suspension assembly</li>
-              <li>Inspect related mounts, bushings, and suspension hardware</li>
-              <li>Check wheel alignment after installation if needed</li>
-            </ul>
-            <p className="mt-6">For best performance, replace worn suspension parts before they affect tyre wear or braking stability.</p>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">🌍 Reliable &amp; Cost-Effective Car Care Product in Bangladesh</h2>
-            <p className="mt-5">Why keep driving with weak suspension?</p>
-            <p className="mt-5">
-              A worn shock absorber can reduce comfort, increase body movement, and make the vehicle feel less stable. Replacing it on time helps protect your tyres, suspension, and daily driving confidence.
-            </p>
-            <p className="mt-5">Ideal for private cars, family vehicles, ride-share drivers, and workshop replacement needs.</p>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">🧪 Product Specifications</h2>
-            <ul className="mt-5 list-disc space-y-3 pl-6">
-              <li>Product Type: Front Left Shock Absorber</li>
-              <li>Part Number: B3337</li>
-              <li>Position: Front Left</li>
-              <li>Vehicle Fitment: Toyota Prius α HV-ZVW40W</li>
-              <li>Condition: New</li>
-              <li>Application: Suspension replacement</li>
-              <li>Origin: Demo data</li>
-            </ul>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">🏠 Multi-Purpose Maintenance Use</h2>
-            <p className="mt-5">Besides replacement use, this part is suitable for:</p>
-            <ul className="mt-3 list-disc space-y-3 pl-6">
-              <li>Routine suspension repair</li>
-              <li>Comfort restoration</li>
-              <li>Handling improvement</li>
-              <li>Workshop service packages</li>
-            </ul>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-[42px] font-black leading-tight tracking-[-0.04em] text-[#242424] max-sm:text-[30px]">✅ Why Choose This Shock Absorber?</h2>
-            <p className="mt-5">It is practical, reliable, and selected for drivers who want smoother suspension performance without compromising safety.</p>
-            <p className="mt-5">If you are looking for dependable <b>car parts in Bangladesh</b> with clear fitment and support, this is a strong choice.</p>
-          </div>
-
-          <button onClick={() => setIsExpanded(false)} className="mt-8 rounded-full bg-[#1a73e8] px-8 py-4 text-[15px] font-black text-white transition hover:bg-[#155fc4]">Show less</button>
-        </>
+      {isExpanded && paragraphs.length > 3 && (
+        <button onClick={() => setIsExpanded(false)} className="mt-8 rounded-full bg-[#1a73e8] px-8 py-4 text-[15px] font-black text-white transition hover:bg-[#155fc4]">Show less</button>
       )}
 
-      <div className="relative mt-8 aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5]">
-        <Image src="/black-odor-red-console.webp" alt="JPSPARE product showcase" fill sizes="(max-width: 1040px) 100vw, 1040px" className="object-cover" />
-      </div>
+      {image && (
+        <div className="relative mt-8 aspect-[4/3] w-full overflow-hidden bg-[#f5f5f5]">
+          <Image src={image} alt={product?.title || "JPSPARE product showcase"} fill sizes="(max-width: 1040px) 100vw, 1040px" className="object-cover" />
+        </div>
+      )}
     </section>
   );
 }
 
-export default function ProductDetailClient({ slug }) {
-  const product = productCopy[slug] || fallbackProduct;
+export default function ProductDetailClient({ slug, product: productProp }) {
+  const product = productProp || productCopy[slug] || fallbackProduct;
+  const cartProduct = buildCartProduct(product);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [addedRelated, setAddedRelated] = useState([]);
@@ -601,7 +597,11 @@ export default function ProductDetailClient({ slug }) {
   const [wishlisted, setWishlisted] = useState(false);
   const [activeInfoTab, setActiveInfoTab] = useState("Description");
   const [isStickyCartVisible, setIsStickyCartVisible] = useState(false);
-  const saleTotal = `৳${(quantity * 4680).toLocaleString("en-US")}.00`;
+  const saleTotal = formatPriceDisplay(effectivePrice(product) * quantity);
+  const unitPrice = formatPriceDisplay(effectivePrice(product));
+  const oldPrice = comparePrice(product);
+  const discount = discountPercent(product);
+  const stock = stockCopy(product);
   const handleRelatedAdd = async (item) => {
     const productName = item.name || item.title;
     setAddedRelated((items) => (items.includes(productName) ? items : [...items, productName]));
@@ -614,20 +614,7 @@ export default function ProductDetailClient({ slug }) {
   };
   const handleMainAdd = async () => {
     setAdded(true);
-    await addProductToCart(
-      {
-        ...product,
-        title: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
-        name: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
-        price: "Tk 4,680.00",
-        oldPrice: "Tk 7,800.00",
-        brand: "HITACHI",
-        category: "Shock Absorber",
-        image: "/product-gallery-reference.png",
-        slug: "hitachi-shock-absorver-b3337",
-      },
-      quantity
-    );
+    await addProductToCart(cartProduct, quantity);
   };
 
   useEffect(() => {
@@ -644,21 +631,32 @@ export default function ProductDetailClient({ slug }) {
   return (
     <main className="min-h-screen bg-white text-black">
       <section className="mx-auto grid max-w-[1180px] grid-cols-[0.9fr_1fr] gap-14 px-5 py-12 max-lg:grid-cols-1 max-sm:gap-7 max-sm:px-4 max-sm:py-7">
-        <ProductGallery />
+        <ProductGallery product={product} />
         <div className="pt-4 max-sm:pt-0">
           <div className="flex flex-wrap items-center gap-3 max-sm:gap-2">
-            <span className="rounded-full border border-[#ff9da1] bg-[#fff1f2] px-4 py-2 text-[13px] font-black uppercase tracking-[0.08em] text-[#e11d22] max-sm:px-3 max-sm:py-1.5 max-sm:text-[11px]">♙ Hitachi</span>
-            <span className="rounded-full bg-[#e11d22] px-4 py-2 text-[13px] font-black uppercase tracking-[0.08em] text-white max-sm:px-3 max-sm:py-1.5 max-sm:text-[11px]">% 40% Off</span>
+            {product?.brand?.name && (
+              <span className="rounded-full border border-[#ff9da1] bg-[#fff1f2] px-4 py-2 text-[13px] font-black uppercase tracking-[0.08em] text-[#e11d22] max-sm:px-3 max-sm:py-1.5 max-sm:text-[11px]">♙ {product.brand.name}</span>
+            )}
+            {discount && (
+              <span className="rounded-full bg-[#e11d22] px-4 py-2 text-[13px] font-black uppercase tracking-[0.08em] text-white max-sm:px-3 max-sm:py-1.5 max-sm:text-[11px]">{discount}% Off</span>
+            )}
+            {product?.sku && (
+              <span className="rounded-full border border-[#d1d5db] bg-white px-4 py-2 text-[13px] font-black uppercase tracking-[0.08em] text-[#4b5563] max-sm:px-3 max-sm:py-1.5 max-sm:text-[11px]">SKU {product.sku}</span>
+            )}
           </div>
-          <h1 className="mt-6 max-w-[680px] text-[30px] font-black leading-[1.18] tracking-[-0.02em] text-[#111827] max-sm:mt-4 max-sm:text-[24px]">TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)</h1>
+          <h1 className="mt-6 max-w-[680px] text-[30px] font-black leading-[1.18] tracking-[-0.02em] text-[#111827] max-sm:mt-4 max-sm:text-[24px]">{product.title}</h1>
+          {product.shortDescription && <p className="mt-4 max-w-[660px] text-[15px] leading-6 text-[#4b5563]">{product.shortDescription}</p>}
           <div className="mt-4 h-1 w-16 rounded bg-[#e11d22]" />
           <div className="mt-4 flex flex-wrap items-end gap-4">
             <p className="text-[38px] font-black leading-none tracking-[-0.03em] text-[#111827] max-sm:text-[32px]">{saleTotal}</p>
-            <p className="text-[20px] font-medium leading-none text-[#6b7280] line-through">৳7,800.00</p>
+            {oldPrice && <p className="text-[20px] font-medium leading-none text-[#6b7280] line-through">{formatPriceDisplay(oldPrice)}</p>}
           </div>
-          <p className="mt-8 text-[15px] font-black max-sm:mt-6">⚡ 40 sold in last 24 hours</p>
-          <div className="mt-6 max-sm:mt-4"><p className="text-[14px]"><span className="text-[#ff6961]">HURRY UP!</span> Only <span className="text-[22px] text-[#ff6961]">61</span> items left!</p><div className="mt-3 h-1.5 rounded bg-[#e5e7eb]"><div className="h-full w-[62%] rounded bg-[#ff6961]" /></div></div>
-          <p className="mt-7 text-[14px] leading-6">🚚 Order in the next 21 hour(s) 48 minute(s) to get it between <b><u>Tuesday, 19th May</u></b> and <b><u>Thursday, 21st May</u></b></p>
+          <p className="mt-8 text-[15px] font-black max-sm:mt-6">Availability: {stock.label}</p>
+          <div className="mt-6 max-sm:mt-4">
+            <p className="text-[14px]"><span className="text-[#ff6961]">{stock.isOut ? "CHECK BACK SOON" : "READY TO ORDER"}</span> {stock.detail}</p>
+            <div className="mt-3 h-1.5 rounded bg-[#e5e7eb]"><div className={`h-full rounded bg-[#ff6961] ${stock.isOut ? "w-0" : "w-[62%]"}`} /></div>
+          </div>
+          <p className="mt-7 text-[14px] leading-6">🚚 Delivery timing is confirmed during checkout based on your address and product availability.</p>
           <div className="mt-7 rounded-[15px] border border-[#e5e7eb] bg-white p-5 transition-all duration-300 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fff8f8] hover:shadow-[0_18px_40px_rgba(220,38,38,0.12)] focus-within:border-[#f7d95f] focus-within:bg-[#fff8f8] focus-within:shadow-[0_18px_40px_rgba(220,38,38,0.12)] max-sm:p-4">
             <div className="grid grid-cols-[0.75fr_1fr_1fr] gap-2 max-sm:grid-cols-1">
               <div className="flex h-12 items-center justify-between rounded-[10px] border border-[#dfe4ea] bg-white px-4 text-[18px] font-black">
@@ -666,8 +664,8 @@ export default function ProductDetailClient({ slug }) {
                 <span>{quantity}</span>
                 <button className="text-[#f19397]" onClick={() => setQuantity(quantity + 1)}>＋</button>
               </div>
-              <button disabled className="h-12 rounded-[10px] bg-[#f3989d] text-[16px] font-black text-white opacity-95">Out of Stock</button>
-              <button onClick={handleMainAdd} className="h-12 rounded-[10px] bg-[#df8b8f] text-[16px] font-black text-white transition hover:bg-[#d3191d]">{added ? "Added" : "Buy Now"} ›</button>
+              <button disabled className="h-12 rounded-[10px] bg-[#f3989d] text-[16px] font-black text-white opacity-95">{stock.label}</button>
+              <button onClick={handleMainAdd} disabled={stock.isOut} className="h-12 rounded-[10px] bg-[#df8b8f] text-[16px] font-black text-white transition hover:bg-[#d3191d] disabled:cursor-not-allowed disabled:opacity-60">{added ? "Added" : "Buy Now"} ›</button>
             </div>
             <button className="mt-3 h-12 w-full rounded-[10px] bg-[#2f74f3] text-[16px] font-black text-white transition hover:bg-[#1d5ed7]">
               ▭ Calculate EMI <span className="ml-2 rounded-full bg-white/25 px-2 py-1 text-[12px]">15 Banks</span>
@@ -675,14 +673,7 @@ export default function ProductDetailClient({ slug }) {
             <div className="mt-3 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
               <button onClick={async () => {
                 setWishlisted(!wishlisted);
-                await addProductToWishlist({
-                  ...product,
-                  title: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
-                  name: "TOKICO Front Left Shock Absorber B3337 (Toyota Prius α HV-ZVW40W)",
-                  price: "Tk 4,680.00",
-                  image: "/product-gallery-reference.png",
-                  slug: "hitachi-shock-absorver-b3337",
-                });
+                await addProductToWishlist(cartProduct);
               }} className="h-10 rounded-[10px] border border-[#d1d5db] bg-white text-[13px] font-black text-[#4b5563] transition hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)] hover:bg-[#fff8e6]">
                 ♡ {wishlisted ? "Wishlisted" : "Wishlist"}
               </button>
@@ -704,10 +695,10 @@ export default function ProductDetailClient({ slug }) {
 
       <ProductInfoTabs activeTab={activeInfoTab} setActiveTab={setActiveInfoTab} />
       {activeInfoTab === "Description" && (
-        <DescriptionPanel />
+        <DescriptionPanel product={product} />
       )}
-      {activeInfoTab === "Specs" && <SpecsPanel />}
-      {activeInfoTab === "Compatibility" && <CompatibilityPanel />}
+      {activeInfoTab === "Specs" && <SpecsPanel product={product} />}
+      {activeInfoTab === "Compatibility" && <CompatibilityPanel product={product} />}
       {activeInfoTab === "Reviews" && <ProductReviews />}
 
       <section className="overflow-hidden border-t border-[#fff2d7] bg-[radial-gradient(circle_at_50%_0%,#fff6e5_0%,#fffaf2_30%,#ffffff_72%)] px-6 py-20 max-sm:px-4 max-sm:py-14">
@@ -795,10 +786,12 @@ export default function ProductDetailClient({ slug }) {
       }`}>
         <div className="mx-auto flex max-w-[1040px] items-center justify-between gap-4 px-5 py-4 max-md:flex-col max-md:items-stretch max-sm:px-4 max-sm:py-3">
           <div className="flex min-w-0 items-center gap-4 max-sm:gap-3">
-            <div className="size-14 shrink-0 bg-[url('/product-detail-reference.jpg')] bg-[length:1920px_5260px] bg-[-730px_-170px] max-sm:size-11" />
+            <div className="relative size-14 shrink-0 overflow-hidden bg-[#f5f5f5] max-sm:size-11">
+              <Image src={cartProduct.image} alt={product.title || "Product"} fill sizes="56px" className="object-cover" />
+            </div>
             <div className="min-w-0">
               <b className="block truncate text-[14px]">{product.title}</b>
-              <p className="product-price-display text-[15px] leading-none text-[#ef3338]">{formatPriceDisplay(product.price)}</p>
+              <p className="product-price-display text-[15px] leading-none text-[#ef3338]">{unitPrice}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 max-md:justify-between max-sm:gap-2">
@@ -807,7 +800,7 @@ export default function ProductDetailClient({ slug }) {
               {quantity}
               <button onClick={() => setQuantity(quantity + 1)}>＋</button>
             </div>
-            <button onClick={handleMainAdd} className="h-12 bg-black px-12 font-black text-white hover:bg-[#d3191d] max-sm:h-11 max-sm:flex-1 max-sm:px-4 max-sm:text-[13px]">Add to cart</button>
+            <button onClick={handleMainAdd} disabled={stock.isOut} className="h-12 bg-black px-12 font-black text-white hover:bg-[#d3191d] disabled:cursor-not-allowed disabled:opacity-60 max-sm:h-11 max-sm:flex-1 max-sm:px-4 max-sm:text-[13px]">Add to cart</button>
           </div>
         </div>
       </div>
