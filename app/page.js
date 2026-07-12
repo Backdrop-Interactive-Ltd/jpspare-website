@@ -127,6 +127,120 @@ function getUsableHeroSlides(heroSlider) {
   return fallbackHeroSlides.map(normalizeHeroSlide).filter(Boolean);
 }
 
+const fallbackBrandColors = premiumBrands.map((brand) => brand.color).filter(Boolean);
+
+function getFallbackPremiumBrands() {
+  return premiumBrands.map((brand, index) => ({
+    id: `fallback-brand-${slugify(brand.name)}`,
+    name: brand.name,
+    slug: slugify(brand.name),
+    short: brand.short,
+    color: brand.color,
+    href: `#${slugify(brand.name)}`,
+    fallback: true,
+    sortOrder: index,
+  }));
+}
+
+function getBrandShortName(name) {
+  const cleanName = cleanSeoText(name);
+  if (!cleanName) return "";
+
+  if (cleanName.length <= 8) return cleanName.toUpperCase();
+
+  const initials = cleanName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 6)
+    .toUpperCase();
+
+  return initials || cleanName.slice(0, 6).toUpperCase();
+}
+
+function normalizeHomepageBrand(brand, index = 0) {
+  const name = cleanSeoText(brand?.name);
+  const slug = cleanSeoText(brand?.slug);
+  if (!name || !slug) return null;
+
+  return {
+    id: brand.id || slug,
+    name,
+    slug,
+    short: getBrandShortName(name),
+    color: fallbackBrandColors[index % fallbackBrandColors.length] || "bg-white text-[#1f2937] border border-[#dfe4ea]",
+    imageUrl: brand?.logoUrl || brand?.coverImageUrl || null,
+    href: `/products?brand=${slug}`,
+    productCount: brand?._count?.products || 0,
+    sortOrder: index,
+  };
+}
+
+async function queryActiveHomepageBrands({ brandIds = [], featuredOnly = false, limit = 12 } = {}) {
+  const where = {
+    isActive: true,
+    products: {
+      some: {
+        status: "ACTIVE",
+      },
+    },
+  };
+
+  if (brandIds.length) where.id = { in: brandIds };
+  if (featuredOnly) where.isFeatured = true;
+
+  const brands = await prisma.brand.findMany({
+    where,
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              status: "ACTIVE",
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+    take: brandIds.length ? undefined : limit,
+  });
+
+  if (!brandIds.length) return brands;
+
+  const orderMap = new Map(brandIds.map((id, index) => [id, index]));
+  return brands.sort((a, b) => {
+    const aIndex = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const bIndex = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+    if (aIndex !== bIndex) return aIndex - bIndex;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+async function getHomepageBrandShowcase(brandShowcase) {
+  if (brandShowcase?.enabled === false) return [];
+
+  const brandIds = Array.isArray(brandShowcase?.brandIds)
+    ? brandShowcase.brandIds.map((id) => cleanSeoText(id)).filter(Boolean)
+    : [];
+
+  try {
+    let brands = brandIds.length
+      ? await queryActiveHomepageBrands({ brandIds, limit: Math.max(brandIds.length, 12) })
+      : await queryActiveHomepageBrands({ featuredOnly: true, limit: 12 });
+
+    if (!brands.length && !brandIds.length) {
+      brands = await queryActiveHomepageBrands({ limit: 12 });
+    }
+
+    const normalized = brands.map(normalizeHomepageBrand).filter(Boolean);
+    return normalized.length ? normalized : getFallbackPremiumBrands();
+  } catch {
+    return getFallbackPremiumBrands();
+  }
+}
+
 function HeroImage({ slide, className = "" }) {
   const image = (
     <picture>
@@ -397,7 +511,11 @@ function PremiumAuthenticVideoSection() {
   );
 }
 
-function PremiumBrandsSection() {
+function PremiumBrandsSection({ brands = getFallbackPremiumBrands() }) {
+  if (!brands.length) return null;
+
+  const marqueeBrands = [...brands, ...brands, ...brands, ...brands];
+
   return (
     <section id="brands" className="bg-transparent py-6 max-sm:py-4">
       <div className="mx-auto mb-3 flex min-h-[52px] w-[calc(100%-40px)] items-center justify-between gap-4 rounded-[6px] bg-white px-2 text-left sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)]">
@@ -409,14 +527,20 @@ function PremiumBrandsSection() {
         <div className="manual-slide-shell brand-marquee pb-5 pt-3 text-left" data-loop-copies="4">
           <SlideManualControls step={4} />
           <div className="brand-marquee-track flex w-max gap-8 max-sm:gap-4">
-          {[...premiumBrands, ...premiumBrands, ...premiumBrands, ...premiumBrands].map((brand, index) => (
+          {marqueeBrands.map((brand, index) => (
             <a
-              key={`${brand.name}-${index}`}
-              href={`#${slugify(brand.name)}`}
+              key={`${brand.id || brand.name}-${index}`}
+              href={brand.href || `#${slugify(brand.name)}`}
               className="group/brand relative flex h-[94px] w-[128px] shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#dfe4ea] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-1 hover:border-[#f7d95f] hover:shadow-[0_16px_34px_rgba(220,38,38,0.12)]"
             >
               <span className="absolute right-1 top-1 size-3 rounded-full border-2 border-white bg-[#20c86b]" />
-              <span className={`grid h-8 min-w-[60px] place-items-center rounded-[4px] px-2 text-[13px] font-black ${brand.color}`}>{brand.short}</span>
+              <span className={`grid h-8 min-w-[60px] place-items-center overflow-hidden rounded-[4px] px-2 text-[13px] font-black ${brand.imageUrl ? "bg-white text-[#1f2937] border border-[#dfe4ea]" : brand.color}`}>
+                {brand.imageUrl ? (
+                  <img src={brand.imageUrl} alt="" className="max-h-7 max-w-[72px] object-contain" />
+                ) : (
+                  brand.short
+                )}
+              </span>
               <span className="mt-3 text-[12px] font-black text-[#1f2937] transition group-hover/brand:text-[#d3191d]">{brand.name}</span>
             </a>
           ))}
@@ -652,6 +776,7 @@ export default async function Home() {
   const campaignPicks = await getHomepageCampaignPicks();
   const homepageCategories = await getHomepageCategoryViewModel();
   const homepageCms = await getHomepageCms();
+  const homepageBrands = await getHomepageBrandShowcase(homepageCms?.brandShowcase);
 
   return (
     <main className="min-h-screen bg-[#f2f3f5] text-[#111827]">
@@ -671,7 +796,7 @@ export default async function Home() {
       <ProductTabs />
       <PremiumAuthenticVideoSection />
       <BestSellingAutoParts />
-      <PremiumBrandsSection />
+      <PremiumBrandsSection brands={homepageBrands} />
       <CampaignPicksSection campaigns={campaignPicks} />
       <FeaturedArticlesSection articles={featuredArticles} />
       <CustomerReviews />
