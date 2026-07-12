@@ -241,6 +241,59 @@ async function getHomepageBrandShowcase(brandShowcase) {
   }
 }
 
+const fallbackTrustStripItems = [
+  {
+    icon: "tag",
+    title: "Competitive Price",
+    text: "Get The Best Prices Everyday",
+  },
+  {
+    icon: "award",
+    title: "Authentic Products",
+    text: "Secured with Brand Warranty",
+  },
+  {
+    icon: "card",
+    title: "Easy & Secured Payment",
+    text: "Pre-payment, Cash on Delivery",
+  },
+  {
+    icon: "truck",
+    title: "Fast Delivery",
+    text: "Rapid delivery At Your Doorstep",
+  },
+  {
+    icon: "rotate",
+    title: "7-Day Easy Returns",
+    text: "Hassle-free returns and replacements with full warranty",
+  },
+  {
+    icon: "headphones",
+    title: "Expert Support Team",
+    text: "Professional automotive specialists available 7 days a week",
+  },
+];
+
+function getUsableTrustStripItems(trustStrip) {
+  if (trustStrip?.enabled === false) return [];
+
+  const cmsItems = Array.isArray(trustStrip?.items)
+    ? trustStrip.items
+        .filter((item) => item?.enabled !== false)
+        .map((item, index) => ({
+          id: cleanSeoText(item?.id, `trust-item-${index}`),
+          icon: cleanSeoText(item?.icon, "tag"),
+          title: cleanSeoText(item?.title),
+          text: cleanSeoText(item?.description || item?.text),
+          sortOrder: Number.isFinite(Number(item?.sortOrder)) ? Number(item.sortOrder) : (index + 1) * 10,
+        }))
+        .filter((item) => item.title && item.text)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
+  return cmsItems.length ? cmsItems : fallbackTrustStripItems;
+}
+
 function HeroImage({ slide, className = "" }) {
   const image = (
     <picture>
@@ -338,46 +391,16 @@ function Hero({ heroSlider }) {
   );
 }
 
-function HeroFeatureStrip() {
-  const features = [
-    {
-      icon: "tag",
-      title: "Competitive Price",
-      text: "Get The Best Prices Everyday",
-    },
-    {
-      icon: "award",
-      title: "Authentic Products",
-      text: "Secured with Brand Warranty",
-    },
-    {
-      icon: "card",
-      title: "Easy & Secured Payment",
-      text: "Pre-payment, Cash on Delivery",
-    },
-    {
-      icon: "truck",
-      title: "Fast Delivery",
-      text: "Rapid delivery At Your Doorstep",
-    },
-    {
-      icon: "rotate",
-      title: "7-Day Easy Returns",
-      text: "Hassle-free returns and replacements with full warranty",
-    },
-    {
-      icon: "headphones",
-      title: "Expert Support Team",
-      text: "Professional automotive specialists available 7 days a week",
-    },
-  ];
+function HeroFeatureStrip({ trustStrip }) {
+  const features = getUsableTrustStripItems(trustStrip);
+  if (!features.length) return null;
 
   return (
     <section className="bg-[#f2f3f5] py-3">
       <div className="mx-auto grid w-[calc(100%-40px)] max-w-none grid-cols-6 gap-3 sm:w-[calc(100%-64px)] lg:w-[calc(100%-80px)] max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
         {features.map((feature, index) => (
           <div
-            key={feature.title}
+            key={feature.id || feature.title || index}
             className="group/feature relative flex min-h-[66px] items-center gap-3 overflow-hidden rounded-[10px] border border-white/85 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfd_100%)] px-4 py-2.5 text-left shadow-[0_10px_24px_rgba(15,23,42,0.055)] transition duration-200 hover:-translate-y-0.5 hover:border-[#ffd2d3] hover:shadow-[0_16px_30px_rgba(239,51,56,0.10)]"
           >
             <span className="absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,transparent,#ff3b40,transparent)] opacity-0 transition group-hover/feature:opacity-100" />
@@ -784,7 +807,7 @@ export default async function Home() {
       <TopDealBar />
       <Header />
       <Hero heroSlider={homepageCms?.heroSlider} />
-      <HeroFeatureStrip />
+      <HeroFeatureStrip trustStrip={homepageCms?.trustStrip} />
       <CategoryShowcase groups={homepageCategories.categoryShowcase} />
       <LatestJapaneseAutoParts />
       <HeroCategorySlider categories={homepageCategories.heroSliderCategories} />
