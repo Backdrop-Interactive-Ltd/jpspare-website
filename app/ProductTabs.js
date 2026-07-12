@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getHomepageClientData } from "@/lib/homepage/client-cache";
 import { getHomepageFeaturedProductsClientData } from "@/lib/homepage/featured-products-client-cache";
 import { getActiveCampaignBadges } from "@/lib/campaigns/get-active-badges";
 import CartDrawer from "./CartDrawer";
@@ -87,6 +88,30 @@ const quoteLabels = {
   TYRES: "TYRE",
   LUBRICANT: "LUBRICANT",
 };
+
+const fallbackPromoBanners = [
+  {
+    id: "combo-offers",
+    eyebrow: "Exclusive",
+    title: "Combo Offers!",
+    subtitle: "Save More, For Your Car",
+    ctaLink: "/combo-package",
+    active: true,
+    sortOrder: 10,
+    comboLabels: ["Engine Oil\nFilter\nCombo", "Flamingo\nCar Care\nCombo"],
+  },
+  {
+    id: "car-care-essentials",
+    eyebrow: "Clean & Shine",
+    title: "Car Care",
+    subtitle: "Essentials",
+    ctaLink: "/collections/car-accessories",
+    active: true,
+    sortOrder: 20,
+    brandLabels: ["SOFT99", "3M", "Flamingo", "Bullson"],
+    productImages: ["/accessory-car-shampoo.jpeg", "/accessory-hard-wax.jpeg", "/accessory-ac-pro.jpeg", "/accessory-windshield-washer.jpeg"],
+  },
+];
 
 const PRODUCT_GRID_COLUMNS = 6;
 const PRODUCT_ROWS_PER_CLICK = 7;
@@ -228,6 +253,79 @@ function useHomepageProductSet(sectionKey, fallbackProducts) {
   }, [sectionKey]);
 
   return products.length ? products : fallbackProducts;
+}
+
+function safePromoHref(value) {
+  const href = String(value || "").trim();
+  if (!href || href.startsWith("#")) return href || "#";
+  if (href.startsWith("/")) return href;
+
+  try {
+    const url = new URL(href);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "#";
+  } catch {
+    return "#";
+  }
+}
+
+function normalizePromoBanner(banner, index) {
+  const title = String(banner?.title || "").trim();
+  const subtitle = String(banner?.subtitle || "").trim();
+  const image = String(banner?.image || "").trim();
+
+  if (!title && !subtitle && !image) return null;
+
+  return {
+    id: String(banner?.id || `promo-${index}`).trim(),
+    eyebrow: String(banner?.eyebrow || banner?.ctaText || "").trim(),
+    title,
+    subtitle,
+    image,
+    mobileImage: String(banner?.mobileImage || image).trim(),
+    href: safePromoHref(banner?.ctaLink || banner?.href),
+    active: banner?.active !== false,
+    sortOrder: Number.isFinite(Number(banner?.sortOrder)) ? Number(banner.sortOrder) : (index + 1) * 10,
+    comboLabels: Array.isArray(banner?.comboLabels) ? banner.comboLabels : [],
+    brandLabels: Array.isArray(banner?.brandLabels) ? banner.brandLabels : [],
+    productImages: Array.isArray(banner?.productImages) ? banner.productImages : [],
+  };
+}
+
+function getFallbackPromoBanners() {
+  return fallbackPromoBanners.map(normalizePromoBanner).filter(Boolean);
+}
+
+function useHomepagePromoBanners() {
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    getHomepageClientData()
+      .then((payload) => {
+        if (!mounted) return;
+        const promoConfig = payload?.cms?.promoBanners;
+        const cmsBanners =
+          promoConfig?.enabled === false
+            ? []
+            : Array.isArray(promoConfig?.banners)
+              ? promoConfig.banners
+                  .filter((banner) => banner?.active !== false)
+                  .map(normalizePromoBanner)
+                  .filter(Boolean)
+                  .sort((a, b) => a.sortOrder - b.sortOrder)
+              : [];
+
+        if (cmsBanners.length) setBanners(cmsBanners);
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return banners.length ? banners : getFallbackPromoBanners();
 }
 
 const bestSellingCategoryGroups = tabs.map((tab) => ({
@@ -445,50 +543,114 @@ export function ProductCardInfo({ product, productUrl, onAdd, onWishlist, isAdde
   );
 }
 
-export function FeaturedOfferBanners() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <a href="/combo-package" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#fff3da_0%,#ffe4b7_50%,#fff4df_100%)] px-8 py-7 shadow-[0_12px_30px_rgba(245,158,11,0.10)] ring-1 ring-[#f7d95f]/45 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(245,158,11,0.18)] max-sm:min-h-[220px] max-sm:px-5">
-        <div className="relative z-10 max-w-[58%] max-sm:max-w-[72%]">
-          <p className="text-[15px] font-black uppercase tracking-[0.12em] text-[#242424]">Exclusive</p>
-          <h3 className="mt-1 text-[42px] font-black uppercase leading-[0.9] tracking-[-0.04em] text-[#ef3338] max-xl:text-[34px] max-sm:text-[30px]">
-            Combo Offers!
-          </h3>
-          <p className="mt-3 text-[20px] font-black text-[#2b2529] max-sm:text-[16px]">Save More, For Your Car</p>
-        </div>
-        <div className="absolute right-6 top-5 z-10 flex gap-5 max-sm:right-3 max-sm:top-10 max-sm:gap-2">
-          <span className="grid h-[118px] w-[118px] place-items-center rounded-full bg-white/70 text-center text-[12px] font-black text-[#ef3338] shadow-[0_12px_26px_rgba(17,24,39,0.12)] ring-1 ring-white/80 max-sm:h-[92px] max-sm:w-[92px]">
-            Engine Oil<br />Filter<br />Combo
-          </span>
-          <span className="grid h-[118px] w-[118px] place-items-center rounded-full bg-white/70 text-center text-[12px] font-black text-[#ef3338] shadow-[0_12px_26px_rgba(17,24,39,0.12)] ring-1 ring-white/80 max-sm:h-[92px] max-sm:w-[92px]">
-            Flamingo<br />Car Care<br />Combo
-          </span>
-        </div>
-        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_60%_42%,rgba(255,255,255,0.95),transparent_22%),radial-gradient(circle_at_85%_72%,rgba(239,51,56,0.13),transparent_30%)]" />
-      </a>
+function PromoLink({ href, className, children }) {
+  const safeHref = safePromoHref(href);
+  const isExternal = /^https?:\/\//i.test(safeHref);
 
-      <Link href="/collections/car-accessories" className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
-        <div className="relative z-10 ml-auto max-w-[47%] text-right max-sm:max-w-[58%]">
-          <p className="text-[22px] font-black uppercase leading-none tracking-[-0.03em] text-[#2b2529] max-sm:text-[18px]">Clean & Shine</p>
-          <h3 className="mt-1 text-[44px] font-black uppercase leading-[0.88] tracking-[0.02em] text-white max-xl:text-[36px] max-sm:text-[30px]">
-            Car Care
+  if (isExternal) {
+    return (
+      <a href={safeHref} target="_blank" rel="noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={safeHref} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+function PromoBannerImage({ banner, className }) {
+  if (!banner.image) return null;
+
+  return (
+    <picture>
+      {banner.mobileImage && banner.mobileImage !== banner.image ? (
+        <source media="(max-width: 767px)" srcSet={banner.mobileImage} />
+      ) : null}
+      <span
+        aria-hidden="true"
+        className={className}
+        style={{ backgroundImage: `url(${banner.image})` }}
+      />
+    </picture>
+  );
+}
+
+function ComboPromoCard({ banner }) {
+  const comboLabels = banner.comboLabels.length ? banner.comboLabels : [banner.ctaText || "Special\nOffer"];
+
+  return (
+    <PromoLink href={banner.href} className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#fff3da_0%,#ffe4b7_50%,#fff4df_100%)] px-8 py-7 shadow-[0_12px_30px_rgba(245,158,11,0.10)] ring-1 ring-[#f7d95f]/45 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(245,158,11,0.18)] max-sm:min-h-[220px] max-sm:px-5">
+      <PromoBannerImage banner={banner} className="absolute inset-y-0 right-0 z-0 w-[44%] bg-contain bg-center bg-no-repeat opacity-90" />
+      <div className="relative z-10 max-w-[58%] max-sm:max-w-[72%]">
+        {banner.eyebrow ? <p className="text-[15px] font-black uppercase tracking-[0.12em] text-[#242424]">{banner.eyebrow}</p> : null}
+        {banner.title ? (
+          <h3 className="mt-1 text-[42px] font-black uppercase leading-[0.9] tracking-[-0.04em] text-[#ef3338] max-xl:text-[34px] max-sm:text-[30px]">
+            {banner.title}
           </h3>
-          <p className="mt-1 text-[35px] font-black uppercase leading-none tracking-[0.16em] text-[#2b2529] max-xl:text-[27px] max-sm:text-[22px]">Essentials</p>
-        </div>
+        ) : null}
+        {banner.subtitle ? <p className="mt-3 text-[20px] font-black text-[#2b2529] max-sm:text-[16px]">{banner.subtitle}</p> : null}
+      </div>
+      <div className="absolute right-6 top-5 z-10 flex gap-5 max-sm:right-3 max-sm:top-10 max-sm:gap-2">
+        {comboLabels.slice(0, 2).map((label) => (
+          <span key={label} className="grid h-[118px] w-[118px] place-items-center whitespace-pre-line rounded-full bg-white/70 text-center text-[12px] font-black text-[#ef3338] shadow-[0_12px_26px_rgba(17,24,39,0.12)] ring-1 ring-white/80 max-sm:h-[92px] max-sm:w-[92px]">
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_60%_42%,rgba(255,255,255,0.95),transparent_22%),radial-gradient(circle_at_85%_72%,rgba(239,51,56,0.13),transparent_30%)]" />
+    </PromoLink>
+  );
+}
+
+function CarePromoCard({ banner }) {
+  const brandLabels = banner.brandLabels.length ? banner.brandLabels : [banner.eyebrow].filter(Boolean);
+  const productImages = banner.productImages.length ? banner.productImages : [banner.image].filter(Boolean);
+
+  return (
+    <PromoLink href={banner.href} className="group/offer relative min-h-[180px] overflow-hidden rounded-[8px] bg-[linear-gradient(105deg,#ff812d_0%,#ff5b22_58%,#f04a1c_100%)] px-8 py-7 text-white shadow-[0_12px_30px_rgba(239,83,28,0.16)] ring-1 ring-[#ff9a50]/55 transition hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(239,83,28,0.24)] max-sm:min-h-[220px] max-sm:px-5">
+      <PromoBannerImage banner={banner} className="absolute inset-0 z-0 bg-cover bg-center opacity-25" />
+      <div className="relative z-10 ml-auto max-w-[47%] text-right max-sm:max-w-[58%]">
+        {banner.eyebrow ? <p className="text-[22px] font-black uppercase leading-none tracking-[-0.03em] text-[#2b2529] max-sm:text-[18px]">{banner.eyebrow}</p> : null}
+        {banner.title ? (
+          <h3 className="mt-1 text-[44px] font-black uppercase leading-[0.88] tracking-[0.02em] text-white max-xl:text-[36px] max-sm:text-[30px]">
+            {banner.title}
+          </h3>
+        ) : null}
+        {banner.subtitle ? <p className="mt-1 text-[35px] font-black uppercase leading-none tracking-[0.16em] text-[#2b2529] max-xl:text-[27px] max-sm:text-[22px]">{banner.subtitle}</p> : null}
+      </div>
+      {brandLabels.length ? (
         <div className="absolute left-8 top-7 z-10 flex items-end gap-2 max-sm:left-4 max-sm:top-12">
-          {["SOFT99", "3M", "Flamingo", "Bullson"].map((brand) => (
+          {brandLabels.slice(0, 4).map((brand) => (
             <span key={brand} className="grid h-12 min-w-[74px] place-items-center rounded-[5px] bg-white px-2 text-[12px] font-black text-[#ef3338] shadow-[0_8px_18px_rgba(17,24,39,0.12)] max-xl:min-w-[58px] max-xl:text-[10px] max-sm:h-10">
               {brand}
             </span>
           ))}
         </div>
+      ) : null}
+      {productImages.length ? (
         <div className="absolute bottom-4 left-8 flex gap-2 max-sm:left-4">
-          {["/accessory-car-shampoo.jpeg", "/accessory-hard-wax.jpeg", "/accessory-ac-pro.jpeg", "/accessory-windshield-washer.jpeg"].map((image) => (
+          {productImages.slice(0, 4).map((image) => (
             <span key={image} className="block size-14 rounded-[6px] bg-white bg-cover bg-center shadow-[0_8px_18px_rgba(17,24,39,0.18)] ring-1 ring-white/70 max-sm:size-12" style={{ backgroundImage: `url(${image})` }} />
           ))}
         </div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_78%,rgba(255,255,255,0.2),transparent_26%),radial-gradient(circle_at_76%_18%,rgba(255,255,255,0.18),transparent_24%)]" />
-      </Link>
+      ) : null}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_78%,rgba(255,255,255,0.2),transparent_26%),radial-gradient(circle_at_76%_18%,rgba(255,255,255,0.18),transparent_24%)]" />
+    </PromoLink>
+  );
+}
+
+export function FeaturedOfferBanners() {
+  const banners = useHomepagePromoBanners();
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {banners.slice(0, 2).map((banner, index) => (
+        index % 2 === 0 ? <ComboPromoCard key={banner.id || index} banner={banner} /> : <CarePromoCard key={banner.id || index} banner={banner} />
+      ))}
     </div>
   );
 }
