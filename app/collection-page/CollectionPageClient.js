@@ -87,7 +87,7 @@ function expandProducts(products, total = PAGE_SIZE * TOTAL_PAGES) {
 }
 
 function ProductCard({ product, isAdded, onAdd, onWishlist, cardIndex }) {
-  const productUrl = `/products/${slugify(product.name)}`;
+  const productUrl = product.href || `/products/${slugify(product.name)}`;
 
   return (
     <article className="group/product rounded-[8px] border border-transparent bg-transparent p-2.5 transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
@@ -107,8 +107,8 @@ function ProductCard({ product, isAdded, onAdd, onWishlist, cardIndex }) {
   );
 }
 
-export default function CollectionPageClient({ pageKey }) {
-  const data = pageData[pageKey] || pageData["sale-offer"];
+export default function CollectionPageClient({ pageKey, collectionData }) {
+  const data = collectionData || pageData[pageKey] || pageData["sale-offer"];
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [addedItems, setAddedItems] = useState([]);
