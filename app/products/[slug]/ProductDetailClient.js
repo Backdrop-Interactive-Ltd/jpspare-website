@@ -23,14 +23,14 @@ const productCopy = {
   "liqui-moly-octane-booster-200ml": fallbackProduct,
 };
 
-const relatedProducts = [
+const fallbackRelatedProducts = [
   { category: "ADDITIVES FLUID", name: "Chevron Techron Fuel System Cleaner (USA) - 355mL", price: "Tk 1,650.00", reviews: 2, crop: "bg-[-968px_-28px]" },
   { category: "ADDITIVES FLUID", name: "Liqui Moly Engine Flush Plus - 300mL", price: "Tk 850.00", reviews: 5, crop: "bg-[-1318px_-37px]" },
   { category: "LUBRICANT", name: "Liqui Moly Hybrid Additive - 250 mL", price: "Tk 899.00", reviews: 3, crop: "bg-[-268px_-22px]" },
   { category: "FUEL SYSTEM", name: "Dipetane Fuel System Cleaner & Treatment - 277mL", price: "Tk 1,199.00", reviews: 4, crop: "bg-[-618px_-28px]" },
 ];
 
-const buyingNowProducts = [
+const fallbackBuyingNowProducts = [
   { category: "CAR CARE DETAILING", name: "Auto Windshield Washer Glass Cleaner Tablet", price: "Tk 299.00", reviews: 3, crop: "bg-[-268px_-22px]" },
   { category: "FUEL SYSTEM", name: "Dipetane Fuel System Cleaner & Treatment", price: "Tk 1,199.00", reviews: 7, crop: "bg-[-618px_-28px]" },
   { category: "CAR ACCESSORIES", name: "Premium Microfiber Cleaning Towel", price: "Tk 450.00", reviews: 5, crop: "bg-[-618px_-506px]" },
@@ -153,6 +153,51 @@ function buildCartProduct(product) {
     brand: product?.brand,
     category: product?.category,
   };
+}
+
+function getProductKeyValue(product) {
+  return product?.id || product?.productId || product?.slug || product?.name || product?.title || "";
+}
+
+function mergeWithFallbackProducts(primaryProducts, fallbackProducts, limit, currentProduct) {
+  const currentKeys = new Set([currentProduct?.id, currentProduct?.productId, currentProduct?.slug].filter(Boolean));
+  const seen = new Set(currentKeys);
+  const merged = [];
+
+  for (const item of [...(Array.isArray(primaryProducts) ? primaryProducts : []), ...fallbackProducts]) {
+    const key = getProductKeyValue(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+    if (merged.length >= limit) break;
+  }
+
+  return merged;
+}
+
+function getProductUrl(product) {
+  return `/products/${product?.slug || slugify(product?.name || product?.title || "")}`;
+}
+
+function ProductMerchImage({ item, productUrl }) {
+  const image = item?.image || item?.thumbnail || item?.images?.[0]?.url;
+  const baseClass = "block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055]";
+
+  if (image) {
+    return (
+      <Link href={productUrl} className={`${baseClass} relative overflow-hidden`} aria-label={item.name || item.title}>
+        <Image src={image} alt={item.name || item.title || "Product"} fill sizes="245px" className="object-cover" />
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href={productUrl}
+      className={`${baseClass} bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop || "bg-center"}`}
+      aria-label={item.name || item.title}
+    />
+  );
 }
 
 function ZoomPlusIcon({ className = "size-4" }) {
@@ -587,9 +632,11 @@ function DescriptionPanel({ product }) {
   );
 }
 
-export default function ProductDetailClient({ slug, product: productProp }) {
+export default function ProductDetailClient({ slug, product: productProp, relatedProducts: cmsRelatedProducts = [], buyingNowProducts: cmsBuyingNowProducts = [] }) {
   const product = productProp || productCopy[slug] || fallbackProduct;
   const cartProduct = buildCartProduct(product);
+  const relatedProducts = mergeWithFallbackProducts(cmsRelatedProducts, fallbackRelatedProducts, 4, product);
+  const buyingNowProducts = mergeWithFallbackProducts(cmsBuyingNowProducts, fallbackBuyingNowProducts, 5, product);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [addedRelated, setAddedRelated] = useState([]);
@@ -717,26 +764,26 @@ export default function ProductDetailClient({ slug, product: productProp }) {
 
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
           <div className="related-product-track flex w-max gap-5">
-            {[...relatedProducts, ...relatedProducts].map((item, index) => (
+            {[...relatedProducts, ...relatedProducts].map((item, index) => {
+              const productUrl = getProductUrl(item);
+              const productName = item.name || item.title;
+              return (
             <article key={`${item.name}-${index}`} className="group/product w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 text-left transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
               <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
-                <Link
-                  href={`/products/${slugify(item.name)}`}
-                  className={`block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055]`}
-                  aria-label={item.name}
-                />
-                <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
+                <ProductMerchImage item={item} productUrl={productUrl} />
+                <ProductQuickActions productUrl={productUrl} productName={productName} />
               </div>
               <ProductCardInfo
                 product={item}
-                productUrl={`/products/${slugify(item.name)}`}
+                productUrl={productUrl}
                 onAdd={() => handleRelatedAdd(item)}
-                isAdded={addedRelated.includes(item.name)}
+                isAdded={addedRelated.includes(productName)}
                 cardIndex={index}
                 compact
               />
             </article>
-          ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -757,26 +804,26 @@ export default function ProductDetailClient({ slug, product: productProp }) {
 
         <div className="related-product-marquee mx-auto mt-14 max-w-[1600px] overflow-hidden">
           <div className="related-product-track related-product-track-reverse flex w-max gap-5">
-            {[...buyingNowProducts, ...buyingNowProducts].map((item, index) => (
+            {[...buyingNowProducts, ...buyingNowProducts].map((item, index) => {
+              const productUrl = getProductUrl(item);
+              const productName = item.name || item.title;
+              return (
               <article key={`${item.name}-${index}`} className="group/product w-[245px] shrink-0 rounded-[8px] border border-transparent bg-transparent p-2.5 text-left transition duration-200 hover:border-[#f7d95f] hover:shadow-[0_18px_38px_rgba(220,38,38,0.16)]">
                 <div className="relative -mx-2.5 -mt-2.5 overflow-hidden rounded-t-[8px]">
-                  <Link
-                    href={`/products/${slugify(item.name)}`}
-                    className={`block aspect-[10/11] rounded-t-[8px] rounded-b-none border border-[#eef0f3] bg-white bg-[url('/products-reference.png')] bg-[length:1920px_900px] bg-no-repeat ${item.crop} transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/product:scale-[1.055]`}
-                    aria-label={item.name}
-                  />
-                  <ProductQuickActions productUrl={`/products/${slugify(item.name)}`} productName={item.name} />
+                  <ProductMerchImage item={item} productUrl={productUrl} />
+                  <ProductQuickActions productUrl={productUrl} productName={productName} />
                 </div>
                 <ProductCardInfo
                   product={item}
-                  productUrl={`/products/${slugify(item.name)}`}
+                  productUrl={productUrl}
                   onAdd={() => handleBuyingNowAdd(item)}
-                  isAdded={addedBuyingNow.includes(item.name)}
+                  isAdded={addedBuyingNow.includes(productName)}
                   cardIndex={index}
                   compact
                 />
               </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

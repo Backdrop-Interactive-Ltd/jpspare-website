@@ -63,51 +63,157 @@ function serializeProduct(product) {
   };
 }
 
+function serializeMerchProduct(product) {
+  const serialized = serializeProduct(product);
+  if (!serialized) return null;
+
+  return {
+    id: serialized.id,
+    productId: serialized.id,
+    slug: serialized.slug,
+    title: serialized.title,
+    name: serialized.title,
+    sku: serialized.sku,
+    shortDescription: serialized.shortDescription,
+    price: serialized.discountPrice ?? serialized.price,
+    oldPrice: serialized.compareAtPrice ?? (serialized.discountPrice ? serialized.price : null),
+    discountPrice: serialized.discountPrice,
+    compareAtPrice: serialized.compareAtPrice,
+    stockStatus: serialized.stockStatus,
+    stockQuantity: serialized.stockQuantity,
+    image: serialized.image,
+    thumbnail: serialized.thumbnail,
+    images: serialized.images,
+    brand: serialized.brand,
+    category: serialized.category?.name || "Products",
+    categorySlug: serialized.category?.slug || null,
+  };
+}
+
+const productSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  sku: true,
+  shortDescription: true,
+  description: true,
+  fullDescription: true,
+  seoTitle: true,
+  seoDescription: true,
+  price: true,
+  discountPrice: true,
+  compareAtPrice: true,
+  stockStatus: true,
+  stockQuantity: true,
+  status: true,
+  isFeatured: true,
+  createdAt: true,
+  categoryId: true,
+  brandId: true,
+  category: { select: { id: true, name: true, slug: true } },
+  brand: { select: { id: true, name: true, slug: true, logoUrl: true } },
+  images: {
+    select: { id: true, url: true, alt: true, sortOrder: true, isThumbnail: true },
+    orderBy: [{ isThumbnail: "desc" }, { sortOrder: "asc" }],
+  },
+  media: {
+    select: {
+      mediaId: true,
+      sortOrder: true,
+      alt: true,
+      media: {
+        select: { url: true, alt: true, type: true },
+      },
+    },
+    orderBy: { sortOrder: "asc" },
+  },
+  specifications: {
+    select: { id: true, name: true, value: true, sortOrder: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  },
+  tags: { select: { name: true } },
+};
+
 async function getProductData(slug) {
   const product = await prisma.product.findFirst({
     where: { slug, status: "ACTIVE" },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      sku: true,
-      shortDescription: true,
-      description: true,
-      fullDescription: true,
-      seoTitle: true,
-      seoDescription: true,
-      price: true,
-      discountPrice: true,
-      compareAtPrice: true,
-      stockStatus: true,
-      stockQuantity: true,
-      status: true,
-      category: { select: { id: true, name: true, slug: true } },
-      brand: { select: { id: true, name: true, slug: true, logoUrl: true } },
-      images: {
-        select: { id: true, url: true, alt: true, sortOrder: true, isThumbnail: true },
-        orderBy: [{ isThumbnail: "desc" }, { sortOrder: "asc" }],
-      },
-      media: {
-        select: {
-          mediaId: true,
-          sortOrder: true,
-          alt: true,
-          media: {
-            select: { url: true, alt: true, type: true },
-          },
-        },
-        orderBy: { sortOrder: "asc" },
-      },
-      specifications: {
-        select: { id: true, name: true, value: true, sortOrder: true },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      },
-      tags: { select: { name: true } },
-    },
+    select: productSelect,
   });
 
   return serializeProduct(product);
+}
+
+function mergeUniqueProducts(groups, currentProductId, limit) {
+  const seen = new Set([currentProductId].filter(Boolean));
+  const merged = [];
+
+  for (const group of groups) {
+    for (const product of group || []) {
+      if (!product?.id || seen.has(product.id)) continue;
+      seen.add(product.id);
+      merged.push(product);
+      if (merged.length >= limit) return merged;
+    }
+  }
+
+  return merged;
+}
+
+async function getRelatedProducts(product, limit = 4) {
+  const categoryId = product?.category?.id;
+  const brandId = product?.brand?.id;
+  const productId = product?.id;
+
+  const [categoryProducts, brandProducts] = await Promise.all([
+    categoryId
+      ? prisma.product.findMany({
+          where: { status: "ACTIVE", categoryId, id: { not: productId } },
+          select: productSelect,
+          orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+          take: limit,
+        })
+      : [],
+    brandId
+      ? prisma.product.findMany({
+          where: { status: "ACTIVE", brandId, id: { not: productId } },
+          select: productSelect,
+          orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+          take: limit,
+        })
+      : [],
+  ]);
+
+  return mergeUniqueProducts([categoryProducts, brandProducts], productId, limit).map(serializeMerchProduct).filter(Boolean);
+}
+
+async function getBuyingNowProducts(product, excludeIds = [], limit = 5) {
+  const productId = product?.id;
+  const categoryId = product?.category?.id;
+  const brandId = product?.brand?.id;
+  const excludedIds = [productId, ...excludeIds].filter(Boolean);
+  const contextualOr = [
+    categoryId ? { categoryId } : null,
+    brandId ? { brandId } : null,
+  ].filter(Boolean);
+
+  const [contextualProducts, featuredProducts] = await Promise.all([
+    contextualOr.length
+      ? prisma.product.findMany({
+          where: { status: "ACTIVE", id: { notIn: excludedIds }, OR: contextualOr },
+          select: productSelect,
+          orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+          take: limit,
+        })
+      : [],
+    prisma.product.findMany({
+      where: { status: "ACTIVE", id: { notIn: excludedIds } },
+      select: productSelect,
+      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      take: limit,
+    }),
+  ]);
+
+  return mergeUniqueProducts([contextualProducts, featuredProducts], productId, limit).map(serializeMerchProduct).filter(Boolean);
 }
 
 function titleFromSlug(slug) {
@@ -137,6 +243,8 @@ export default async function ProductPage({ params }) {
   if (!product) {
     notFound();
   }
+  const relatedProducts = await getRelatedProducts(product);
+  const buyingNowProducts = await getBuyingNowProducts(product, relatedProducts.map((item) => item.id));
 
   const productSchema = buildProductSchema(product, { url: `/products/${slug}` });
   const breadcrumbSchema = buildBreadcrumbSchema([
@@ -151,7 +259,7 @@ export default async function ProductPage({ params }) {
       <MainNavBar showTrackOrder={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(productSchema)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbSchema)} />
-      <ProductDetailClient slug={slug} product={product} />
+      <ProductDetailClient slug={slug} product={product} relatedProducts={relatedProducts} buyingNowProducts={buyingNowProducts} />
     </>
   );
 }
