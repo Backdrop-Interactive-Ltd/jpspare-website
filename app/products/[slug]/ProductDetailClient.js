@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addProductToCart, addProductToWishlist } from "../../commerce-client";
 import { formatPriceDisplay } from "../../price-format";
 import { ProductCardInfo } from "../../ProductTabs";
 import ProductQuickActions from "../../ProductQuickActions";
+import { addRecentlyViewedProduct } from "../../../lib/commerce/recently-viewed";
 
 const fallbackProduct = {
   id: "fallback-product",
@@ -177,6 +178,23 @@ function mergeWithFallbackProducts(primaryProducts, fallbackProducts, limit, cur
 
 function getProductUrl(product) {
   return `/products/${product?.slug || slugify(product?.name || product?.title || "")}`;
+}
+
+function getRecentlyViewedSnapshot(product) {
+  if (!product || product.status !== "ACTIVE" || (!product.id && !product.slug) || !(product.name || product.title)) {
+    return null;
+  }
+
+  return {
+    id: product.id,
+    slug: product.slug,
+    name: product.name || product.title,
+    image: product.image || product.thumbnail || product.images?.[0]?.url || null,
+    price: effectivePrice(product),
+    comparePrice: comparePrice(product),
+    brand: product.brand,
+    category: product.category,
+  };
 }
 
 function ProductMerchImage({ item, productUrl }) {
@@ -649,6 +667,7 @@ export default function ProductDetailClient({ slug, product: productProp, relate
   const oldPrice = comparePrice(product);
   const discount = discountPercent(product);
   const stock = stockCopy(product);
+  const recentlyViewedSnapshot = useMemo(() => getRecentlyViewedSnapshot(product), [product]);
   const handleRelatedAdd = async (item) => {
     const productName = item.name || item.title;
     setAddedRelated((items) => (items.includes(productName) ? items : [...items, productName]));
@@ -663,6 +682,10 @@ export default function ProductDetailClient({ slug, product: productProp, relate
     setAdded(true);
     await addProductToCart(cartProduct, quantity);
   };
+
+  useEffect(() => {
+    if (recentlyViewedSnapshot) addRecentlyViewedProduct(recentlyViewedSnapshot);
+  }, [recentlyViewedSnapshot]);
 
   useEffect(() => {
     const handleScroll = () => {
