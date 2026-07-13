@@ -48,6 +48,14 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum ProductAttributeType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+}
+
 enum BlogPostStatus {
   DRAFT
   PUBLISHED
@@ -484,6 +492,22 @@ model Brand {
   @@index([isFeatured])
   @@index([externalId])
   @@index([source, syncStatus])
+}
+
+model ProductAttribute {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  slug        String               @unique
+  description String?
+  type        ProductAttributeType @default(TEXT)
+  isActive    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([type])
 }
 
 model Product {
