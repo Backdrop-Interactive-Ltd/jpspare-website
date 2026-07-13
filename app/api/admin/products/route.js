@@ -4,10 +4,16 @@ import { normalizeProductPayload, PRODUCT_READ_ROLES, PRODUCT_WRITE_ROLES, produ
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const TOP_SELLING_ORDER_STATUSES = ["DELIVERED"];
+
 function stockStatusForFilter(filter) {
   if (filter === "low-stock") return "LOW_STOCK";
   if (filter === "out-of-stock") return "OUT_OF_STOCK";
   return null;
+}
+
+function isTopSellingSort(sort) {
+  return sort === "top-selling";
 }
 
 function buildWhere(searchParams) {
@@ -34,6 +40,45 @@ function buildWhere(searchParams) {
   };
 }
 
+async function getTopSellingProducts({ where, page, limit }) {
+  const salesWhere = {
+    productId: { not: null },
+    order: { status: { in: TOP_SELLING_ORDER_STATUSES } },
+    product: { is: where },
+  };
+
+  const [groups, allGroups] = await prisma.$transaction([
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: salesWhere,
+      _sum: { quantity: true },
+      orderBy: [{ _sum: { quantity: "desc" } }, { productId: "asc" }],
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: salesWhere,
+    }),
+  ]);
+
+  const productIds = groups.map((group) => group.productId).filter(Boolean);
+  const products = productIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: productInclude(),
+      })
+    : [];
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const soldById = new Map(groups.map((group) => [group.productId, Number(group._sum.quantity || 0)]));
+  const items = productIds
+    .map((productId) => productById.get(productId))
+    .filter(Boolean)
+    .map((product) => ({ ...serializeProduct(product), totalSold: soldById.get(product.id) || 0 }));
+
+  return { items, total: allGroups.length };
+}
+
 export async function GET(request) {
   const auth = await requireAdminApi(PRODUCT_READ_ROLES);
   if (auth.response) return auth.response;
@@ -43,24 +88,26 @@ export async function GET(request) {
   const limit = Math.min(Math.max(Number.parseInt(searchParams.get("limit") || "12", 10), 1), 100);
   const where = buildWhere(searchParams);
 
-  const [items, total] = await prisma.$transaction([
-    prisma.product.findMany({
-      where,
-      include: productInclude(),
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.product.count({ where }),
-  ]);
+  const result = isTopSellingSort(searchParams.get("sort"))
+    ? await getTopSellingProducts({ where, page, limit })
+    : await prisma.$transaction([
+        prisma.product.findMany({
+          where,
+          include: productInclude(),
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.product.count({ where }),
+      ]).then(([items, total]) => ({ items: items.map(serializeProduct), total }));
 
   return json({
-    items: items.map(serializeProduct),
+    items: result.items,
     pagination: {
       page,
       limit,
-      total,
-      totalPages: Math.max(Math.ceil(total / limit), 1),
+      total: result.total,
+      totalPages: Math.max(Math.ceil(result.total / limit), 1),
     },
   });
 }

@@ -7,6 +7,8 @@ import { hasRole } from "../../../../lib/auth/rbac";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const TOP_SELLING_ORDER_STATUSES = ["DELIVERED"];
+
 function money(value) {
   const number = Number(value || 0);
   return `৳${number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -37,6 +39,56 @@ function stockStatusForFilter(filter) {
   return null;
 }
 
+function isTopSellingSort(sort) {
+  return sort === "top-selling";
+}
+
+async function getTopSellingProducts({ where, page, limit }) {
+  const salesWhere = {
+    productId: { not: null },
+    order: { status: { in: TOP_SELLING_ORDER_STATUSES } },
+    product: { is: where },
+  };
+
+  const [groups, allGroups, categories, brands] = await prisma.$transaction([
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: salesWhere,
+      _sum: { quantity: true },
+      orderBy: [{ _sum: { quantity: "desc" } }, { productId: "asc" }],
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: salesWhere,
+    }),
+    prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  const productIds = groups.map((group) => group.productId).filter(Boolean);
+  const productsRaw = productIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: productInclude(),
+      })
+    : [];
+  const productById = new Map(productsRaw.map((product) => [product.id, product]));
+  const soldById = new Map(groups.map((group) => [group.productId, Number(group._sum.quantity || 0)]));
+  const products = productIds
+    .map((productId) => productById.get(productId))
+    .filter(Boolean)
+    .map((product) => ({ ...serializeProduct(product), totalSold: soldById.get(product.id) || 0 }));
+
+  return {
+    products,
+    total: allGroups.length,
+    categories,
+    brands,
+  };
+}
+
 export default async function AdminProductsPage({ searchParams }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
@@ -53,6 +105,8 @@ export default async function AdminProductsPage({ searchParams }) {
   const brandId = params.get("brandId") || "";
   const status = params.get("status") || "";
   const filter = params.get("filter") || "";
+  const sort = params.get("sort") || "";
+  const topSelling = isTopSellingSort(sort);
   const stockStatus = stockStatusForFilter(filter);
   const page = Math.max(Number.parseInt(params.get("page") || "1", 10), 1);
   const limit = 12;
@@ -73,21 +127,29 @@ export default async function AdminProductsPage({ searchParams }) {
     ...(stockStatus ? { stockStatus } : {}),
   };
 
-  const [productsRaw, total, categories, brands] = await prisma.$transaction([
-    prisma.product.findMany({
-      where,
-      include: productInclude(),
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.product.count({ where }),
-    prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-  ]);
+  const productResult = topSelling
+    ? await getTopSellingProducts({ where, page, limit })
+    : await prisma.$transaction([
+        prisma.product.findMany({
+          where,
+          include: productInclude(),
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.product.count({ where }),
+        prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+        prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+      ]).then(([productsRaw, total, categories, brands]) => ({
+        products: productsRaw.map(serializeProduct),
+        total,
+        categories,
+        brands,
+      }));
 
-  const products = productsRaw.map(serializeProduct);
+  const { products, total, categories, brands } = productResult;
   const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const tableColumnCount = topSelling ? 10 : 9;
 
   if (!canRead) {
     return (
@@ -104,7 +166,7 @@ export default async function AdminProductsPage({ searchParams }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Catalog Management</p>
-            <h1 className="mt-1 text-3xl font-black text-[#111827]">Products</h1>
+            <h1 className="mt-1 text-3xl font-black text-[#111827]">{topSelling ? "Top Selling Products" : "Products"}</h1>
             <p className="mt-2 text-sm font-semibold text-[#667085]">Search, filter, and manage product inventory for ERP/BMS-ready catalog sync.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -124,6 +186,7 @@ export default async function AdminProductsPage({ searchParams }) {
 
       <form className="grid gap-3 rounded-3xl border border-[#e5e7eb] bg-white p-4 shadow-sm md:grid-cols-[1.4fr_1fr_1fr_220px_auto]">
         {filter ? <input type="hidden" name="filter" value={filter} /> : null}
+        {sort ? <input type="hidden" name="sort" value={sort} /> : null}
         <input name="q" defaultValue={query} placeholder="Search products, SKU, barcode" className="h-11 rounded-xl border border-[#d0d5dd] px-4 text-sm font-bold outline-none focus:border-[#ef3338] focus:ring-4 focus:ring-red-100" />
         <select name="categoryId" defaultValue={categoryId} className="h-11 rounded-xl border border-[#d0d5dd] px-4 text-sm font-bold outline-none focus:border-[#ef3338]">
           <option value="">All categories</option>
@@ -160,6 +223,7 @@ export default async function AdminProductsPage({ searchParams }) {
                 <th className="px-5 py-4">SKU</th>
                 <th className="px-5 py-4">Price</th>
                 <th className="px-5 py-4">Stock</th>
+                {topSelling ? <th className="px-5 py-4">Sold</th> : null}
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Featured</th>
                 <th className="px-5 py-4">Created</th>
@@ -184,6 +248,7 @@ export default async function AdminProductsPage({ searchParams }) {
                   <td className="px-5 py-4 text-sm font-bold text-[#344054]">{product.sku || "—"}</td>
                   <td className="px-5 py-4 text-sm font-black text-[#ef3338]">{money(product.discountPrice || product.price)}</td>
                   <td className="px-5 py-4 text-sm font-black text-[#111827]">{product.stockQuantity}</td>
+                  {topSelling ? <td className="px-5 py-4 text-sm font-black text-[#111827]">{product.totalSold || 0}</td> : null}
                   <td className="px-5 py-4">
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(product.status)}`}>{product.status}</span>
                   </td>
@@ -200,7 +265,7 @@ export default async function AdminProductsPage({ searchParams }) {
               ))}
               {!products.length ? (
                 <tr>
-                  <td colSpan="9" className="px-5 py-16 text-center">
+                  <td colSpan={tableColumnCount} className="px-5 py-16 text-center">
                     <p className="text-lg font-black text-[#111827]">No products found</p>
                     <p className="mt-2 text-sm font-semibold text-[#667085]">Try changing filters or create your first product.</p>
                   </td>
