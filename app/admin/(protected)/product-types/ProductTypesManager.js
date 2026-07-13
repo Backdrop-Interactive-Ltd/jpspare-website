@@ -1,0 +1,285 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function emptyProductType() {
+  return {
+    id: "",
+    name: "",
+    slug: "",
+    description: "",
+    isActive: true,
+    sortOrder: 0,
+  };
+}
+
+function statusClass(isActive) {
+  return isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-gray-100 text-gray-600 ring-gray-200";
+}
+
+function inputClass(readOnly) {
+  return `h-11 w-full rounded-xl border border-[#d0d5dd] bg-white px-4 text-sm font-semibold text-[#111827] outline-none transition focus:border-[#ef3338] focus:ring-4 focus:ring-red-100 ${
+    readOnly ? "cursor-not-allowed bg-[#f2f4f7] text-[#667085]" : ""
+  }`;
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-black text-[#344054]">{label}</span>
+      <div className="mt-2">{children}</div>
+    </label>
+  );
+}
+
+function Toggle({ label, checked, onChange, disabled }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`flex h-11 items-center justify-between rounded-xl border px-4 text-sm font-black transition ${
+        checked ? "border-red-200 bg-red-50 text-[#ef3338]" : "border-[#d0d5dd] bg-white text-[#344054]"
+      } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+    >
+      <span>{label}</span>
+      <span className={`h-6 w-11 rounded-full p-1 transition ${checked ? "bg-[#ef3338]" : "bg-[#d0d5dd]"}`}>
+        <span className={`block size-4 rounded-full bg-white transition ${checked ? "translate-x-5" : ""}`} />
+      </span>
+    </button>
+  );
+}
+
+export default function ProductTypesManager({ initialProductTypes, canManage }) {
+  const router = useRouter();
+  const [productTypes, setProductTypes] = useState(initialProductTypes || []);
+  const [form, setForm] = useState(emptyProductType);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [query, setQuery] = useState("");
+  const readOnly = !canManage;
+  const editing = Boolean(form.id);
+
+  const filteredProductTypes = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return productTypes;
+    return productTypes.filter((productType) =>
+      [productType.name, productType.slug, productType.description].some((value) => String(value || "").toLowerCase().includes(needle))
+    );
+  }, [productTypes, query]);
+
+  function setField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function setName(value) {
+    setForm((current) => ({ ...current, name: value, slug: current.slug ? current.slug : slugify(value) }));
+  }
+
+  function resetForm() {
+    setForm(emptyProductType());
+    setMessage("");
+  }
+
+  async function refreshProductTypes() {
+    const response = await fetch("/api/admin/product-types?limit=100");
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Unable to refresh product types");
+    setProductTypes(payload.items || []);
+    router.refresh();
+  }
+
+  async function saveProductType(event) {
+    event.preventDefault();
+    if (readOnly) return;
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(editing ? `/api/admin/product-types/${form.id}` : "/api/admin/product-types", {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, slug: form.slug || slugify(form.name) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to save product type");
+      await refreshProductTypes();
+      resetForm();
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteProductType(productType) {
+    if (readOnly || !window.confirm(`Delete "${productType.name}"?`)) return;
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/product-types/${productType.id}`, { method: "DELETE" });
+      const payload = response.status === 204 ? {} : await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to delete product type");
+      await refreshProductTypes();
+      if (form.id === productType.id) resetForm();
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleProductType(productType) {
+    if (readOnly) return;
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/product-types/${productType.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...productType, isActive: !productType.isActive }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to update product type");
+      await refreshProductTypes();
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function editProductType(productType) {
+    setForm({ ...emptyProductType(), ...productType, description: productType.description || "" });
+    setMessage("");
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Product Configuration</p>
+            <h1 className="mt-1 text-3xl font-black text-[#111827]">Product Types</h1>
+            <p className="mt-2 text-sm font-semibold text-[#667085]">Define reusable product classifications for CMS configuration without changing category navigation.</p>
+          </div>
+          {!canManage ? <span className="inline-flex h-11 items-center rounded-xl border border-amber-200 bg-amber-50 px-5 text-sm font-black text-amber-700">Read-only</span> : null}
+        </div>
+      </section>
+
+      {message ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">{message}</div> : null}
+
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <form onSubmit={saveProductType} className="space-y-5 rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm sm:p-6">
+          <div>
+            <h2 className="text-xl font-black text-[#111827]">{editing ? "Edit Product Type" : "Add Product Type"}</h2>
+            <p className="mt-1 text-sm font-semibold text-[#667085]">Classification definitions only. Product assignment is intentionally out of scope.</p>
+          </div>
+
+          <Field label="Name">
+            <input value={form.name || ""} onChange={(event) => setName(event.target.value)} disabled={readOnly} className={inputClass(readOnly)} required />
+          </Field>
+
+          <Field label="Slug">
+            <input value={form.slug || ""} onChange={(event) => setField("slug", slugify(event.target.value))} disabled={readOnly} className={inputClass(readOnly)} required />
+          </Field>
+
+          <Field label="Sort Order">
+            <input type="number" value={form.sortOrder ?? 0} onChange={(event) => setField("sortOrder", event.target.value)} disabled={readOnly} className={inputClass(readOnly)} />
+          </Field>
+
+          <Field label="Description">
+            <textarea value={form.description || ""} onChange={(event) => setField("description", event.target.value)} disabled={readOnly} className={`${inputClass(readOnly)} h-28 py-3`} />
+          </Field>
+
+          <Toggle label="Active product type" checked={Boolean(form.isActive)} disabled={readOnly} onChange={(value) => setField("isActive", value)} />
+
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={resetForm} className="h-11 rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054]">
+              Clear
+            </button>
+            {canManage ? (
+              <button type="submit" disabled={saving} className="h-11 rounded-xl bg-[#ef3338] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)] disabled:opacity-60">
+                {saving ? "Saving..." : editing ? "Save Product Type" : "Add Product Type"}
+              </button>
+            ) : null}
+          </div>
+        </form>
+
+        <section className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef0f3] p-4">
+            <div>
+              <h2 className="text-xl font-black text-[#111827]">Product Types</h2>
+              <p className="mt-1 text-sm font-semibold text-[#667085]">{productTypes.length} total classifications</p>
+            </div>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search product types" className="h-11 w-full rounded-xl border border-[#d0d5dd] px-4 text-sm font-bold outline-none focus:border-[#ef3338] focus:ring-4 focus:ring-red-100 sm:w-72" />
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-[760px] w-full text-left">
+              <thead className="bg-[#f8fafc] text-xs font-black uppercase tracking-[0.14em] text-[#667085]">
+                <tr>
+                  <th className="px-5 py-4">Product Type</th>
+                  <th className="px-5 py-4">Sort</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#eef0f3]">
+                {filteredProductTypes.map((productType) => (
+                  <tr key={productType.id} className="transition hover:bg-red-50/40">
+                    <td className="px-5 py-4">
+                      <p className="font-black text-[#111827]">{productType.name}</p>
+                      <p className="mt-1 text-xs font-bold text-[#667085]">{productType.slug}</p>
+                      {productType.description ? <p className="mt-1 max-w-md truncate text-xs font-semibold text-[#98a2b3]">{productType.description}</p> : null}
+                    </td>
+                    <td className="px-5 py-4 text-sm font-black text-[#111827]">{productType.sortOrder}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClass(productType.isActive)}`}>{productType.isActive ? "Active" : "Inactive"}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => editProductType(productType)} className="rounded-xl border border-[#d0d5dd] px-3 py-2 text-xs font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                          {canManage ? "Edit" : "View"}
+                        </button>
+                        {canManage ? (
+                          <>
+                            <button type="button" onClick={() => toggleProductType(productType)} disabled={saving} className="rounded-xl border border-[#d0d5dd] px-3 py-2 text-xs font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                              {productType.isActive ? "Deactivate" : "Activate"}
+                            </button>
+                            <button type="button" onClick={() => deleteProductType(productType)} disabled={saving} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-[#ef3338]">
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {!filteredProductTypes.length ? (
+                  <tr>
+                    <td colSpan="4" className="px-5 py-16 text-center">
+                      <p className="text-lg font-black text-[#111827]">No product types found</p>
+                      <p className="mt-2 text-sm font-semibold text-[#667085]">Create your first reusable product type or adjust the search.</p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
