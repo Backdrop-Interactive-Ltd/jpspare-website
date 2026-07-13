@@ -67,6 +67,7 @@ const menuGroups = [
       { label: "Brands", href: "/admin/brands" },
       { label: "Categories", href: "/admin/categories" },
       { label: "Product Types", href: "/admin/product-types" },
+      { label: "Variants", href: "/admin/variants" },
     ],
   },
   {

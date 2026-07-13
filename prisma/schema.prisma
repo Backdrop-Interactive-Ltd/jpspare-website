@@ -524,6 +524,20 @@ model ProductType {
   @@index([sortOrder])
 }
 
+model Variant {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
 model Product {
   id                 String                 @id @default(cuid())
   title              String
