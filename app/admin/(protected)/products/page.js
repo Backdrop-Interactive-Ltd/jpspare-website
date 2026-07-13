@@ -24,6 +24,15 @@ function buildHref(params, updates) {
   return `/admin/products?${next.toString()}`;
 }
 
+function buildExportHref(params) {
+  const exportParams = new URLSearchParams(params);
+  exportParams.delete("page");
+  exportParams.delete("sort");
+  exportParams.delete("tool");
+  const query = exportParams.toString();
+  return query ? `/api/admin/products/export?${query}` : "/api/admin/products/export";
+}
+
 function getThumbnail(product) {
   return product.images?.find((image) => image.isThumbnail)?.url || product.images?.[0]?.url || product.media?.[0]?.media?.url || "/jpspare-logo.png";
 }
@@ -152,6 +161,7 @@ export default async function AdminProductsPage({ searchParams }) {
   const { products, total, categories, brands } = productResult;
   const totalPages = Math.max(Math.ceil(total / limit), 1);
   const tableColumnCount = topSelling ? 10 : 9;
+  const exportHref = buildExportHref(params);
 
   if (!canRead) {
     return (
@@ -172,9 +182,9 @@ export default async function AdminProductsPage({ searchParams }) {
             <p className="mt-2 text-sm font-semibold text-[#667085]">Search, filter, and manage product inventory for ERP/BMS-ready catalog sync.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="h-11 rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054]">
-              Bulk Actions
-            </button>
+            <Link href={exportHref} className="inline-flex h-11 items-center rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+              Bulk Export
+            </Link>
             {canManage ? (
               <Link href="/admin/products/new" className="inline-flex h-11 items-center rounded-xl bg-[#ef3338] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(239,51,56,0.22)]">
                 Add Product

@@ -48,7 +48,7 @@ const menuGroups = [
     items: [
       { label: "Add Product", href: "/admin/products/new" },
       { label: "Bulk Import", href: "/admin/products?tool=bulk-import" },
-      { label: "Bulk Export", href: "/admin/products?tool=bulk-export" },
+      { label: "Bulk Export", href: "/api/admin/products/export" },
       { label: "All Products", href: "/admin/products" },
       { label: "Low Stock Products", href: "/admin/products?filter=low-stock" },
       { label: "Out of Stock Products", href: "/admin/products?filter=out-of-stock" },
