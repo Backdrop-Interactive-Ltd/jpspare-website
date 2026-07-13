@@ -35,7 +35,7 @@ function buildWhere(searchParams) {
       : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(brandId ? { brandId } : {}),
-    ...(status && status !== "ALL" ? { status } : {}),
+    ...(status && status !== "ALL" ? { status } : { status: { not: "ARCHIVED" } }),
     ...(stockStatus ? { stockStatus } : {}),
   };
 }

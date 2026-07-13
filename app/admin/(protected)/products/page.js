@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/db";
 import { PRODUCT_READ_ROLES, PRODUCT_WRITE_ROLES, productInclude, serializeProduct } from "../../../../lib/admin/productPayload";
 import { requireAdminPage } from "../../../../lib/auth/admin";
 import { hasRole } from "../../../../lib/auth/rbac";
+import ProductRowActions from "./ProductRowActions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -107,6 +108,7 @@ export default async function AdminProductsPage({ searchParams }) {
   const filter = params.get("filter") || "";
   const sort = params.get("sort") || "";
   const topSelling = isTopSellingSort(sort);
+  const archivedView = status === "ARCHIVED";
   const stockStatus = stockStatusForFilter(filter);
   const page = Math.max(Number.parseInt(params.get("page") || "1", 10), 1);
   const limit = 12;
@@ -123,7 +125,7 @@ export default async function AdminProductsPage({ searchParams }) {
       : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(brandId ? { brandId } : {}),
-    ...(status ? { status } : {}),
+    ...(status ? { status } : { status: { not: "ARCHIVED" } }),
     ...(stockStatus ? { stockStatus } : {}),
   };
 
@@ -166,7 +168,7 @@ export default async function AdminProductsPage({ searchParams }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ef3338]">Catalog Management</p>
-            <h1 className="mt-1 text-3xl font-black text-[#111827]">{topSelling ? "Top Selling Products" : "Products"}</h1>
+            <h1 className="mt-1 text-3xl font-black text-[#111827]">{archivedView ? "Trashed Products" : topSelling ? "Top Selling Products" : "Products"}</h1>
             <p className="mt-2 text-sm font-semibold text-[#667085]">Search, filter, and manage product inventory for ERP/BMS-ready catalog sync.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -257,9 +259,7 @@ export default async function AdminProductsPage({ searchParams }) {
                   </td>
                   <td className="px-5 py-4 text-sm font-bold text-[#667085]">{new Date(product.createdAt).toLocaleDateString("en-GB")}</td>
                   <td className="px-5 py-4 text-right">
-                    <Link href={`/admin/products/${product.id}`} className="rounded-xl border border-[#d0d5dd] px-4 py-2 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
-                      {canManage ? "Edit" : "View"}
-                    </Link>
+                    <ProductRowActions productId={product.id} canManage={canManage} archived={archivedView} />
                   </td>
                 </tr>
               ))}

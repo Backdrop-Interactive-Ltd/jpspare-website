@@ -41,13 +41,44 @@ export async function PUT(request, context) {
 }
 
 export async function PATCH(request, context) {
-  return PUT(request, context);
-}
-
-export async function DELETE(_request, context) {
   const auth = await requireAdminApi(PRODUCT_WRITE_ROLES);
   if (auth.response) return auth.response;
 
-  await prisma.product.delete({ where: { id: await getId(context) } });
+  const id = await getId(context);
+  const body = await request.json();
+  if (body.action === "archive") {
+    const item = await prisma.product.update({
+      where: { id },
+      data: { status: "ARCHIVED" },
+      include: productInclude(),
+    });
+    return json({ item: serializeProduct(item) });
+  }
+  if (body.action === "restore") {
+    const item = await prisma.product.update({
+      where: { id },
+      data: { status: "ACTIVE" },
+      include: productInclude(),
+    });
+    return json({ item: serializeProduct(item) });
+  }
+  return PUT(request, context);
+}
+
+export async function DELETE(request, context) {
+  const auth = await requireAdminApi(PRODUCT_WRITE_ROLES);
+  if (auth.response) return auth.response;
+
+  const id = await getId(context);
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("permanent") === "true") {
+    const product = await prisma.product.findUnique({ where: { id }, select: { status: true } });
+    if (!product) return apiError("Product not found.", 404);
+    if (product.status !== "ARCHIVED") return apiError("Only archived products can be permanently deleted.", 409);
+    await prisma.product.delete({ where: { id } });
+    return json({ ok: true });
+  }
+
+  await prisma.product.update({ where: { id }, data: { status: "ARCHIVED" } });
   return json({ ok: true });
 }

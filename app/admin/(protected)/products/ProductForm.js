@@ -210,7 +210,7 @@ export default function ProductForm({ mode, product, categories, brands, canMana
   }
 
   async function handleDelete() {
-    if (readOnly || mode !== "edit" || !window.confirm("Delete this product?")) return;
+    if (readOnly || mode !== "edit" || !window.confirm("Move this product to trash?")) return;
     setSaving(true);
     try {
       const response = await fetch(`/api/admin/products/${form.id}`, { method: "DELETE" });
@@ -242,7 +242,7 @@ export default function ProductForm({ mode, product, categories, brands, canMana
             </button>
             {mode === "edit" && canManage ? (
               <button type="button" onClick={handleDelete} className="h-11 rounded-xl border border-red-200 bg-red-50 px-5 text-sm font-black text-[#ef3338]">
-                Delete
+                Archive
               </button>
             ) : null}
             {canManage ? (
