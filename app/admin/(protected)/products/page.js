@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/db";
 import { PRODUCT_READ_ROLES, PRODUCT_WRITE_ROLES, productInclude, serializeProduct } from "../../../../lib/admin/productPayload";
 import { requireAdminPage } from "../../../../lib/auth/admin";
 import { hasRole } from "../../../../lib/auth/rbac";
+import BulkImportProducts from "./BulkImportProducts";
 import ProductRowActions from "./ProductRowActions";
 
 export const dynamic = "force-dynamic";
@@ -116,8 +117,10 @@ export default async function AdminProductsPage({ searchParams }) {
   const status = params.get("status") || "";
   const filter = params.get("filter") || "";
   const sort = params.get("sort") || "";
+  const tool = params.get("tool") || "";
   const topSelling = isTopSellingSort(sort);
   const archivedView = status === "ARCHIVED";
+  const bulkImportView = tool === "bulk-import";
   const stockStatus = stockStatusForFilter(filter);
   const page = Math.max(Number.parseInt(params.get("page") || "1", 10), 1);
   const limit = 12;
@@ -182,6 +185,11 @@ export default async function AdminProductsPage({ searchParams }) {
             <p className="mt-2 text-sm font-semibold text-[#667085]">Search, filter, and manage product inventory for ERP/BMS-ready catalog sync.</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            {canManage ? (
+              <Link href="/admin/products?tool=bulk-import" className="inline-flex h-11 items-center rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
+                Bulk Import
+              </Link>
+            ) : null}
             <Link href={exportHref} className="inline-flex h-11 items-center rounded-xl border border-[#d0d5dd] bg-white px-5 text-sm font-black text-[#344054] hover:border-[#ef3338] hover:text-[#ef3338]">
               Bulk Export
             </Link>
@@ -195,6 +203,8 @@ export default async function AdminProductsPage({ searchParams }) {
           </div>
         </div>
       </section>
+
+      {bulkImportView ? <BulkImportProducts canManage={canManage} /> : null}
 
       <form className="grid gap-3 rounded-3xl border border-[#e5e7eb] bg-white p-4 shadow-sm md:grid-cols-[1.4fr_1fr_1fr_220px_auto]">
         {filter ? <input type="hidden" name="filter" value={filter} /> : null}
