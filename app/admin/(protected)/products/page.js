@@ -31,6 +31,12 @@ function statusClass(status) {
   return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
+function stockStatusForFilter(filter) {
+  if (filter === "low-stock") return "LOW_STOCK";
+  if (filter === "out-of-stock") return "OUT_OF_STOCK";
+  return null;
+}
+
 export default async function AdminProductsPage({ searchParams }) {
   const session = await requireAdminPage();
   const user = { roles: session.user.roles.map((name) => ({ role: { name } })) };
@@ -46,6 +52,8 @@ export default async function AdminProductsPage({ searchParams }) {
   const categoryId = params.get("categoryId") || "";
   const brandId = params.get("brandId") || "";
   const status = params.get("status") || "";
+  const filter = params.get("filter") || "";
+  const stockStatus = stockStatusForFilter(filter);
   const page = Math.max(Number.parseInt(params.get("page") || "1", 10), 1);
   const limit = 12;
 
@@ -62,6 +70,7 @@ export default async function AdminProductsPage({ searchParams }) {
     ...(categoryId ? { categoryId } : {}),
     ...(brandId ? { brandId } : {}),
     ...(status ? { status } : {}),
+    ...(stockStatus ? { stockStatus } : {}),
   };
 
   const [productsRaw, total, categories, brands] = await prisma.$transaction([
@@ -114,6 +123,7 @@ export default async function AdminProductsPage({ searchParams }) {
       </section>
 
       <form className="grid gap-3 rounded-3xl border border-[#e5e7eb] bg-white p-4 shadow-sm md:grid-cols-[1.4fr_1fr_1fr_220px_auto]">
+        {filter ? <input type="hidden" name="filter" value={filter} /> : null}
         <input name="q" defaultValue={query} placeholder="Search products, SKU, barcode" className="h-11 rounded-xl border border-[#d0d5dd] px-4 text-sm font-bold outline-none focus:border-[#ef3338] focus:ring-4 focus:ring-red-100" />
         <select name="categoryId" defaultValue={categoryId} className="h-11 rounded-xl border border-[#d0d5dd] px-4 text-sm font-bold outline-none focus:border-[#ef3338]">
           <option value="">All categories</option>

@@ -4,11 +4,18 @@ import { normalizeProductPayload, PRODUCT_READ_ROLES, PRODUCT_WRITE_ROLES, produ
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+function stockStatusForFilter(filter) {
+  if (filter === "low-stock") return "LOW_STOCK";
+  if (filter === "out-of-stock") return "OUT_OF_STOCK";
+  return null;
+}
+
 function buildWhere(searchParams) {
   const query = searchParams.get("q")?.trim();
   const categoryId = searchParams.get("categoryId") || undefined;
   const brandId = searchParams.get("brandId") || undefined;
   const status = searchParams.get("status") || undefined;
+  const stockStatus = stockStatusForFilter(searchParams.get("filter"));
 
   return {
     ...(query
@@ -23,6 +30,7 @@ function buildWhere(searchParams) {
     ...(categoryId ? { categoryId } : {}),
     ...(brandId ? { brandId } : {}),
     ...(status && status !== "ALL" ? { status } : {}),
+    ...(stockStatus ? { stockStatus } : {}),
   };
 }
 
